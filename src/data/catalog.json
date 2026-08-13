@@ -1,0 +1,3264 @@
+{
+  "generatedFrom": "extraction/data (read-only mirror)",
+  "currency": "AED",
+  "vatRate": 0.05,
+  "departments": [
+    {
+      "id": 15,
+      "name": "Medical Consumables",
+      "slug": "medical-consumables",
+      "children": [
+        {
+          "id": 37,
+          "name": "Sterilisation",
+          "slug": "sterilisation",
+          "parentId": 15
+        },
+        {
+          "id": 39,
+          "name": "Monitoring & Testing",
+          "slug": "monitoring-and-testing",
+          "parentId": 15
+        },
+        {
+          "id": 40,
+          "name": "Kits",
+          "slug": "kits",
+          "parentId": 15
+        },
+        {
+          "id": 41,
+          "name": "Gels, Lubrication & Creams",
+          "slug": "gels-lubrication-and-creams",
+          "parentId": 15
+        },
+        {
+          "id": 42,
+          "name": "Respiratory Management",
+          "slug": "respiratory-management",
+          "parentId": 15
+        },
+        {
+          "id": 43,
+          "name": "Rehabilitation",
+          "slug": "rehabilitation",
+          "parentId": 15
+        },
+        {
+          "id": 44,
+          "name": "Nutrition",
+          "slug": "nutrition",
+          "parentId": 15
+        },
+        {
+          "id": 45,
+          "name": "Bed & Accessories",
+          "slug": "bed-and-accessories",
+          "parentId": 15
+        },
+        {
+          "id": 46,
+          "name": "Needles & Accessories",
+          "slug": "needles-and-accessories",
+          "parentId": 15
+        },
+        {
+          "id": 47,
+          "name": "Clinical Supplies",
+          "slug": "clinical-supplies",
+          "parentId": 15
+        },
+        {
+          "id": 48,
+          "name": "Applicators & Swabs",
+          "slug": "applicators-and-swabs",
+          "parentId": 15
+        },
+        {
+          "id": 49,
+          "name": "Syringes & Accessories",
+          "slug": "syringes-and-accessories",
+          "parentId": 15
+        },
+        {
+          "id": 50,
+          "name": "Furniture",
+          "slug": "furniture",
+          "parentId": 15
+        },
+        {
+          "id": 51,
+          "name": "Incontinence Care",
+          "slug": "incontinence-care",
+          "parentId": 15
+        },
+        {
+          "id": 52,
+          "name": "Catheters & Accessories",
+          "slug": "catheters-and-accessories",
+          "parentId": 15
+        },
+        {
+          "id": 53,
+          "name": "Dispensers",
+          "slug": "dispensers",
+          "parentId": 15
+        },
+        {
+          "id": 54,
+          "name": "Tubes",
+          "slug": "tubes",
+          "parentId": 15
+        },
+        {
+          "id": 55,
+          "name": "Trolleys",
+          "slug": "trolleys",
+          "parentId": 15
+        },
+        {
+          "id": 56,
+          "name": "Intravenous & Infusion Therapy",
+          "slug": "intravenous-and-infusion-therapy",
+          "parentId": 15
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Wound Care, First Aid & Safety",
+      "slug": "wound-care-first-aid-and-safety",
+      "children": [
+        {
+          "id": 38,
+          "name": "Medicine",
+          "slug": "medicine",
+          "parentId": 16
+        },
+        {
+          "id": 57,
+          "name": "Respiratory Management",
+          "slug": "respiratory-management-57",
+          "parentId": 16
+        },
+        {
+          "id": 58,
+          "name": "Clips & Fasteners",
+          "slug": "clips-and-fasteners",
+          "parentId": 16
+        },
+        {
+          "id": 59,
+          "name": "Emergency & Rescue",
+          "slug": "emergency-and-rescue",
+          "parentId": 16
+        },
+        {
+          "id": 60,
+          "name": "Wound Care",
+          "slug": "wound-care",
+          "parentId": 16
+        },
+        {
+          "id": 61,
+          "name": "Antiseptics",
+          "slug": "antiseptics",
+          "parentId": 16
+        },
+        {
+          "id": 62,
+          "name": "Workplace Safety",
+          "slug": "workplace-safety",
+          "parentId": 16
+        },
+        {
+          "id": 63,
+          "name": "Skin Protection",
+          "slug": "skin-protection",
+          "parentId": 16
+        },
+        {
+          "id": 64,
+          "name": "First Aid Kits & Accessories",
+          "slug": "first-aid-kits-and-accessories",
+          "parentId": 16
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Kitchen",
+      "slug": "kitchen",
+      "children": [
+        {
+          "id": 65,
+          "name": "Food Supplies",
+          "slug": "food-supplies",
+          "parentId": 17
+        },
+        {
+          "id": 66,
+          "name": "Cups & Accessories",
+          "slug": "cups-and-accessories",
+          "parentId": 17
+        },
+        {
+          "id": 67,
+          "name": "Beverages & Accessories",
+          "slug": "beverages-and-accessories",
+          "parentId": 17
+        },
+        {
+          "id": 68,
+          "name": "Bags",
+          "slug": "bags",
+          "parentId": 17
+        },
+        {
+          "id": 69,
+          "name": "Food Containers",
+          "slug": "food-containers",
+          "parentId": 17
+        },
+        {
+          "id": 70,
+          "name": "Cutlery & Plates",
+          "slug": "cutlery-and-plates",
+          "parentId": 17
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Laboratory",
+      "slug": "laboratory",
+      "children": [
+        {
+          "id": 71,
+          "name": "Labware",
+          "slug": "labware",
+          "parentId": 18
+        },
+        {
+          "id": 72,
+          "name": "Plasticware",
+          "slug": "plasticware",
+          "parentId": 18
+        },
+        {
+          "id": 73,
+          "name": "Lab Safety",
+          "slug": "lab-safety",
+          "parentId": 18
+        },
+        {
+          "id": 74,
+          "name": "Glassware",
+          "slug": "glassware",
+          "parentId": 18
+        },
+        {
+          "id": 75,
+          "name": "Laboratory Equipment and Apparatus",
+          "slug": "laboratory-equipment-and-apparatus",
+          "parentId": 18
+        },
+        {
+          "id": 76,
+          "name": "Charts and Models",
+          "slug": "charts-and-models",
+          "parentId": 18
+        },
+        {
+          "id": 77,
+          "name": "Laboratory Consumables",
+          "slug": "laboratory-consumables",
+          "parentId": 18
+        },
+        {
+          "id": 78,
+          "name": "Heating mantle",
+          "slug": "heating-mantle",
+          "parentId": 18
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Protective Wear PPE",
+      "slug": "protective-wear-ppe",
+      "children": [
+        {
+          "id": 79,
+          "name": "Face Protection",
+          "slug": "face-protection",
+          "parentId": 19
+        },
+        {
+          "id": 80,
+          "name": "Body Protection",
+          "slug": "body-protection",
+          "parentId": 19
+        },
+        {
+          "id": 81,
+          "name": "Hand Protection",
+          "slug": "hand-protection",
+          "parentId": 19
+        },
+        {
+          "id": 82,
+          "name": "Head Protection",
+          "slug": "head-protection",
+          "parentId": 19
+        },
+        {
+          "id": 83,
+          "name": "PPE Dispensers",
+          "slug": "ppe-dispensers",
+          "parentId": 19
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Beauty, Skin & Personal Care",
+      "slug": "beauty-skin-and-personal-care",
+      "children": [
+        {
+          "id": 84,
+          "name": "Nail Care",
+          "slug": "nail-care",
+          "parentId": 20
+        },
+        {
+          "id": 85,
+          "name": "Undergarments",
+          "slug": "undergarments",
+          "parentId": 20
+        },
+        {
+          "id": 86,
+          "name": "Makeup Supplies",
+          "slug": "makeup-supplies",
+          "parentId": 20
+        },
+        {
+          "id": 87,
+          "name": "Barber/Hairdressing Supplies",
+          "slug": "barber-hairdressing-supplies",
+          "parentId": 20
+        },
+        {
+          "id": 88,
+          "name": "Sexual Health",
+          "slug": "sexual-health",
+          "parentId": 20
+        },
+        {
+          "id": 89,
+          "name": "Amenities",
+          "slug": "amenities",
+          "parentId": 20
+        },
+        {
+          "id": 90,
+          "name": "Beauty",
+          "slug": "beauty",
+          "parentId": 20
+        },
+        {
+          "id": 91,
+          "name": "Baby Care",
+          "slug": "baby-care",
+          "parentId": 20
+        },
+        {
+          "id": 92,
+          "name": "Tanning",
+          "slug": "tanning",
+          "parentId": 20
+        },
+        {
+          "id": 93,
+          "name": "Hair Care",
+          "slug": "hair-care",
+          "parentId": 20
+        },
+        {
+          "id": 94,
+          "name": "Cotton Products",
+          "slug": "cotton-products",
+          "parentId": 20
+        },
+        {
+          "id": 95,
+          "name": "Oral Care",
+          "slug": "oral-care",
+          "parentId": 20
+        },
+        {
+          "id": 96,
+          "name": "Oral Care",
+          "slug": "oral-care-96",
+          "parentId": 20
+        },
+        {
+          "id": 97,
+          "name": "Hair Removal",
+          "slug": "hair-removal",
+          "parentId": 20
+        },
+        {
+          "id": 98,
+          "name": "Skin Care",
+          "slug": "skin-care",
+          "parentId": 20
+        },
+        {
+          "id": 99,
+          "name": "Eye Care",
+          "slug": "eye-care",
+          "parentId": 20
+        },
+        {
+          "id": 100,
+          "name": "Body Care",
+          "slug": "body-care",
+          "parentId": 20
+        },
+        {
+          "id": 101,
+          "name": "Personal Hygiene",
+          "slug": "personal-hygiene",
+          "parentId": 20
+        },
+        {
+          "id": 102,
+          "name": "Feminine Hygiene",
+          "slug": "feminine-hygiene",
+          "parentId": 20
+        },
+        {
+          "id": 103,
+          "name": "Piercing Supplies",
+          "slug": "piercing-supplies",
+          "parentId": 20
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Instruments & Diagnostics",
+      "slug": "instruments-and-diagnostics",
+      "children": [
+        {
+          "id": 104,
+          "name": "Scissors",
+          "slug": "scissors",
+          "parentId": 24
+        },
+        {
+          "id": 105,
+          "name": "Blades & Accessories",
+          "slug": "blades-and-accessories",
+          "parentId": 24
+        },
+        {
+          "id": 106,
+          "name": "Blood Collection",
+          "slug": "blood-collection",
+          "parentId": 24
+        },
+        {
+          "id": 107,
+          "name": "Biopsy Punches",
+          "slug": "biopsy-punches",
+          "parentId": 24
+        },
+        {
+          "id": 108,
+          "name": "Allied Health",
+          "slug": "allied-health",
+          "parentId": 24
+        },
+        {
+          "id": 109,
+          "name": "Medical",
+          "slug": "medical",
+          "parentId": 24
+        },
+        {
+          "id": 110,
+          "name": "Clamps",
+          "slug": "clamps",
+          "parentId": 24
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories",
+          "parentId": 24
+        },
+        {
+          "id": 112,
+          "name": "Aerosol Masks",
+          "slug": "aerosol-masks",
+          "parentId": 24
+        },
+        {
+          "id": 113,
+          "name": "Hollow Ware",
+          "slug": "hollow-ware",
+          "parentId": 24
+        },
+        {
+          "id": 114,
+          "name": "Monitoring & Testing",
+          "slug": "monitoring-and-testing-114",
+          "parentId": 24
+        },
+        {
+          "id": 115,
+          "name": "Forceps",
+          "slug": "forceps",
+          "parentId": 24
+        },
+        {
+          "id": 116,
+          "name": "Sutures",
+          "slug": "sutures",
+          "parentId": 24
+        },
+        {
+          "id": 117,
+          "name": "I.V Administration",
+          "slug": "i-v-administration",
+          "parentId": 24
+        },
+        {
+          "id": 118,
+          "name": "Environment Control",
+          "slug": "environment-control",
+          "parentId": 24
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Dental",
+      "slug": "dental",
+      "children": [
+        {
+          "id": 119,
+          "name": "Dental Bibs & Chains",
+          "slug": "dental-bibs-and-chains",
+          "parentId": 25
+        },
+        {
+          "id": 120,
+          "name": "Finishing & Polishing",
+          "slug": "finishing-and-polishing",
+          "parentId": 25
+        },
+        {
+          "id": 121,
+          "name": "Waxes",
+          "slug": "waxes",
+          "parentId": 25
+        },
+        {
+          "id": 122,
+          "name": "Evacuation",
+          "slug": "evacuation",
+          "parentId": 25
+        },
+        {
+          "id": 123,
+          "name": "Storage",
+          "slug": "storage",
+          "parentId": 25
+        },
+        {
+          "id": 124,
+          "name": "Rubber Dams & Accessories",
+          "slug": "rubber-dams-and-accessories",
+          "parentId": 25
+        },
+        {
+          "id": 125,
+          "name": "Stone & Plaster",
+          "slug": "stone-and-plaster",
+          "parentId": 25
+        },
+        {
+          "id": 126,
+          "name": "Articulating",
+          "slug": "articulating",
+          "parentId": 25
+        },
+        {
+          "id": 127,
+          "name": "Acrylic & Reline",
+          "slug": "acrylic-and-reline",
+          "parentId": 25
+        },
+        {
+          "id": 128,
+          "name": "Teeth",
+          "slug": "teeth",
+          "parentId": 25
+        },
+        {
+          "id": 129,
+          "name": "Impression Materials",
+          "slug": "impression-materials",
+          "parentId": 25
+        },
+        {
+          "id": 130,
+          "name": "Mouthguards & Splints",
+          "slug": "mouthguards-and-splints",
+          "parentId": 25
+        },
+        {
+          "id": 131,
+          "name": "Restorative & Cosmetic",
+          "slug": "restorative-and-cosmetic",
+          "parentId": 25
+        },
+        {
+          "id": 132,
+          "name": "Burs & Accessories",
+          "slug": "burs-and-accessories",
+          "parentId": 25
+        },
+        {
+          "id": 133,
+          "name": "Endodontics",
+          "slug": "endodontics",
+          "parentId": 25
+        },
+        {
+          "id": 134,
+          "name": "Preventive Oral Care",
+          "slug": "preventive-oral-care",
+          "parentId": 25
+        },
+        {
+          "id": 135,
+          "name": "Instruments & Equipment",
+          "slug": "instruments-and-equipment",
+          "parentId": 25
+        },
+        {
+          "id": 136,
+          "name": "Crown & Bridge",
+          "slug": "crown-and-bridge",
+          "parentId": 25
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Cleaning & Hygiene",
+      "slug": "cleaning-and-hygiene",
+      "children": [
+        {
+          "id": 33,
+          "name": "Hand Hygiene",
+          "slug": "hand-hygiene",
+          "parentId": 26
+        },
+        {
+          "id": 34,
+          "name": "Cleaning Supplies",
+          "slug": "cleaning-supplies",
+          "parentId": 26
+        },
+        {
+          "id": 137,
+          "name": "Cleaning Towels",
+          "slug": "cleaning-towels",
+          "parentId": 26
+        },
+        {
+          "id": 138,
+          "name": "Tissues",
+          "slug": "tissues",
+          "parentId": 26
+        },
+        {
+          "id": 139,
+          "name": "Wipers & Cleaners",
+          "slug": "wipers-and-cleaners",
+          "parentId": 26
+        },
+        {
+          "id": 140,
+          "name": "Swabs & Wipes",
+          "slug": "swabs-and-wipes",
+          "parentId": 26
+        },
+        {
+          "id": 141,
+          "name": "Waste Disposal",
+          "slug": "waste-disposal",
+          "parentId": 26
+        },
+        {
+          "id": 142,
+          "name": "Bottle Brushes",
+          "slug": "bottle-brushes",
+          "parentId": 26
+        },
+        {
+          "id": 143,
+          "name": "Scrubs, Sponges & Brushes",
+          "slug": "scrubs-sponges-and-brushes",
+          "parentId": 26
+        },
+        {
+          "id": 144,
+          "name": "Dispensers",
+          "slug": "dispensers-144",
+          "parentId": 26
+        },
+        {
+          "id": 145,
+          "name": "Mops, Brooms & Buckets",
+          "slug": "mops-brooms-and-buckets",
+          "parentId": 26
+        },
+        {
+          "id": 146,
+          "name": "Accessories",
+          "slug": "accessories",
+          "parentId": 26
+        },
+        {
+          "id": 147,
+          "name": "Cleaning Chemicals",
+          "slug": "cleaning-chemicals",
+          "parentId": 26
+        },
+        {
+          "id": 148,
+          "name": "Toilet Essentials",
+          "slug": "toilet-essentials",
+          "parentId": 26
+        },
+        {
+          "id": 149,
+          "name": "Bags",
+          "slug": "bags-149",
+          "parentId": 26
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Office & Stationery Supplies",
+      "slug": "office-and-stationery-supplies",
+      "children": [
+        {
+          "id": 150,
+          "name": "Teaching Aid & Charts",
+          "slug": "teaching-aid-and-charts",
+          "parentId": 27
+        },
+        {
+          "id": 151,
+          "name": "Arts & Crafts",
+          "slug": "arts-and-crafts",
+          "parentId": 27
+        },
+        {
+          "id": 152,
+          "name": "Tapes & Adhesives",
+          "slug": "tapes-and-adhesives",
+          "parentId": 27
+        },
+        {
+          "id": 153,
+          "name": "Pen, Pencils & Markers",
+          "slug": "pen-pencils-and-markers",
+          "parentId": 27
+        },
+        {
+          "id": 154,
+          "name": "Paper Supplies",
+          "slug": "paper-supplies",
+          "parentId": 27
+        },
+        {
+          "id": 155,
+          "name": "Packaging Supplies",
+          "slug": "packaging-supplies",
+          "parentId": 27
+        },
+        {
+          "id": 156,
+          "name": "Ink & Accessories",
+          "slug": "ink-and-accessories",
+          "parentId": 27
+        },
+        {
+          "id": 157,
+          "name": "Envelopes & Labels",
+          "slug": "envelopes-and-labels",
+          "parentId": 27
+        },
+        {
+          "id": 158,
+          "name": "Stamps & Accessories",
+          "slug": "stamps-and-accessories",
+          "parentId": 27
+        },
+        {
+          "id": 159,
+          "name": "Office Accessories",
+          "slug": "office-accessories",
+          "parentId": 27
+        },
+        {
+          "id": 160,
+          "name": "Binding & Laminating",
+          "slug": "binding-and-laminating",
+          "parentId": 27
+        },
+        {
+          "id": 161,
+          "name": "Books & Notepads",
+          "slug": "books-and-notepads",
+          "parentId": 27
+        },
+        {
+          "id": 162,
+          "name": "Desk Supplies",
+          "slug": "desk-supplies",
+          "parentId": 27
+        },
+        {
+          "id": 163,
+          "name": "Whiteboard, Corkboards & Accessories",
+          "slug": "whiteboard-corkboards-and-accessories",
+          "parentId": 27
+        },
+        {
+          "id": 164,
+          "name": "Filing & Storage",
+          "slug": "filing-and-storage",
+          "parentId": 27
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Pet Care",
+      "slug": "pet-care",
+      "children": [
+        {
+          "id": 165,
+          "name": "Grooming",
+          "slug": "grooming",
+          "parentId": 28
+        },
+        {
+          "id": 166,
+          "name": "Pet Toys",
+          "slug": "pet-toys",
+          "parentId": 28
+        },
+        {
+          "id": 167,
+          "name": "Medicine",
+          "slug": "medicine-167",
+          "parentId": 28
+        },
+        {
+          "id": 168,
+          "name": "Pet Accessories",
+          "slug": "pet-accessories",
+          "parentId": 28
+        },
+        {
+          "id": 169,
+          "name": "Pet Food & Accessories",
+          "slug": "pet-food-and-accessories",
+          "parentId": 28
+        }
+      ]
+    }
+  ],
+  "suppliers": [
+    {
+      "id": 20,
+      "name": "Northline Uniforms",
+      "isPlaceholder": true
+    },
+    {
+      "id": 21,
+      "name": "AussieMed Distribution",
+      "isPlaceholder": true
+    },
+    {
+      "id": 22,
+      "name": "Puracleanse Hygiene",
+      "isPlaceholder": true
+    },
+    {
+      "id": 23,
+      "name": "Woundline Medical",
+      "isPlaceholder": true
+    },
+    {
+      "id": 24,
+      "name": "Medcore Instruments",
+      "isPlaceholder": true
+    },
+    {
+      "id": 25,
+      "name": "Dentiva Dental Supply",
+      "isPlaceholder": true
+    },
+    {
+      "id": 26,
+      "name": "Labworks Scientific",
+      "isPlaceholder": true
+    }
+  ],
+  "products": [
+    {
+      "id": 171,
+      "skuId": 167,
+      "slug": "omron-hem7156t-blood-pressure-monitor",
+      "sku": "OMR-HEM7156T",
+      "name": "Omron HEM7156T Blood Pressure Monitor",
+      "brand": "Omron",
+      "description": "Upper-arm automatic blood pressure monitor with cuff wrapping guide and irregular heartbeat detection. Suitable for clinical and home monitoring use, with a single-button operation and a wide-range cuff.",
+      "categoryId": 111,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories"
+        }
+      ],
+      "priceAED": 186.99,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 3,
+          "priceAED": 179.99
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "8f344f80-3915-4a10-8ec6-76bfd4d9b17d",
+      "sourceNote": null
+    },
+    {
+      "id": 172,
+      "skuId": 168,
+      "slug": "tena-pads-extra-standard-length-24-pack",
+      "sku": "TEN-PAD-EX24",
+      "name": "TENA Pads Extra Standard Length 24 Pack",
+      "brand": "TENA",
+      "description": "Extra absorbency incontinence pads in standard length, with a rapid-absorption core and body-close fit. Supplied 24 per pack for residential and aged-care use.",
+      "categoryId": 51,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 51,
+          "name": "Incontinence Care",
+          "slug": "incontinence-care"
+        }
+      ],
+      "priceAED": 12.49,
+      "unit": "Each",
+      "packSize": "24 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 6,
+          "priceAED": 11.99
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "b210d66f-4324-4f05-8670-906b30b28578",
+      "sourceNote": null
+    },
+    {
+      "id": 173,
+      "skuId": 169,
+      "slug": "kleenex-aloe-vera-and-vitamin-e-facial-tissues-95-pack",
+      "sku": "KLX-AV95",
+      "name": "Kleenex Aloe Vera & Vitamin E Facial Tissues 95 Pack",
+      "brand": "Kleenex",
+      "description": "Facial tissues with aloe vera and vitamin E, designed to be gentle on sensitive skin. Two-ply, 95 tissues per box, suitable for reception areas and consulting rooms.",
+      "categoryId": 138,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 138,
+          "name": "Tissues",
+          "slug": "tissues"
+        }
+      ],
+      "priceAED": 2.99,
+      "unit": "Each",
+      "packSize": "95 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": false,
+      "detailKey": "972edc7c-9f1d-4075-afbc-41b1da601093",
+      "sourceNote": null
+    },
+    {
+      "id": 174,
+      "skuId": 170,
+      "slug": "swisspers-paper-stems-cotton-tips-240-pack",
+      "sku": "SWP-CT240",
+      "name": "Swisspers Paper Stems Cotton Tips 240 Pack",
+      "brand": "Swisspers",
+      "description": "Cotton tips on biodegradable paper stems, with firmly wound tips at both ends. Supplied 240 per pack for general clinical and personal care use.",
+      "categoryId": 94,
+      "categoryPath": [
+        {
+          "id": 20,
+          "name": "Beauty, Skin & Personal Care",
+          "slug": "beauty-skin-and-personal-care"
+        },
+        {
+          "id": 94,
+          "name": "Cotton Products",
+          "slug": "cotton-products"
+        }
+      ],
+      "priceAED": 2.99,
+      "unit": "Each",
+      "packSize": "240 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 2.79
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "3626a2b1-9e24-433e-bd58-3cccd6168c12",
+      "sourceNote": null
+    },
+    {
+      "id": 175,
+      "skuId": 171,
+      "slug": "fess-original-saline-nasal-spray-75ml",
+      "sku": "FES-NS75",
+      "name": "FESS Original Saline Nasal Spray 75mL",
+      "brand": "FESS",
+      "description": "Preservative-free saline nasal spray for relief of nasal congestion and dryness. Non-medicated and suitable for frequent use, in a 75 mL metered spray bottle.",
+      "categoryId": 42,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 42,
+          "name": "Respiratory Management",
+          "slug": "respiratory-management"
+        }
+      ],
+      "priceAED": 15.99,
+      "unit": "Each",
+      "packSize": "75 mL",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": false,
+      "detailKey": "dc3b544d-702d-4c3b-9973-fefcfbf66a9d",
+      "sourceNote": null
+    },
+    {
+      "id": 176,
+      "skuId": 172,
+      "slug": "cancer-council-spf-50-everyday-value-sunscreen-110ml",
+      "sku": "CCL-SPF50-110",
+      "name": "Cancer Council SPF 50+ Everyday Value Sunscreen 110mL",
+      "brand": "Cancer Council",
+      "description": "Broad-spectrum SPF 50+ sunscreen for everyday use, water resistant for four hours. Suitable for workplace sun-safety programmes and outdoor staff, in a 110 mL pump bottle.",
+      "categoryId": 63,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 63,
+          "name": "Skin Protection",
+          "slug": "skin-protection"
+        }
+      ],
+      "priceAED": 11.99,
+      "unit": "Each",
+      "packSize": "110 mL",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 11.49
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "22b455a9-6ee0-4282-9f06-08baeaae6269",
+      "sourceNote": null
+    },
+    {
+      "id": 177,
+      "skuId": 173,
+      "slug": "manicare-nail-clippers-with-nail-file",
+      "sku": "MAN-NC-FILE",
+      "name": "Manicare Nail Clippers with Nail File",
+      "brand": "Manicare",
+      "description": "Stainless steel nail clippers with a built-in nail file and lever action. Suitable for personal care, podiatry support and general clinic amenity use.",
+      "categoryId": 84,
+      "categoryPath": [
+        {
+          "id": 20,
+          "name": "Beauty, Skin & Personal Care",
+          "slug": "beauty-skin-and-personal-care"
+        },
+        {
+          "id": 84,
+          "name": "Nail Care",
+          "slug": "nail-care"
+        }
+      ],
+      "priceAED": 5.99,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": false,
+      "detailKey": "5cddb9d7-b388-4556-a24f-02c010caee45",
+      "sourceNote": null
+    },
+    {
+      "id": 178,
+      "skuId": 174,
+      "slug": "bodichek-first-aid-kit-126-piece",
+      "sku": "BDC-FAK126",
+      "name": "Bodichek First Aid Kit 126 Piece",
+      "brand": "Bodichek",
+      "description": "General purpose first aid kit containing 126 pieces in a compartmented carry case, covering wound dressing, strapping and basic emergency response for small workplaces.",
+      "categoryId": 64,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 64,
+          "name": "First Aid Kits & Accessories",
+          "slug": "first-aid-kits-and-accessories"
+        }
+      ],
+      "priceAED": 25.99,
+      "unit": "Each",
+      "packSize": "126 pieces",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 4,
+          "priceAED": 24.99
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "f7238d73-76d5-4693-9ea3-4a886d8ca3dd",
+      "sourceNote": null
+    },
+    {
+      "id": 179,
+      "skuId": 175,
+      "slug": "vicks-vaporub-ointment-chest-rub-100g",
+      "sku": "VCK-VR100",
+      "name": "Vicks VapoRub Ointment Chest Rub 100g",
+      "brand": "Vicks",
+      "description": "Topical chest rub ointment with camphor, eucalyptus and menthol for temporary relief of coughs and nasal congestion. 100 g jar for ward and residential use.",
+      "categoryId": 41,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 41,
+          "name": "Gels, Lubrication & Creams",
+          "slug": "gels-lubrication-and-creams"
+        }
+      ],
+      "priceAED": 13.99,
+      "unit": "Each",
+      "packSize": "100 g",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": false,
+      "detailKey": "a6ce0e8e-584a-4fd3-a37b-7f47816639d3",
+      "sourceNote": null
+    },
+    {
+      "id": 180,
+      "skuId": 176,
+      "slug": "vaseline-original-petroleum-jelly-100g",
+      "sku": "VAS-PJ100",
+      "name": "Vaseline Original Petroleum Jelly 100g",
+      "brand": "Vaseline",
+      "description": "Triple-purified petroleum jelly for protection of dry, chafed or cracked skin, and as a barrier over minor wounds. 100 g jar.",
+      "categoryId": 98,
+      "categoryPath": [
+        {
+          "id": 20,
+          "name": "Beauty, Skin & Personal Care",
+          "slug": "beauty-skin-and-personal-care"
+        },
+        {
+          "id": 98,
+          "name": "Skin Care",
+          "slug": "skin-care"
+        }
+      ],
+      "priceAED": 5.99,
+      "unit": "Each",
+      "packSize": "100 g",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": false,
+      "detailKey": "b88dc64c-ba7c-479e-9806-dd95231f1394",
+      "sourceNote": "Present on storefront listing at 12:45 UTC, absent by 13:05 UTC same day — evidence for the 'products disappearing from listing' issue. PDP still loads directly via detailKey."
+    },
+    {
+      "id": 183,
+      "skuId": 179,
+      "slug": "mens-scrub-top",
+      "sku": "AMD-SCRUB-M",
+      "name": "Mens Scrub Top",
+      "brand": "AussieMed",
+      "description": "Men's scrub top in a soft poly-cotton blend, with a V-neck, chest pocket and side vents. Available in a range of sizes and colourways for clinical teams.",
+      "categoryId": 80,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 80,
+          "name": "Body Protection",
+          "slug": "body-protection"
+        }
+      ],
+      "priceAED": 100,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 20,
+      "outOfStock": false,
+      "images": [
+        "/products/scrub-top-2.jpeg",
+        "/products/scrub-top-3.jpeg"
+      ],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 95
+        },
+        {
+          "minQty": 10,
+          "priceAED": 90
+        }
+      ],
+      "isPlaceholder": false,
+      "detailKey": "bf11d270-088a-49a7-99d8-87f2937d1828",
+      "sourceNote": null
+    },
+    {
+      "id": 1000,
+      "skuId": 1000,
+      "slug": "nitrile-examination-gloves-powder-free-medium",
+      "sku": "PL-1000",
+      "name": "Nitrile Examination Gloves Powder Free Medium",
+      "brand": "Medisafe",
+      "description": "Nitrile Examination Gloves Powder Free Medium. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 81,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 81,
+          "name": "Hand Protection",
+          "slug": "hand-protection"
+        }
+      ],
+      "priceAED": 34.5,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 32.9
+        },
+        {
+          "minQty": 50,
+          "priceAED": 30.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1001,
+      "skuId": 1001,
+      "slug": "nitrile-examination-gloves-powder-free-large",
+      "sku": "PL-1001",
+      "name": "Nitrile Examination Gloves Powder Free Large",
+      "brand": "Medisafe",
+      "description": "Nitrile Examination Gloves Powder Free Large. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 81,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 81,
+          "name": "Hand Protection",
+          "slug": "hand-protection"
+        }
+      ],
+      "priceAED": 34.5,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 32.9
+        },
+        {
+          "minQty": 50,
+          "priceAED": 30.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1002,
+      "skuId": 1002,
+      "slug": "latex-examination-gloves-powder-free-small",
+      "sku": "PL-1002",
+      "name": "Latex Examination Gloves Powder Free Small",
+      "brand": "Medisafe",
+      "description": "Latex Examination Gloves Powder Free Small. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 81,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 81,
+          "name": "Hand Protection",
+          "slug": "hand-protection"
+        }
+      ],
+      "priceAED": 28.9,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 27.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1003,
+      "skuId": 1003,
+      "slug": "type-iir-surgical-face-mask-level-2",
+      "sku": "PL-1003",
+      "name": "Type IIR Surgical Face Mask Level 2",
+      "brand": "Medisafe",
+      "description": "Type IIR Surgical Face Mask Level 2. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 79,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 79,
+          "name": "Face Protection",
+          "slug": "face-protection"
+        }
+      ],
+      "priceAED": 18.75,
+      "unit": "Box",
+      "packSize": "50 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 17.25
+        },
+        {
+          "minQty": 100,
+          "priceAED": 15.9
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1004,
+      "skuId": 1004,
+      "slug": "p2-n95-respirator-flat-fold",
+      "sku": "PL-1004",
+      "name": "P2/N95 Respirator Flat Fold",
+      "brand": "Medisafe",
+      "description": "P2/N95 Respirator Flat Fold. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 79,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 79,
+          "name": "Face Protection",
+          "slug": "face-protection"
+        }
+      ],
+      "priceAED": 62,
+      "unit": "Box",
+      "packSize": "20 pack",
+      "supplierId": 21,
+      "outOfStock": true,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 58.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1005,
+      "skuId": 1005,
+      "slug": "disposable-isolation-gown-aami-level-2",
+      "sku": "PL-1005",
+      "name": "Disposable Isolation Gown AAMI Level 2",
+      "brand": "Medisafe",
+      "description": "Disposable Isolation Gown AAMI Level 2. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 80,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 80,
+          "name": "Body Protection",
+          "slug": "body-protection"
+        }
+      ],
+      "priceAED": 96,
+      "unit": "Carton",
+      "packSize": "50 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 91
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1006,
+      "skuId": 1006,
+      "slug": "bouffant-cap-blue",
+      "sku": "PL-1006",
+      "name": "Bouffant Cap Blue",
+      "brand": "Medisafe",
+      "description": "Bouffant Cap Blue. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 82,
+      "categoryPath": [
+        {
+          "id": 19,
+          "name": "Protective Wear PPE",
+          "slug": "protective-wear-ppe"
+        },
+        {
+          "id": 82,
+          "name": "Head Protection",
+          "slug": "head-protection"
+        }
+      ],
+      "priceAED": 12.4,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1007,
+      "skuId": 1007,
+      "slug": "alcohol-hand-rub-gel-70-500ml-pump",
+      "sku": "PL-1007",
+      "name": "Alcohol Hand Rub Gel 70% 500mL Pump",
+      "brand": "Puracleanse",
+      "description": "Alcohol Hand Rub Gel 70% 500mL Pump. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 33,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 33,
+          "name": "Hand Hygiene",
+          "slug": "hand-hygiene"
+        }
+      ],
+      "priceAED": 21.9,
+      "unit": "Each",
+      "packSize": "500 mL",
+      "supplierId": 22,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 12,
+          "priceAED": 19.99
+        },
+        {
+          "minQty": 48,
+          "priceAED": 18.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1008,
+      "skuId": 1008,
+      "slug": "antibacterial-hand-wash-5l-refill",
+      "sku": "PL-1008",
+      "name": "Antibacterial Hand Wash 5L Refill",
+      "brand": "Puracleanse",
+      "description": "Antibacterial Hand Wash 5L Refill. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 33,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 33,
+          "name": "Hand Hygiene",
+          "slug": "hand-hygiene"
+        }
+      ],
+      "priceAED": 78,
+      "unit": "Each",
+      "packSize": "5 L",
+      "supplierId": 22,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 4,
+          "priceAED": 73.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1009,
+      "skuId": 1009,
+      "slug": "surface-disinfectant-wipes-canister",
+      "sku": "PL-1009",
+      "name": "Surface Disinfectant Wipes Canister",
+      "brand": "Puracleanse",
+      "description": "Surface Disinfectant Wipes Canister. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 140,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 140,
+          "name": "Swabs & Wipes",
+          "slug": "swabs-and-wipes"
+        }
+      ],
+      "priceAED": 32.5,
+      "unit": "Each",
+      "packSize": "200 wipes",
+      "supplierId": 22,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 6,
+          "priceAED": 30
+        },
+        {
+          "minQty": 24,
+          "priceAED": 28.4
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1010,
+      "skuId": 1010,
+      "slug": "hospital-grade-disinfectant-concentrate-5l",
+      "sku": "PL-1010",
+      "name": "Hospital Grade Disinfectant Concentrate 5L",
+      "brand": "Puracleanse",
+      "description": "Hospital Grade Disinfectant Concentrate 5L. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 147,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 147,
+          "name": "Cleaning Chemicals",
+          "slug": "cleaning-chemicals"
+        }
+      ],
+      "priceAED": 112,
+      "unit": "Each",
+      "packSize": "5 L",
+      "supplierId": 22,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 4,
+          "priceAED": 105
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1011,
+      "skuId": 1011,
+      "slug": "clinical-waste-bags-yellow-240l",
+      "sku": "PL-1011",
+      "name": "Clinical Waste Bags Yellow 240L",
+      "brand": "Puracleanse",
+      "description": "Clinical Waste Bags Yellow 240L. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 141,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 141,
+          "name": "Waste Disposal",
+          "slug": "waste-disposal"
+        }
+      ],
+      "priceAED": 145,
+      "unit": "Carton",
+      "packSize": "100 pack",
+      "supplierId": 22,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 138
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1012,
+      "skuId": 1012,
+      "slug": "sterile-gauze-swabs-7-5cm-x-7-5cm",
+      "sku": "PL-1012",
+      "name": "Sterile Gauze Swabs 7.5cm x 7.5cm",
+      "brand": "Woundline",
+      "description": "Sterile Gauze Swabs 7.5cm x 7.5cm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 60,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 60,
+          "name": "Wound Care",
+          "slug": "wound-care"
+        }
+      ],
+      "priceAED": 8.9,
+      "unit": "Pack",
+      "packSize": "100 pack",
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 25,
+          "priceAED": 8.25
+        },
+        {
+          "minQty": 100,
+          "priceAED": 7.6
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1013,
+      "skuId": 1013,
+      "slug": "adhesive-wound-dressing-6cm-x-7cm",
+      "sku": "PL-1013",
+      "name": "Adhesive Wound Dressing 6cm x 7cm",
+      "brand": "Woundline",
+      "description": "Adhesive Wound Dressing 6cm x 7cm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 60,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 60,
+          "name": "Wound Care",
+          "slug": "wound-care"
+        }
+      ],
+      "priceAED": 24.5,
+      "unit": "Box",
+      "packSize": "50 pack",
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 22.9
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1014,
+      "skuId": 1014,
+      "slug": "conforming-bandage-7-5cm-x-4m",
+      "sku": "PL-1014",
+      "name": "Conforming Bandage 7.5cm x 4m",
+      "brand": "Woundline",
+      "description": "Conforming Bandage 7.5cm x 4m. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 60,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 60,
+          "name": "Wound Care",
+          "slug": "wound-care"
+        }
+      ],
+      "priceAED": 4.25,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 50,
+          "priceAED": 3.85
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1015,
+      "skuId": 1015,
+      "slug": "micropore-surgical-tape-2-5cm-x-9m",
+      "sku": "PL-1015",
+      "name": "Micropore Surgical Tape 2.5cm x 9m",
+      "brand": "Woundline",
+      "description": "Micropore Surgical Tape 2.5cm x 9m. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 152,
+      "categoryPath": [
+        {
+          "id": 27,
+          "name": "Office & Stationery Supplies",
+          "slug": "office-and-stationery-supplies"
+        },
+        {
+          "id": 152,
+          "name": "Tapes & Adhesives",
+          "slug": "tapes-and-adhesives"
+        }
+      ],
+      "priceAED": 3.6,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 24,
+          "priceAED": 3.3
+        },
+        {
+          "minQty": 96,
+          "priceAED": 3.05
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1016,
+      "skuId": 1016,
+      "slug": "povidone-iodine-antiseptic-solution-500ml",
+      "sku": "PL-1016",
+      "name": "Povidone-Iodine Antiseptic Solution 500mL",
+      "brand": "Woundline",
+      "description": "Povidone-Iodine Antiseptic Solution 500mL. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 61,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 61,
+          "name": "Antiseptics",
+          "slug": "antiseptics"
+        }
+      ],
+      "priceAED": 27,
+      "unit": "Each",
+      "packSize": "500 mL",
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 12,
+          "priceAED": 25.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1017,
+      "skuId": 1017,
+      "slug": "alcohol-prep-pads-sterile",
+      "sku": "PL-1017",
+      "name": "Alcohol Prep Pads Sterile",
+      "brand": "Woundline",
+      "description": "Alcohol Prep Pads Sterile. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 140,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 140,
+          "name": "Swabs & Wipes",
+          "slug": "swabs-and-wipes"
+        }
+      ],
+      "priceAED": 14.9,
+      "unit": "Box",
+      "packSize": "200 pack",
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 13.75
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1018,
+      "skuId": 1018,
+      "slug": "instant-cold-pack-single-use",
+      "sku": "PL-1018",
+      "name": "Instant Cold Pack Single Use",
+      "brand": "Woundline",
+      "description": "Instant Cold Pack Single Use. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 59,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 59,
+          "name": "Emergency & Rescue",
+          "slug": "emergency-and-rescue"
+        }
+      ],
+      "priceAED": 6.5,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 23,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 24,
+          "priceAED": 5.95
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1019,
+      "skuId": 1019,
+      "slug": "digital-thermometer-oral-and-axillary",
+      "sku": "PL-1019",
+      "name": "Digital Thermometer Oral and Axillary",
+      "brand": "Medcore",
+      "description": "Digital Thermometer Oral and Axillary. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 111,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories"
+        }
+      ],
+      "priceAED": 42,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 39.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1020,
+      "skuId": 1020,
+      "slug": "infrared-non-contact-forehead-thermometer",
+      "sku": "PL-1020",
+      "name": "Infrared Non-Contact Forehead Thermometer",
+      "brand": "Medcore",
+      "description": "Infrared Non-Contact Forehead Thermometer. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 111,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories"
+        }
+      ],
+      "priceAED": 165,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": true,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 156
+        },
+        {
+          "minQty": 20,
+          "priceAED": 149
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1021,
+      "skuId": 1021,
+      "slug": "fingertip-pulse-oximeter",
+      "sku": "PL-1021",
+      "name": "Fingertip Pulse Oximeter",
+      "brand": "Medcore",
+      "description": "Fingertip Pulse Oximeter. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 114,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 114,
+          "name": "Monitoring & Testing",
+          "slug": "monitoring-and-testing-114"
+        }
+      ],
+      "priceAED": 118,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 112
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1022,
+      "skuId": 1022,
+      "slug": "dual-head-stethoscope-stainless-steel",
+      "sku": "PL-1022",
+      "name": "Dual Head Stethoscope Stainless Steel",
+      "brand": "Medcore",
+      "description": "Dual Head Stethoscope Stainless Steel. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 109,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 109,
+          "name": "Medical",
+          "slug": "medical"
+        }
+      ],
+      "priceAED": 138,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 129
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1023,
+      "skuId": 1023,
+      "slug": "aneroid-sphygmomanometer-with-adult-cuff",
+      "sku": "PL-1023",
+      "name": "Aneroid Sphygmomanometer with Adult Cuff",
+      "brand": "Medcore",
+      "description": "Aneroid Sphygmomanometer with Adult Cuff. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 111,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories"
+        }
+      ],
+      "priceAED": 175,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 165
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1024,
+      "skuId": 1024,
+      "slug": "diagnostic-penlight-reusable",
+      "sku": "PL-1024",
+      "name": "Diagnostic Penlight Reusable",
+      "brand": "Medcore",
+      "description": "Diagnostic Penlight Reusable. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 111,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 111,
+          "name": "Diagnostics & Accessories",
+          "slug": "diagnostics-and-accessories"
+        }
+      ],
+      "priceAED": 22.5,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 20.9
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1025,
+      "skuId": 1025,
+      "slug": "blood-glucose-test-strips",
+      "sku": "PL-1025",
+      "name": "Blood Glucose Test Strips",
+      "brand": "Medcore",
+      "description": "Blood Glucose Test Strips. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 114,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 114,
+          "name": "Monitoring & Testing",
+          "slug": "monitoring-and-testing-114"
+        }
+      ],
+      "priceAED": 89,
+      "unit": "Box",
+      "packSize": "50 pack",
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 84
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1026,
+      "skuId": 1026,
+      "slug": "disposable-scalpel-blade-no-11-sterile",
+      "sku": "PL-1026",
+      "name": "Disposable Scalpel Blade No.11 Sterile",
+      "brand": "Medcore",
+      "description": "Disposable Scalpel Blade No.11 Sterile. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 105,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 105,
+          "name": "Blades & Accessories",
+          "slug": "blades-and-accessories"
+        }
+      ],
+      "priceAED": 46,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 43.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1027,
+      "skuId": 1027,
+      "slug": "iris-scissors-straight-11-5cm",
+      "sku": "PL-1027",
+      "name": "Iris Scissors Straight 11.5cm",
+      "brand": "Medcore",
+      "description": "Iris Scissors Straight 11.5cm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 104,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 104,
+          "name": "Scissors",
+          "slug": "scissors"
+        }
+      ],
+      "priceAED": 58,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 54
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1028,
+      "skuId": 1028,
+      "slug": "dressing-forceps-serrated-14cm",
+      "sku": "PL-1028",
+      "name": "Dressing Forceps Serrated 14cm",
+      "brand": "Medcore",
+      "description": "Dressing Forceps Serrated 14cm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 115,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 115,
+          "name": "Forceps",
+          "slug": "forceps"
+        }
+      ],
+      "priceAED": 39,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 36.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1029,
+      "skuId": 1029,
+      "slug": "luer-lock-syringe-10ml-sterile",
+      "sku": "PL-1029",
+      "name": "Luer Lock Syringe 10mL Sterile",
+      "brand": "Medcore",
+      "description": "Luer Lock Syringe 10mL Sterile. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 49,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 49,
+          "name": "Syringes & Accessories",
+          "slug": "syringes-and-accessories"
+        }
+      ],
+      "priceAED": 38.5,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 36
+        },
+        {
+          "minQty": 50,
+          "priceAED": 34.2
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1030,
+      "skuId": 1030,
+      "slug": "hypodermic-needle-21g-x-38mm",
+      "sku": "PL-1030",
+      "name": "Hypodermic Needle 21G x 38mm",
+      "brand": "Medcore",
+      "description": "Hypodermic Needle 21G x 38mm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 46,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 46,
+          "name": "Needles & Accessories",
+          "slug": "needles-and-accessories"
+        }
+      ],
+      "priceAED": 31,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 29
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1031,
+      "skuId": 1031,
+      "slug": "safety-lancets-28g-single-use",
+      "sku": "PL-1031",
+      "name": "Safety Lancets 28G Single Use",
+      "brand": "Medcore",
+      "description": "Safety Lancets 28G Single Use. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 106,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 106,
+          "name": "Blood Collection",
+          "slug": "blood-collection"
+        }
+      ],
+      "priceAED": 54,
+      "unit": "Box",
+      "packSize": "200 pack",
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 50.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1032,
+      "skuId": 1032,
+      "slug": "iv-administration-set-20-drops-per-ml",
+      "sku": "PL-1032",
+      "name": "IV Administration Set 20 Drops per mL",
+      "brand": "Medcore",
+      "description": "IV Administration Set 20 Drops per mL. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 117,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 117,
+          "name": "I.V Administration",
+          "slug": "i-v-administration"
+        }
+      ],
+      "priceAED": 12.9,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 25,
+          "priceAED": 11.9
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1033,
+      "skuId": 1033,
+      "slug": "nasal-oxygen-cannula-adult",
+      "sku": "PL-1033",
+      "name": "Nasal Oxygen Cannula Adult",
+      "brand": "Medcore",
+      "description": "Nasal Oxygen Cannula Adult. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 57,
+      "categoryPath": [
+        {
+          "id": 16,
+          "name": "Wound Care, First Aid & Safety",
+          "slug": "wound-care-first-aid-and-safety"
+        },
+        {
+          "id": 57,
+          "name": "Respiratory Management",
+          "slug": "respiratory-management-57"
+        }
+      ],
+      "priceAED": 9.4,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 25,
+          "priceAED": 8.6
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1034,
+      "skuId": 1034,
+      "slug": "nebuliser-mask-kit-adult",
+      "sku": "PL-1034",
+      "name": "Nebuliser Mask Kit Adult",
+      "brand": "Medcore",
+      "description": "Nebuliser Mask Kit Adult. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 112,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 112,
+          "name": "Aerosol Masks",
+          "slug": "aerosol-masks"
+        }
+      ],
+      "priceAED": 16.8,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 15.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1035,
+      "skuId": 1035,
+      "slug": "examination-couch-roll-50cm-x-50m",
+      "sku": "PL-1035",
+      "name": "Examination Couch Roll 50cm x 50m",
+      "brand": "Medisafe",
+      "description": "Examination Couch Roll 50cm x 50m. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 47,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 47,
+          "name": "Clinical Supplies",
+          "slug": "clinical-supplies"
+        }
+      ],
+      "priceAED": 26,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 12,
+          "priceAED": 24
+        },
+        {
+          "minQty": 48,
+          "priceAED": 22.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1036,
+      "skuId": 1036,
+      "slug": "kidney-dish-stainless-steel-250mm",
+      "sku": "PL-1036",
+      "name": "Kidney Dish Stainless Steel 250mm",
+      "brand": "Medcore",
+      "description": "Kidney Dish Stainless Steel 250mm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 113,
+      "categoryPath": [
+        {
+          "id": 24,
+          "name": "Instruments & Diagnostics",
+          "slug": "instruments-and-diagnostics"
+        },
+        {
+          "id": 113,
+          "name": "Hollow Ware",
+          "slug": "hollow-ware"
+        }
+      ],
+      "priceAED": 44,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 24,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 41
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1037,
+      "skuId": 1037,
+      "slug": "sharps-container-5l-yellow",
+      "sku": "PL-1037",
+      "name": "Sharps Container 5L Yellow",
+      "brand": "Medisafe",
+      "description": "Sharps Container 5L Yellow. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 141,
+      "categoryPath": [
+        {
+          "id": 26,
+          "name": "Cleaning & Hygiene",
+          "slug": "cleaning-and-hygiene"
+        },
+        {
+          "id": 141,
+          "name": "Waste Disposal",
+          "slug": "waste-disposal"
+        }
+      ],
+      "priceAED": 33.5,
+      "unit": "Each",
+      "packSize": "5 L",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 12,
+          "priceAED": 31
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1038,
+      "skuId": 1038,
+      "slug": "instrument-sterilisation-pouches-90mm-x-230mm",
+      "sku": "PL-1038",
+      "name": "Instrument Sterilisation Pouches 90mm x 230mm",
+      "brand": "Medisafe",
+      "description": "Instrument Sterilisation Pouches 90mm x 230mm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 37,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 37,
+          "name": "Sterilisation",
+          "slug": "sterilisation"
+        }
+      ],
+      "priceAED": 42,
+      "unit": "Box",
+      "packSize": "200 pack",
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 39.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1039,
+      "skuId": 1039,
+      "slug": "autoclave-indicator-tape-19mm",
+      "sku": "PL-1039",
+      "name": "Autoclave Indicator Tape 19mm",
+      "brand": "Medisafe",
+      "description": "Autoclave Indicator Tape 19mm. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 37,
+      "categoryPath": [
+        {
+          "id": 15,
+          "name": "Medical Consumables",
+          "slug": "medical-consumables"
+        },
+        {
+          "id": 37,
+          "name": "Sterilisation",
+          "slug": "sterilisation"
+        }
+      ],
+      "priceAED": 11.5,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 21,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 24,
+          "priceAED": 10.6
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1040,
+      "skuId": 1040,
+      "slug": "dental-bibs-2-ply-blue",
+      "sku": "PL-1040",
+      "name": "Dental Bibs 2-Ply Blue",
+      "brand": "Dentiva",
+      "description": "Dental Bibs 2-Ply Blue. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 119,
+      "categoryPath": [
+        {
+          "id": 25,
+          "name": "Dental",
+          "slug": "dental"
+        },
+        {
+          "id": 119,
+          "name": "Dental Bibs & Chains",
+          "slug": "dental-bibs-and-chains"
+        }
+      ],
+      "priceAED": 29,
+      "unit": "Box",
+      "packSize": "500 pack",
+      "supplierId": 25,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 27
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1041,
+      "skuId": 1041,
+      "slug": "saliva-ejectors-disposable",
+      "sku": "PL-1041",
+      "name": "Saliva Ejectors Disposable",
+      "brand": "Dentiva",
+      "description": "Saliva Ejectors Disposable. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 122,
+      "categoryPath": [
+        {
+          "id": 25,
+          "name": "Dental",
+          "slug": "dental"
+        },
+        {
+          "id": 122,
+          "name": "Evacuation",
+          "slug": "evacuation"
+        }
+      ],
+      "priceAED": 17.5,
+      "unit": "Bag",
+      "packSize": "100 pack",
+      "supplierId": 25,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 16.2
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1042,
+      "skuId": 1042,
+      "slug": "prophy-paste-cups-medium-grit",
+      "sku": "PL-1042",
+      "name": "Prophy Paste Cups Medium Grit",
+      "brand": "Dentiva",
+      "description": "Prophy Paste Cups Medium Grit. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 120,
+      "categoryPath": [
+        {
+          "id": 25,
+          "name": "Dental",
+          "slug": "dental"
+        },
+        {
+          "id": 120,
+          "name": "Finishing & Polishing",
+          "slug": "finishing-and-polishing"
+        }
+      ],
+      "priceAED": 68,
+      "unit": "Box",
+      "packSize": "200 pack",
+      "supplierId": 25,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 64
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1043,
+      "skuId": 1043,
+      "slug": "alginate-impression-material-500g",
+      "sku": "PL-1043",
+      "name": "Alginate Impression Material 500g",
+      "brand": "Dentiva",
+      "description": "Alginate Impression Material 500g. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 129,
+      "categoryPath": [
+        {
+          "id": 25,
+          "name": "Dental",
+          "slug": "dental"
+        },
+        {
+          "id": 129,
+          "name": "Impression Materials",
+          "slug": "impression-materials"
+        }
+      ],
+      "priceAED": 54,
+      "unit": "Each",
+      "packSize": "500 g",
+      "supplierId": 25,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 50.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1044,
+      "skuId": 1044,
+      "slug": "fluoride-varnish-unit-dose-0-4ml",
+      "sku": "PL-1044",
+      "name": "Fluoride Varnish Unit Dose 0.4mL",
+      "brand": "Dentiva",
+      "description": "Fluoride Varnish Unit Dose 0.4mL. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 134,
+      "categoryPath": [
+        {
+          "id": 25,
+          "name": "Dental",
+          "slug": "dental"
+        },
+        {
+          "id": 134,
+          "name": "Preventive Oral Care",
+          "slug": "preventive-oral-care"
+        }
+      ],
+      "priceAED": 185,
+      "unit": "Box",
+      "packSize": "50 pack",
+      "supplierId": 25,
+      "outOfStock": true,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 5,
+          "priceAED": 175
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1045,
+      "skuId": 1045,
+      "slug": "specimen-container-70ml-sterile",
+      "sku": "PL-1045",
+      "name": "Specimen Container 70mL Sterile",
+      "brand": "Labworks",
+      "description": "Specimen Container 70mL Sterile. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 72,
+      "categoryPath": [
+        {
+          "id": 18,
+          "name": "Laboratory",
+          "slug": "laboratory"
+        },
+        {
+          "id": 72,
+          "name": "Plasticware",
+          "slug": "plasticware"
+        }
+      ],
+      "priceAED": 48,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 26,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 45
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1046,
+      "skuId": 1046,
+      "slug": "microscope-slides-frosted-end",
+      "sku": "PL-1046",
+      "name": "Microscope Slides Frosted End",
+      "brand": "Labworks",
+      "description": "Microscope Slides Frosted End. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 71,
+      "categoryPath": [
+        {
+          "id": 18,
+          "name": "Laboratory",
+          "slug": "laboratory"
+        },
+        {
+          "id": 71,
+          "name": "Labware",
+          "slug": "labware"
+        }
+      ],
+      "priceAED": 22,
+      "unit": "Box",
+      "packSize": "50 pack",
+      "supplierId": 26,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 20,
+          "priceAED": 20.5
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1047,
+      "skuId": 1047,
+      "slug": "borosilicate-beaker-250ml",
+      "sku": "PL-1047",
+      "name": "Borosilicate Beaker 250mL",
+      "brand": "Labworks",
+      "description": "Borosilicate Beaker 250mL. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 74,
+      "categoryPath": [
+        {
+          "id": 18,
+          "name": "Laboratory",
+          "slug": "laboratory"
+        },
+        {
+          "id": 74,
+          "name": "Glassware",
+          "slug": "glassware"
+        }
+      ],
+      "priceAED": 18.9,
+      "unit": "Each",
+      "packSize": "250 mL",
+      "supplierId": 26,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 12,
+          "priceAED": 17.4
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1048,
+      "skuId": 1048,
+      "slug": "nitrile-lab-gloves-chemical-resistant",
+      "sku": "PL-1048",
+      "name": "Nitrile Lab Gloves Chemical Resistant",
+      "brand": "Labworks",
+      "description": "Nitrile Lab Gloves Chemical Resistant. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 73,
+      "categoryPath": [
+        {
+          "id": 18,
+          "name": "Laboratory",
+          "slug": "laboratory"
+        },
+        {
+          "id": 73,
+          "name": "Lab Safety",
+          "slug": "lab-safety"
+        }
+      ],
+      "priceAED": 39.5,
+      "unit": "Box",
+      "packSize": "100 pack",
+      "supplierId": 26,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 10,
+          "priceAED": 37
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    },
+    {
+      "id": 1049,
+      "skuId": 1049,
+      "slug": "adjustable-volume-micropipette-100-1000ul",
+      "sku": "PL-1049",
+      "name": "Adjustable Volume Micropipette 100-1000uL",
+      "brand": "Labworks",
+      "description": "Adjustable Volume Micropipette 100-1000uL. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.",
+      "categoryId": 75,
+      "categoryPath": [
+        {
+          "id": 18,
+          "name": "Laboratory",
+          "slug": "laboratory"
+        },
+        {
+          "id": 75,
+          "name": "Laboratory Equipment and Apparatus",
+          "slug": "laboratory-equipment-and-apparatus"
+        }
+      ],
+      "priceAED": 420,
+      "unit": "Each",
+      "packSize": null,
+      "supplierId": 26,
+      "outOfStock": false,
+      "images": [],
+      "tiers": [
+        {
+          "minQty": 3,
+          "priceAED": 399
+        }
+      ],
+      "isPlaceholder": true,
+      "detailKey": null,
+      "sourceNote": null
+    }
+  ],
+  "productCountByCategory": {
+    "15": 8,
+    "16": 8,
+    "18": 5,
+    "19": 8,
+    "20": 3,
+    "24": 15,
+    "25": 5,
+    "26": 8,
+    "27": 1,
+    "33": 2,
+    "37": 2,
+    "41": 1,
+    "42": 1,
+    "46": 1,
+    "47": 1,
+    "49": 1,
+    "51": 1,
+    "57": 1,
+    "59": 1,
+    "60": 3,
+    "61": 1,
+    "63": 1,
+    "64": 1,
+    "71": 1,
+    "72": 1,
+    "73": 1,
+    "74": 1,
+    "75": 1,
+    "79": 2,
+    "80": 2,
+    "81": 3,
+    "82": 1,
+    "84": 1,
+    "94": 1,
+    "98": 1,
+    "104": 1,
+    "105": 1,
+    "106": 1,
+    "109": 1,
+    "111": 5,
+    "112": 1,
+    "113": 1,
+    "114": 2,
+    "115": 1,
+    "117": 1,
+    "119": 1,
+    "120": 1,
+    "122": 1,
+    "129": 1,
+    "134": 1,
+    "138": 1,
+    "140": 2,
+    "141": 2,
+    "147": 1,
+    "152": 1
+  }
+}

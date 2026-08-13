@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Design tokens — clinical B2B
+ *
+ * Light is the primary surface (buyers work in bright rooms, and print/
+ * procurement workflows assume it). Dark is a faithful inversion, not a
+ * separate design. Every colour is defined on bare :root first so no token
+ * exists only inside a media query.
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* Neutrals — cool grey, slightly desaturated for long reading sessions */
+  --canvas: #f4f6f8;
+  --surface: #ffffff;
+  --surface-sunken: #eef1f4;
+  --surface-hover: #f7f9fa;
+  --border: #dde3e8;
+  --border-strong: #c3ccd4;
+
+  --text: #16212b;
+  --text-muted: #5a6b7a;
+  --text-subtle: #8494a1;
+
+  /* Brand — deep clinical teal */
+  --brand: #0c6b66;
+  --brand-hover: #095551;
+  --brand-soft: #e2f1f0;
+  --brand-border: #a9d5d2;
+  --on-brand: #ffffff;
+
+  /* Accent — volume-break savings, deliberately warm against the teal */
+  --accent: #9a5b12;
+  --accent-soft: #fdf3e4;
+  --accent-border: #eccfa3;
+
+  --success: #146c43;
+  --success-soft: #e4f2ea;
+  --danger: #a52834;
+  --danger-soft: #fbeaec;
+
+  --focus: #0c6b66;
+
+  /* Product placeholder tiles. Hue comes per-product from --thumb-h; only the
+     saturation and lightness change between themes, so a category keeps its
+     identity in both. */
+  --thumb-sat: 32%;
+  --thumb-l1: 96%;
+  --thumb-l2: 91%;
+  --thumb-grid-l: 78%;
+  --thumb-ink-s: 30%;
+  --thumb-ink-l: 38%;
+
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgb(16 30 43 / 0.06), 0 1px 3px rgb(16 30 43 / 0.04);
+  --shadow-raised: 0 4px 12px rgb(16 30 43 / 0.08), 0 1px 3px rgb(16 30 43 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #0d1418;
+    --surface: #141e24;
+    --surface-sunken: #0f181d;
+    --surface-hover: #1a262d;
+    --border: #253440;
+    --border-strong: #354756;
+
+    --text: #e8eef2;
+    --text-muted: #a0b0bc;
+    --text-subtle: #7A8B98;
+
+    --brand: #3fada6;
+    --brand-hover: #57c2ba;
+    --brand-soft: #10302f;
+    --brand-border: #1d4d4a;
+    --on-brand: #04211f;
+
+    --accent: #dda45c;
+    --accent-soft: #2b2013;
+    --accent-border: #4a3820;
+
+    --success: #5bbd8a;
+    --success-soft: #10281c;
+    --danger: #e88b95;
+    --danger-soft: #2c1417;
+
+    --focus: #3fada6;
+
+    --thumb-sat: 20%;
+    --thumb-l1: 17%;
+    --thumb-l2: 12%;
+    --thumb-grid-l: 32%;
+    --thumb-ink-s: 32%;
+    --thumb-ink-l: 66%;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+    --shadow-raised: 0 4px 14px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --canvas: #0d1418;
+  --surface: #141e24;
+  --surface-sunken: #0f181d;
+  --surface-hover: #1a262d;
+  --border: #253440;
+  --border-strong: #354756;
+
+  --text: #e8eef2;
+  --text-muted: #a0b0bc;
+  --text-subtle: #7a8b98;
+
+  --brand: #3fada6;
+  --brand-hover: #57c2ba;
+  --brand-soft: #10302f;
+  --brand-border: #1d4d4a;
+  --on-brand: #04211f;
+
+  --accent: #dda45c;
+  --accent-soft: #2b2013;
+  --accent-border: #4a3820;
+
+  --success: #5bbd8a;
+  --success-soft: #10281c;
+  --danger: #e88b95;
+  --danger-soft: #2c1417;
+
+  --focus: #3fada6;
+
+  --thumb-sat: 20%;
+  --thumb-l1: 17%;
+  --thumb-l2: 12%;
+  --thumb-grid-l: 32%;
+  --thumb-ink-s: 32%;
+  --thumb-ink-l: 66%;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-raised: 0 4px 14px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-border-base: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-border: var(--brand-border);
+  --color-on-brand: var(--on-brand);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --radius-card: var(--radius);
+  --radius-panel: var(--radius-lg);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures everywhere money or quantity appears — columns of prices
+   must align, which proportional digits break. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Placeholder product tile. --thumb-h is set per product inline. */
+.product-thumb {
+  background: linear-gradient(
+    140deg,
+    hsl(var(--thumb-h) var(--thumb-sat) var(--thumb-l1)) 0%,
+    hsl(var(--thumb-h) calc(var(--thumb-sat) - 6%) var(--thumb-l2)) 100%
+  );
+}
+
+.product-thumb-grid {
+  background-image:
+    linear-gradient(
+      hsl(var(--thumb-h) 20% var(--thumb-grid-l) / 0.5) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      hsl(var(--thumb-h) 20% var(--thumb-grid-l) / 0.5) 1px,
+      transparent 1px
+    );
+  background-size: 14px 14px;
+}
+
+.product-thumb-ink {
+  color: hsl(var(--thumb-h) var(--thumb-ink-s) var(--thumb-ink-l));
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Strip the spinners off quantity inputs — B2B buyers type quantities, and the
+   native steppers are too small to hit accurately. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

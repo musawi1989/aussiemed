@@ -1,0 +1,586 @@
+[
+  {
+    "id": 15,
+    "name": "Medical Consumables"
+  },
+  {
+    "id": 37,
+    "name": "Sterilisation"
+  },
+  {
+    "id": 39,
+    "name": "Monitoring & Testing"
+  },
+  {
+    "id": 40,
+    "name": "Kits"
+  },
+  {
+    "id": 41,
+    "name": "Gels, Lubrication & Creams"
+  },
+  {
+    "id": 42,
+    "name": "Respiratory Management"
+  },
+  {
+    "id": 43,
+    "name": "Rehabilitation"
+  },
+  {
+    "id": 44,
+    "name": "Nutrition"
+  },
+  {
+    "id": 45,
+    "name": "Bed & Accessories"
+  },
+  {
+    "id": 46,
+    "name": "Needles & Accessories"
+  },
+  {
+    "id": 47,
+    "name": "Clinical Supplies"
+  },
+  {
+    "id": 48,
+    "name": "Applicators & Swabs"
+  },
+  {
+    "id": 49,
+    "name": "Syringes & Accessories"
+  },
+  {
+    "id": 50,
+    "name": "Furniture"
+  },
+  {
+    "id": 51,
+    "name": "Incontinence Care"
+  },
+  {
+    "id": 52,
+    "name": "Catheters & Accessories"
+  },
+  {
+    "id": 53,
+    "name": "Dispensers"
+  },
+  {
+    "id": 54,
+    "name": "Tubes"
+  },
+  {
+    "id": 55,
+    "name": "Trolleys"
+  },
+  {
+    "id": 56,
+    "name": "Intravenous & Infusion Therapy"
+  },
+  {
+    "id": 16,
+    "name": "Wound Care, First Aid & Safety"
+  },
+  {
+    "id": 38,
+    "name": "Medicine"
+  },
+  {
+    "id": 57,
+    "name": "Respiratory Management"
+  },
+  {
+    "id": 58,
+    "name": "Clips & Fasteners"
+  },
+  {
+    "id": 59,
+    "name": "Emergency & Rescue"
+  },
+  {
+    "id": 60,
+    "name": "Wound Care"
+  },
+  {
+    "id": 61,
+    "name": "Antiseptics"
+  },
+  {
+    "id": 62,
+    "name": "Workplace Safety"
+  },
+  {
+    "id": 63,
+    "name": "Skin Protection"
+  },
+  {
+    "id": 64,
+    "name": "First Aid Kits & Accessories"
+  },
+  {
+    "id": 17,
+    "name": "Kitchen"
+  },
+  {
+    "id": 65,
+    "name": "Food Supplies"
+  },
+  {
+    "id": 66,
+    "name": "Cups & Accessories"
+  },
+  {
+    "id": 67,
+    "name": "Beverages & Accessories"
+  },
+  {
+    "id": 68,
+    "name": "Bags"
+  },
+  {
+    "id": 69,
+    "name": "Food Containers"
+  },
+  {
+    "id": 70,
+    "name": "Cutlery & Plates"
+  },
+  {
+    "id": 18,
+    "name": "Laboratory"
+  },
+  {
+    "id": 71,
+    "name": "Labware"
+  },
+  {
+    "id": 72,
+    "name": "Plasticware"
+  },
+  {
+    "id": 73,
+    "name": "Lab Safety"
+  },
+  {
+    "id": 74,
+    "name": "Glassware"
+  },
+  {
+    "id": 75,
+    "name": "Laboratory Equipment and Apparatus"
+  },
+  {
+    "id": 76,
+    "name": "Charts and Models"
+  },
+  {
+    "id": 77,
+    "name": "Laboratory Consumables"
+  },
+  {
+    "id": 78,
+    "name": "Heating mantle"
+  },
+  {
+    "id": 19,
+    "name": "Protective Wear PPE"
+  },
+  {
+    "id": 79,
+    "name": "Face Protection"
+  },
+  {
+    "id": 80,
+    "name": "Body Protection"
+  },
+  {
+    "id": 81,
+    "name": "Hand Protection"
+  },
+  {
+    "id": 82,
+    "name": "Head Protection"
+  },
+  {
+    "id": 83,
+    "name": "PPE Dispensers"
+  },
+  {
+    "id": 20,
+    "name": "Beauty, Skin & Personal Care"
+  },
+  {
+    "id": 84,
+    "name": "Nail Care"
+  },
+  {
+    "id": 85,
+    "name": "Undergarments"
+  },
+  {
+    "id": 86,
+    "name": "Makeup Supplies"
+  },
+  {
+    "id": 87,
+    "name": "Barber/Hairdressing Supplies"
+  },
+  {
+    "id": 88,
+    "name": "Sexual Health"
+  },
+  {
+    "id": 89,
+    "name": "Amenities"
+  },
+  {
+    "id": 90,
+    "name": "Beauty"
+  },
+  {
+    "id": 91,
+    "name": "Baby Care"
+  },
+  {
+    "id": 92,
+    "name": "Tanning"
+  },
+  {
+    "id": 93,
+    "name": "Hair Care"
+  },
+  {
+    "id": 94,
+    "name": "Cotton Products"
+  },
+  {
+    "id": 95,
+    "name": "Oral Care"
+  },
+  {
+    "id": 96,
+    "name": "Oral Care"
+  },
+  {
+    "id": 97,
+    "name": "Hair Removal"
+  },
+  {
+    "id": 98,
+    "name": "Skin Care"
+  },
+  {
+    "id": 99,
+    "name": "Eye Care"
+  },
+  {
+    "id": 100,
+    "name": "Body Care"
+  },
+  {
+    "id": 101,
+    "name": "Personal Hygiene"
+  },
+  {
+    "id": 102,
+    "name": "Feminine Hygiene"
+  },
+  {
+    "id": 103,
+    "name": "Piercing Supplies"
+  },
+  {
+    "id": 24,
+    "name": "Instruments & Diagnostics"
+  },
+  {
+    "id": 104,
+    "name": "Scissors"
+  },
+  {
+    "id": 105,
+    "name": "Blades & Accessories"
+  },
+  {
+    "id": 106,
+    "name": "Blood Collection"
+  },
+  {
+    "id": 107,
+    "name": "Biopsy Punches"
+  },
+  {
+    "id": 108,
+    "name": "Allied Health"
+  },
+  {
+    "id": 109,
+    "name": "Medical"
+  },
+  {
+    "id": 110,
+    "name": "Clamps"
+  },
+  {
+    "id": 111,
+    "name": "Diagnostics & Accessories"
+  },
+  {
+    "id": 112,
+    "name": "Aerosol Masks"
+  },
+  {
+    "id": 113,
+    "name": "Hollow Ware"
+  },
+  {
+    "id": 114,
+    "name": "Monitoring & Testing"
+  },
+  {
+    "id": 115,
+    "name": "Forceps"
+  },
+  {
+    "id": 116,
+    "name": "Sutures"
+  },
+  {
+    "id": 117,
+    "name": "I.V Administration"
+  },
+  {
+    "id": 118,
+    "name": "Environment Control"
+  },
+  {
+    "id": 25,
+    "name": "Dental"
+  },
+  {
+    "id": 119,
+    "name": "Dental Bibs & Chains"
+  },
+  {
+    "id": 120,
+    "name": "Finishing & Polishing"
+  },
+  {
+    "id": 121,
+    "name": "Waxes"
+  },
+  {
+    "id": 122,
+    "name": "Evacuation"
+  },
+  {
+    "id": 123,
+    "name": "Storage"
+  },
+  {
+    "id": 124,
+    "name": "Rubber Dams & Accessories"
+  },
+  {
+    "id": 125,
+    "name": "Stone & Plaster"
+  },
+  {
+    "id": 126,
+    "name": "Articulating"
+  },
+  {
+    "id": 127,
+    "name": "Acrylic & Reline"
+  },
+  {
+    "id": 128,
+    "name": "Teeth"
+  },
+  {
+    "id": 129,
+    "name": "Impression Materials"
+  },
+  {
+    "id": 130,
+    "name": "Mouthguards & Splints"
+  },
+  {
+    "id": 131,
+    "name": "Restorative & Cosmetic"
+  },
+  {
+    "id": 132,
+    "name": "Burs & Accessories"
+  },
+  {
+    "id": 133,
+    "name": "Endodontics"
+  },
+  {
+    "id": 134,
+    "name": "Preventive Oral Care"
+  },
+  {
+    "id": 135,
+    "name": "Instruments & Equipment"
+  },
+  {
+    "id": 136,
+    "name": "Crown & Bridge"
+  },
+  {
+    "id": 26,
+    "name": "Cleaning & Hygiene"
+  },
+  {
+    "id": 33,
+    "name": "Hand Hygiene"
+  },
+  {
+    "id": 34,
+    "name": "Cleaning Supplies"
+  },
+  {
+    "id": 137,
+    "name": "Cleaning Towels"
+  },
+  {
+    "id": 138,
+    "name": "Tissues"
+  },
+  {
+    "id": 139,
+    "name": "Wipers & Cleaners"
+  },
+  {
+    "id": 140,
+    "name": "Swabs & Wipes"
+  },
+  {
+    "id": 141,
+    "name": "Waste Disposal"
+  },
+  {
+    "id": 142,
+    "name": "Bottle Brushes"
+  },
+  {
+    "id": 143,
+    "name": "Scrubs, Sponges & Brushes"
+  },
+  {
+    "id": 144,
+    "name": "Dispensers"
+  },
+  {
+    "id": 145,
+    "name": "Mops, Brooms & Buckets"
+  },
+  {
+    "id": 146,
+    "name": "Accessories"
+  },
+  {
+    "id": 147,
+    "name": "Cleaning Chemicals"
+  },
+  {
+    "id": 148,
+    "name": "Toilet Essentials"
+  },
+  {
+    "id": 149,
+    "name": "Bags"
+  },
+  {
+    "id": 27,
+    "name": "Office & Stationery Supplies"
+  },
+  {
+    "id": 150,
+    "name": "Teaching Aid & Charts"
+  },
+  {
+    "id": 151,
+    "name": "Arts & Crafts"
+  },
+  {
+    "id": 152,
+    "name": "Tapes & Adhesives"
+  },
+  {
+    "id": 153,
+    "name": "Pen, Pencils & Markers"
+  },
+  {
+    "id": 154,
+    "name": "Paper Supplies"
+  },
+  {
+    "id": 155,
+    "name": "Packaging Supplies"
+  },
+  {
+    "id": 156,
+    "name": "Ink & Accessories"
+  },
+  {
+    "id": 157,
+    "name": "Envelopes & Labels"
+  },
+  {
+    "id": 158,
+    "name": "Stamps & Accessories"
+  },
+  {
+    "id": 159,
+    "name": "Office Accessories"
+  },
+  {
+    "id": 160,
+    "name": "Binding & Laminating"
+  },
+  {
+    "id": 161,
+    "name": "Books & Notepads"
+  },
+  {
+    "id": 162,
+    "name": "Desk Supplies"
+  },
+  {
+    "id": 163,
+    "name": "Whiteboard, Corkboards & Accessories"
+  },
+  {
+    "id": 164,
+    "name": "Filing & Storage"
+  },
+  {
+    "id": 28,
+    "name": "Pet Care"
+  },
+  {
+    "id": 165,
+    "name": "Grooming"
+  },
+  {
+    "id": 166,
+    "name": "Pet Toys"
+  },
+  {
+    "id": 167,
+    "name": "Medicine"
+  },
+  {
+    "id": 168,
+    "name": "Pet Accessories"
+  },
+  {
+    "id": 169,
+    "name": "Pet Food & Accessories"
+  }
+]

@@ -1,0 +1,347 @@
+[
+  {
+    "productMasterId": 171,
+    "skuId": 167,
+    "outOfStock": false,
+    "name": "Omron HEM7156T Blood Pressure Monitor",
+    "detailKey": "8f344f80-3915-4a10-8ec6-76bfd4d9b17d",
+    "displayPriceAED": 186.99,
+    "unit": "Each",
+    "listImage": "/assets/img/icons/f-icon.png",
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      5.0,
+      3.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      186.99,
+      179.99,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 172,
+    "skuId": 168,
+    "outOfStock": false,
+    "name": "TENA Pads Extra Standard Length 24 Pack",
+    "detailKey": "b210d66f-4324-4f05-8670-906b30b28578",
+    "displayPriceAED": 12.49,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      20.0,
+      6.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      12.49,
+      11.99,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 173,
+    "skuId": 169,
+    "outOfStock": false,
+    "name": "Kleenex Aloe Vera &amp; Vitamin E Facial Tissues 95 Pack",
+    "detailKey": "972edc7c-9f1d-4075-afbc-41b1da601093",
+    "displayPriceAED": 2.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      50.0,
+      0.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      2.99,
+      0.0,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 174,
+    "skuId": 170,
+    "outOfStock": false,
+    "name": "Swisspers Paper Stems Cotton Tips 240 Pack",
+    "detailKey": "3626a2b1-9e24-433e-bd58-3cccd6168c12",
+    "displayPriceAED": 2.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      60.0,
+      20.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      2.99,
+      2.79,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 175,
+    "skuId": 171,
+    "outOfStock": false,
+    "name": "FESS Original Saline Nasal Spray 75mL",
+    "detailKey": "dc3b544d-702d-4c3b-9973-fefcfbf66a9d",
+    "displayPriceAED": 15.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      20.0,
+      0.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      15.99,
+      0.0,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 176,
+    "skuId": 172,
+    "outOfStock": false,
+    "name": "Cancer Council SPF 50&#x2B; Everyday Value Sunscreen 110mL",
+    "detailKey": "22b455a9-6ee0-4282-9f06-08baeaae6269",
+    "displayPriceAED": 11.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      30.0,
+      10.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      11.99,
+      11.49,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 177,
+    "skuId": 173,
+    "outOfStock": false,
+    "name": "Manicare Nail Clippers with Nail File",
+    "detailKey": "5cddb9d7-b388-4556-a24f-02c010caee45",
+    "displayPriceAED": 5.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      25.0,
+      0.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      5.99,
+      0.0,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 178,
+    "skuId": 174,
+    "outOfStock": false,
+    "name": "Bodichek First Aid Kit 126 Piece",
+    "detailKey": "f7238d73-76d5-4693-9ea3-4a886d8ca3dd",
+    "displayPriceAED": 25.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      10.0,
+      4.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      25.99,
+      24.99,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 179,
+    "skuId": 175,
+    "outOfStock": false,
+    "name": "Vicks VapoRub Ointment Chest Rub 100g",
+    "detailKey": "a6ce0e8e-584a-4fd3-a37b-7f47816639d3",
+    "displayPriceAED": 13.99,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 21,
+    "tierQty": [
+      25.0,
+      0.0,
+      0.0
+    ],
+    "tierPriceAED": [
+      13.99,
+      0.0,
+      0.0
+    ],
+    "variationButtons": 1,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png"
+    ]
+  },
+  {
+    "productMasterId": 180,
+    "skuId": 176,
+    "outOfStock": false,
+    "name": "Vaseline Original Petroleum Jelly 100g",
+    "detailKey": "b88dc64c-ba7c-479e-9806-dd95231f1394",
+    "displayPriceAED": 5.99,
+    "unit": "Each",
+    "currencyId": 1,
+    "supplierId": 21,
+    "_note": "Present on storefront listing at 12:45 UTC, absent by 13:05 UTC same day — evidence for the 'products disappearing from listing' issue. PDP still loads directly via detailKey."
+  },
+  {
+    "productMasterId": 183,
+    "skuId": 179,
+    "outOfStock": false,
+    "name": "mens scrub top",
+    "detailKey": "bf11d270-088a-49a7-99d8-87f2937d1828",
+    "displayPriceAED": 100.0,
+    "unit": "Each",
+    "listImage": null,
+    "currencyId": 1,
+    "supplierId": 20,
+    "tierQty": [
+      1.0,
+      5.0,
+      10.0
+    ],
+    "tierPriceAED": [
+      100.0,
+      95.0,
+      90.0
+    ],
+    "variationButtons": 6,
+    "pdpImages": [
+      "' + (item.image || '') + '",
+      "/assets/img/icons/f-icon.png",
+      "/assets/img/icons/ins-icon.png",
+      "/assets/img/icons/link-icon.png",
+      "/assets/img/icons/t-icon.png",
+      "/assets/img/icons/u-icon.png",
+      "/assets/img/icons/x-icon.png",
+      "/assets/img/logo/logo.png",
+      "https://aussi.r-y-x.net/Content/Product//August-2026/k3f2xffd.jpg",
+      "https://aussi.r-y-x.net/Content/Product//August-2026/wkd4xbkp.jpeg",
+      "https://aussi.r-y-x.net/Content/Product//August-2026/zsd0r4xf.jpeg"
+    ]
+  }
+]

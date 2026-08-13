@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Title  -->
+    <title>Aussie Med || Home</title>
+    <meta property="og:image" content="~/assets/img/fb-share.jpg" />
+
+    <!-- Favicon  -->
+    <link href="/assets/img/favicon.png" rel="icon">
+    <link href="/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <!-- <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700&display=swap" rel="stylesheet"> -->
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link href="/assets/css/aos.css" rel="stylesheet">
+    <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+
+    <!-- Owl Carousel CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
+
+    <!-- Font Style CSS -->
+    <link rel="stylesheet" href="/assets/css/fonts.css">
+
+    <!-- Core Style CSS -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/responsive.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+    <div id="top" class="main">
+
+        <header class="section header-section header_panel home_page">
+    <div class="top-header-box">
+        <div class="container-xxl container o-wrapper p-0">
+            <div class="top-header-box-inner">
+                <div class="site-logo">
+                    <a href="/" class="logo-img">
+                        <img src="/assets/img/logo/logo.png" alt="logo" class="img-fluid">
+                    </a>
+                </div>
+                <div class="header-middle p-0">
+                    <div class="search-outer-wrapper">
+                        <form method="post" action="/website/home/ProductListApply" class="search-box" autocomplete="off">
+                            <input name="__RequestVerificationToken" type="hidden" value="CfDJ8OZo-wRTd15JndBoF1MyvUREJSMzOshDjwIMBWF0LdtmXBXPPVK0vdK1iUyxZmq8xWjKPIpXHuHzJ2FvANw74vLeWzMRAFhGCT40b-2TLxekv420E3MyoIo_JCR04-SFYHjB5Qh1dVwsAW2gNmd4VKU" />
+                            <select class="search-category" name="CategoryId">
+                                <option value="">All</option>
+                                    <option value="15">Medical Consumables</option>
+                                    <option value="16">Wound Care, First Aid &amp; Safety</option>
+                                    <option value="17">Kitchen</option>
+                                    <option value="18">Laboratory </option>
+                                    <option value="19">Protective Wear PPE</option>
+                                    <option value="20">Beauty, Skin &amp; Personal Care</option>
+                                    <option value="24">Instruments &amp; Diagnostics</option>
+                                    <option value="25">Dental</option>
+                                    <option value="26">Cleaning &amp; Hygiene</option>
+                                    <option value="27">Office &amp; Stationery Supplies</option>
+                                    <option value="28">Pet Care</option>
+                            </select>
+
+                            <input type="text" name="Search" required placeholder="What can we help you find?" class="search-input" autocomplete="off">
+
+                            <button class="search-btn">
+                                <i class="fa fa-search" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                        <div class="search-suggestions" id="searchSuggestions"></div>
+                    </div>
+
+                </div>
+                <div class="header-right justify-content-end">
+
+
+                    <div class="header-action-btns">
+
+
+                        <div class="login-box">
+                            <a href="https://aussi.r-y-x.net/" class="upcomming-btn login-toggle m-0">
+                                Business portal
+                            </a>
+                        </div>
+
+                            <div class="login-box dropdown">
+                                <div class="dropdown">
+                                    <button class="btn lang-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        AED
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item active"
+                                                   href="javascript:void(0)"
+                                                   onclick="selectCurrency(1)">
+                                                   AED
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item "
+                                                   href="javascript:void(0)"
+                                                   onclick="selectCurrency(2)">
+                                                   USD
+                                                </a>
+                                            </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        <div class="login-box dropdown">
+                            <i class="bi bi-person"></i>
+                            <div class="dropdown">
+                                    <button class="btn lang-btn dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Account
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                                        <li><a class="dropdown-item" id="openPopupLogin" href="javascript:void(0)">Login</a></li>
+                                        <li><a class="dropdown-item" id="openPopupRegister" href="javascript:void(0)">Register</a></li>
+                                    </ul>
+
+                            </div>
+                        </div>
+
+                        <div class="login-box-cart">
+                            <a href="/website/home/QuoteCart" class="position-relative" title="Quote list" style="margin-right:14px;">
+                                <i class="bi bi-clipboard-check"></i>
+                                <span class="cart-badge" id="txtQuoteNumber">0</span>
+                            </a>
+                            <a href="/website/home/Wishlist" class="position-relative" title="Wishlist" style="margin-right:14px;">
+                                <i class="bi bi-heart"></i>
+                                <span class="cart-badge" id="txtWishlistNumber">0</span>
+                            </a>
+                            <a href="/website/Booking/ShoppingCart" class="position-relative">
+                                <i class="bi bi-cart"></i>
+                                <span class="cart-badge" id="txtCartNumber">0</span>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="header-menu-part">
+        <div class="container-xxl container o-wrapper p-0">
+            <div class="bottom-header-box">
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="category-dropdown">
+                            <div class="category-btn">
+                                <span class="hamburger-icon">☰</span>
+                                BROWSE ALL CATEGORY
+                            </div>
+                            <ul class="dropdown-content">
+                                <li><a href="/website/home/ProductListReset">All</a></li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/15">Medical Consumables</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/37">Sterilisation</a></li>
+                                                    <li><a href="/website/home/GoCategory/39">Monitoring &amp; Testing</a></li>
+                                                    <li><a href="/website/home/GoCategory/40">Kits</a></li>
+                                                    <li><a href="/website/home/GoCategory/41">Gels, Lubrication &amp; Creams</a></li>
+                                                    <li><a href="/website/home/GoCategory/42">Respiratory Management</a></li>
+                                                    <li><a href="/website/home/GoCategory/43">Rehabilitation</a></li>
+                                                    <li><a href="/website/home/GoCategory/44">Nutrition</a></li>
+                                                    <li><a href="/website/home/GoCategory/45">Bed &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/46">Needles &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/47">Clinical Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/48">Applicators &amp; Swabs</a></li>
+                                                    <li><a href="/website/home/GoCategory/49">Syringes &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/50">Furniture</a></li>
+                                                    <li><a href="/website/home/GoCategory/51">Incontinence Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/52">Catheters &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/53">Dispensers</a></li>
+                                                    <li><a href="/website/home/GoCategory/54">Tubes</a></li>
+                                                    <li><a href="/website/home/GoCategory/55">Trolleys</a></li>
+                                                    <li><a href="/website/home/GoCategory/56">Intravenous &amp; Infusion Therapy</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/16">Wound Care, First Aid &amp; Safety</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/38">Medicine</a></li>
+                                                    <li><a href="/website/home/GoCategory/57">Respiratory Management</a></li>
+                                                    <li><a href="/website/home/GoCategory/58">Clips &amp; Fasteners</a></li>
+                                                    <li><a href="/website/home/GoCategory/59">Emergency &amp; Rescue</a></li>
+                                                    <li><a href="/website/home/GoCategory/60">Wound Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/61">Antiseptics</a></li>
+                                                    <li><a href="/website/home/GoCategory/62">Workplace Safety</a></li>
+                                                    <li><a href="/website/home/GoCategory/63">Skin Protection</a></li>
+                                                    <li><a href="/website/home/GoCategory/64">First Aid Kits &amp; Accessories</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/17">Kitchen</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/65">Food Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/66">Cups &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/67">Beverages &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/68">Bags</a></li>
+                                                    <li><a href="/website/home/GoCategory/69">Food Containers</a></li>
+                                                    <li><a href="/website/home/GoCategory/70">Cutlery &amp; Plates</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/18">Laboratory </a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/71">Labware</a></li>
+                                                    <li><a href="/website/home/GoCategory/72">Plasticware</a></li>
+                                                    <li><a href="/website/home/GoCategory/73">Lab Safety</a></li>
+                                                    <li><a href="/website/home/GoCategory/74">Glassware</a></li>
+                                                    <li><a href="/website/home/GoCategory/75">Laboratory Equipment and Apparatus</a></li>
+                                                    <li><a href="/website/home/GoCategory/76">Charts and Models</a></li>
+                                                    <li><a href="/website/home/GoCategory/77">Laboratory Consumables</a></li>
+                                                    <li><a href="/website/home/GoCategory/78">Heating mantle</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/19">Protective Wear PPE</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/79">Face Protection</a></li>
+                                                    <li><a href="/website/home/GoCategory/80">Body Protection</a></li>
+                                                    <li><a href="/website/home/GoCategory/81">Hand Protection</a></li>
+                                                    <li><a href="/website/home/GoCategory/82">Head Protection</a></li>
+                                                    <li><a href="/website/home/GoCategory/83">PPE Dispensers</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/20">Beauty, Skin &amp; Personal Care</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/84">Nail Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/85">Undergarments</a></li>
+                                                    <li><a href="/website/home/GoCategory/86">Makeup Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/87">Barber/Hairdressing  Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/88">Sexual Health</a></li>
+                                                    <li><a href="/website/home/GoCategory/89">Amenities</a></li>
+                                                    <li><a href="/website/home/GoCategory/90">Beauty</a></li>
+                                                    <li><a href="/website/home/GoCategory/91">Baby Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/92">Tanning</a></li>
+                                                    <li><a href="/website/home/GoCategory/93">Hair Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/94">Cotton Products</a></li>
+                                                    <li><a href="/website/home/GoCategory/95">Oral Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/96">Oral Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/97">Hair Removal</a></li>
+                                                    <li><a href="/website/home/GoCategory/98">Skin Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/99">Eye Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/100">Body Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/101">Personal Hygiene</a></li>
+                                                    <li><a href="/website/home/GoCategory/102">Feminine Hygiene</a></li>
+                                                    <li><a href="/website/home/GoCategory/103">Piercing Supplies</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/24">Instruments &amp; Diagnostics</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/104">Scissors</a></li>
+                                                    <li><a href="/website/home/GoCategory/105">Blades &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/106">Blood Collection</a></li>
+                                                    <li><a href="/website/home/GoCategory/107">Biopsy Punches</a></li>
+                                                    <li><a href="/website/home/GoCategory/108">Allied Health </a></li>
+                                                    <li><a href="/website/home/GoCategory/109">Medical </a></li>
+                                                    <li><a href="/website/home/GoCategory/110">Clamps</a></li>
+                                                    <li><a href="/website/home/GoCategory/111">Diagnostics &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/112">Aerosol Masks</a></li>
+                                                    <li><a href="/website/home/GoCategory/113">Hollow Ware</a></li>
+                                                    <li><a href="/website/home/GoCategory/114">Monitoring &amp; Testing</a></li>
+                                                    <li><a href="/website/home/GoCategory/115">Forceps</a></li>
+                                                    <li><a href="/website/home/GoCategory/116">Sutures</a></li>
+                                                    <li><a href="/website/home/GoCategory/117">I.V Administration</a></li>
+                                                    <li><a href="/website/home/GoCategory/118">Environment Control</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/25">Dental</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/119">Dental Bibs &amp; Chains</a></li>
+                                                    <li><a href="/website/home/GoCategory/120">Finishing &amp; Polishing</a></li>
+                                                    <li><a href="/website/home/GoCategory/121">Waxes</a></li>
+                                                    <li><a href="/website/home/GoCategory/122">Evacuation</a></li>
+                                                    <li><a href="/website/home/GoCategory/123">Storage</a></li>
+                                                    <li><a href="/website/home/GoCategory/124">Rubber Dams &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/125">Stone &amp; Plaster</a></li>
+                                                    <li><a href="/website/home/GoCategory/126">Articulating</a></li>
+                                                    <li><a href="/website/home/GoCategory/127">Acrylic &amp; Reline</a></li>
+                                                    <li><a href="/website/home/GoCategory/128">Teeth</a></li>
+                                                    <li><a href="/website/home/GoCategory/129">Impression Materials</a></li>
+                                                    <li><a href="/website/home/GoCategory/130">Mouthguards &amp; Splints</a></li>
+                                                    <li><a href="/website/home/GoCategory/131">Restorative &amp; Cosmetic</a></li>
+                                                    <li><a href="/website/home/GoCategory/132">Burs &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/133">Endodontics</a></li>
+                                                    <li><a href="/website/home/GoCategory/134">Preventive Oral Care</a></li>
+                                                    <li><a href="/website/home/GoCategory/135">Instruments &amp; Equipment</a></li>
+                                                    <li><a href="/website/home/GoCategory/136">Crown &amp; Bridge</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/26">Cleaning &amp; Hygiene</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/33">Hand Hygiene</a></li>
+                                                    <li><a href="/website/home/GoCategory/34">Cleaning Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/137">Cleaning Towels</a></li>
+                                                    <li><a href="/website/home/GoCategory/138">Tissues</a></li>
+                                                    <li><a href="/website/home/GoCategory/139">Wipers &amp; Cleaners</a></li>
+                                                    <li><a href="/website/home/GoCategory/140">Swabs &amp; Wipes</a></li>
+                                                    <li><a href="/website/home/GoCategory/141">Waste Disposal</a></li>
+                                                    <li><a href="/website/home/GoCategory/142">Bottle Brushes</a></li>
+                                                    <li><a href="/website/home/GoCategory/143">Scrubs, Sponges &amp; Brushes</a></li>
+                                                    <li><a href="/website/home/GoCategory/144">Dispensers</a></li>
+                                                    <li><a href="/website/home/GoCategory/145">Mops, Brooms &amp; Buckets</a></li>
+                                                    <li><a href="/website/home/GoCategory/146">Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/147">Cleaning Chemicals</a></li>
+                                                    <li><a href="/website/home/GoCategory/148">Toilet Essentials</a></li>
+                                                    <li><a href="/website/home/GoCategory/149">Bags</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/27">Office &amp; Stationery Supplies</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/150">Teaching Aid &amp; Charts</a></li>
+                                                    <li><a href="/website/home/GoCategory/151">Arts &amp; Crafts</a></li>
+                                                    <li><a href="/website/home/GoCategory/152">Tapes &amp; Adhesives</a></li>
+                                                    <li><a href="/website/home/GoCategory/153">Pen, Pencils &amp; Markers</a></li>
+                                                    <li><a href="/website/home/GoCategory/154">Paper Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/155">Packaging Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/156">Ink &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/157">Envelopes &amp; Labels</a></li>
+                                                    <li><a href="/website/home/GoCategory/158">Stamps &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/159">Office Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/160">Binding &amp; Laminating</a></li>
+                                                    <li><a href="/website/home/GoCategory/161">Books &amp; Notepads</a></li>
+                                                    <li><a href="/website/home/GoCategory/162">Desk Supplies</a></li>
+                                                    <li><a href="/website/home/GoCategory/163">Whiteboard, Corkboards &amp; Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/164">Filing &amp; Storage</a></li>
+                                            </ul>
+
+
+                                        </li>
+                                        <li class="have_child">
+                                            <a href="/website/home/GoCategory/28">Pet Care</a>
+
+                                            <ul class="dropdown-content-child">
+                                                    <li><a href="/website/home/GoCategory/165">Grooming</a></li>
+                                                    <li><a href="/website/home/GoCategory/166">Pet Toys</a></li>
+                                                    <li><a href="/website/home/GoCategory/167">Medicine</a></li>
+                                                    <li><a href="/website/home/GoCategory/168">Pet Accessories</a></li>
+                                                    <li><a href="/website/home/GoCategory/169">Pet Food &amp; Accessories</a></li>
+                                            </ul>
+
+
+                                        </li>
+
+                            </ul>
+                        </div>
+
+                        <nav class="navbar navbar-expand-lg bg-body-tertiary p-0">
+                            <div class="container-fluid p-0">
+                                <button id="navToggleBtn" class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                                    <span class="navbar-toggler-icon"></span>
+                                </button>
+
+                                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                    <ul class="navbar-nav me-auto mb-xxl-0">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" href="/">Home</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="/website/home/ProductRange">Product Range</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="/website/home/AboutUs">About Us</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="/website/home/BulkBuyRequest">Get Bulk Prices</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="/website/home/ContactUs">Contact Us</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</header>
+
+
+<!-- Popup Modal Login -->
+<div class="popup-overlay" id="popupOverlayLogin">
+    <div class="popup-box">
+        <div class="popup-box-header">
+            <button class="close-btn" id="closePopupLogin"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="popup-box-body">
+            <div class="section-title top-title mb-2">
+                <h3>Sign in to your account</h3>
+            </div>
+            <div class="contact_page_title">
+                <p>Enter details to login your account </p>
+            </div>
+
+            <form class="enquire_form" id="loginForm">
+                <div class="contacct_form_block">
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="Enter Email">
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group position-relative">
+                        <label>Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="password" placeholder="********" style="padding-right: 40px; width: 100%;">
+                            <i class="bi bi-eye toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="contacct_form_block ">
+                    <div class="term_of_use">
+                        <input type="checkbox" id="rememberMe" value="Remember">
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                    <div class="text-end">
+                        <a href="javascript:void(0)" id="openPopupForgotPassword">Forget your password</a>
+                    </div>
+                </div>
+                <button type="submit" class="btn submit-btn">Login</button>
+            </form>
+
+            <div class="or-divider">OR</div>
+            <div class="login-box-social">
+                <a href="/Website/Home/GoogleLogin" class="btn-google"><i class="bi bi-google"></i>&nbsp;&nbsp;Sign in with Google</a>
+                <a href="/Website/Home/FacebookLogin" class="btn-facebook"><i class="bi bi-facebook"></i>&nbsp;&nbsp;Sign in with Facebook</a>
+            </div>
+            <div class="login-box-signUp-link">
+                <p>Don't have an account?&nbsp;&nbsp;<a href="javascript:void(0)" id="switchToRegister">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup Modal Forgot Password -->
+<div class="popup-overlay" id="popupOverlayForgotPassword">
+    <div class="popup-box">
+        <div class="popup-box-header">
+            <button class="close-btn" id="closePopupForgotPassword"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="popup-box-body">
+            <div class="section-title top-title mb-2">
+                <h3>Forgot Password</h3>
+            </div>
+            <div class="contact_page_title">
+                <p>Enter your email address to recover your password</p>
+            </div>
+
+            <form class="enquire_form" id="forgotPasswordForm">
+                <div class="contacct_form_block">
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="forgotEmail" placeholder="Enter Email" required>
+                    </div>
+                </div>
+                <div class="contacct_form_block" id="otpBlock" style="display: none;">
+                    <div class="mt-2">
+                        <label>OTP</label>
+                        <input type="text" id="forgotOtp" placeholder="Enter OTP">
+                    </div>
+                </div>
+                <div class="contacct_form_block" id="newPasswordBlock" style="display: none;">
+                    <div class="mt-2 position-relative">
+                        <label>New Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="forgotPasswordInput" placeholder="Enter New Password" style="padding-right: 40px; width: 100%;">
+                            <i class="bi bi-eye toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 position-relative">
+                        <label>Confirm New Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="confirmForgotPasswordInput" placeholder="Confirm New Password" style="padding-right: 40px; width: 100%;">
+                            <i class="bi bi-eye toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;"></i>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn submit-btn" id="btnSendOtp">Send OTP</button>
+                <button type="submit" class="btn submit-btn" id="btnResetPassword" style="display: none;">Reset Password</button>
+            </form>
+
+            <div class="login-box-signUp-link mt-3">
+                <p>Remember your password?&nbsp;&nbsp;<a href="javascript:void(0)" id="switchToLoginFromForgot">Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup Modal Register -->
+<div class="popup-overlay" id="popupOverlayRegister">
+    <div class="popup-box">
+        <div class="popup-box-header">
+            <button class="close-btn" id="closePopupRegister"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="popup-box-body">
+            <div class="section-title top-title mb-2">
+                <h3>Create an account</h3>
+            </div>
+            <div class="contact_page_title">
+                <p>Full access to in any of our products </p>
+            </div>
+
+            <form class="enquire_form" id="registerForm">
+                <div class="contacct_form_block">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="firstName" placeholder="Enter First Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="lastName" placeholder="Enter Last Name" required>
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="emailtxt" placeholder="Enter Email" required>
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" data-intl-phone="+971" placeholder="Enter Phone Number" required>
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group position-relative">
+                        <label>Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="passwordtxt" placeholder="********" required style="padding-right: 40px; width: 100%;">
+                            <i class="bi bi-eye toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group position-relative">
+                        <label>Re-type Password</label>
+                        <div style="position: relative;">
+                            <input type="password" id="confirmPassword" placeholder="********" required style="padding-right: 40px; width: 100%;">
+                            <i class="bi bi-eye toggle-password" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group">
+                        <label class="form-label">Trade license</label>
+                        <input type="file" class="form-control" id="tradeLicenseFile" >
+                    </div>
+                </div>
+                <div class="contacct_form_block">
+                    <div class="form-group">
+                        <label class="form-label">Others File(Optional)</label>
+                        <input type="file" class="form-control" id="otherFile" multiple>
+                    </div>
+                </div>
+                <div class="contacct_form_block term_of_use">
+                    <div class="form-check ps-0 mb-0">
+                        <input type="checkbox" class="mt-0" id="terms" value="Remember">
+                        <label>By creating an account, I agree to our <a href="#">Terms of use</a> and <a href="#">Privacy Policy</a> </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn submit-btn">Create an Account</button>
+            </form>
+            <div id="resultMessage"></div>
+
+
+            <div class="or-divider">OR</div>
+            <div class="login-box-social">
+                <a href="/Website/Home/GoogleLogin" class="btn-google"><i class="bi bi-google"></i>&nbsp;&nbsp;Sign up with Google</a>
+                <a href="/Website/Home/FacebookLogin" class="btn-facebook"><i class="bi bi-facebook"></i>&nbsp;&nbsp;Sign up with Facebook</a>
+            </div>
+            <div class="login-box-signUp-link">
+                <p>Have an account?&nbsp;&nbsp;<a href="javascript:void(0)" id="switchToLoginFromRegister">Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// $(document).ready(function () {
+
+//     $("#registerForm").on("submit", function (e) {
+
+
+//         $("#resultMessage").text("").removeClass("error success");
+
+//         const firstName = $("#firstName").val().trim();
+//         const lastName = $("#lastName").val().trim();
+//         const email = $("#emailtxt").val().trim();
+//         const phone = $("#phone").val().trim(); 
+//         const password = $("#passwordtxt").val();
+//         const confirmPassword = $("#confirmPassword").val();
+//         const termsChecked = $("#terms").is(":checked");
+
+//         const tradeLicense = $("#tradeLicenseFile")[0].files[0];
+//         const otherFiles = $("#otherFile")[0].files; 
+
+      
+//         if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
+//             Swal.fire("Missing Information", "All fields are required.", "warning");
+//             return;
+//         }
+
+//         if (!tradeLicense) {
+//             Swal.fire("Error", "Trade license file is required.", "error");
+//             return;
+//         }
+
+//         if (otherFiles.length === 0) {
+//             Swal.fire("Error", "Please upload at least one other file.", "error");
+//             return;
+//         }
+
+//         const emailRegex = /^[^\s]+[^\s]+\.[^\s]+/;
+//         if (!emailRegex.test(email)) {
+//             Swal.fire("Invalid Email", "Please enter valid email.", "error");
+//             return;
+//         }
+
+//         const phoneRegex = /^[0-9]{10,15}$/;
+//         if (!phoneRegex.test(phone)) {
+//             Swal.fire("Invalid Phone", "Phone must be 10-15 digits.", "error");
+//             return;
+//         }
+
+//         if (password !== confirmPassword) {
+//             Swal.fire("Error", "Passwords do not match.", "error");
+//             return;
+//         }
+
+//         if (!termsChecked) {
+//             Swal.fire("Error", "Please accept Terms and Privacy Policy.", "error");
+//             return;
+//         }
+
+      
+//         var formData = new FormData();
+//         formData.append("FirstName", firstName);
+//         formData.append("LastName", lastName);
+//         formData.append("Email", email);
+//         formData.append("PhoneNo", phone);
+//         formData.append("Password", password);
+//         formData.append("TradeLicenseFile", tradeLicense);
+
+        
+//         for (let i = 0; i < otherFiles.length; i++) {
+//                 formData.append("OtherFile", otherFiles[i]); 
+//         }
+
+//         $.ajax({
+//             url: "/Website/Home/Registration",
+//             type: "POST",
+//             data: formData,
+//             processData: false,
+//             contentType: false,
+//             success: function (response) {
+//                           if (response.success) {
+//                             Swal.fire("Success", "Account created successfully!", "success")
+//                                 .then(() => location.reload());
+//                       }
+//                       else{
+//                          Swal.fire("Registration Failed", response.message, "error");
+//                       }
+//             },
+//             error: function () {
+//                 Swal.fire("Error", "Something went wrong!", "error");
+//             }
+//         });
+
+//     });
+
+// });
+</script>
+
+
+<script>
+$(document).ready(function () {
+
+    $("#registerForm").on("submit", function (e) {
+        e.preventDefault(); // <-- FIX 1: Prevent default form submission
+
+        $("#resultMessage").text("").removeClass("error success");
+
+        const firstName = $("#firstName").val().trim();
+        const lastName = $("#lastName").val().trim();
+        const email = $("#emailtxt").val().trim();
+        const phone = $("#phone").val().trim();
+        const password = $("#passwordtxt").val();
+        const confirmPassword = $("#confirmPassword").val();
+        const termsChecked = $("#terms").is(":checked");
+
+        const tradeLicense = $("#tradeLicenseFile")[0].files[0];
+        const otherFiles = $("#otherFile")[0].files;
+
+        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
+            Swal.fire("Missing Information", "All fields are required.", "warning");
+            return;
+        }
+
+        if (!tradeLicense) {
+            Swal.fire("Error", "Trade license file is required.", "error");
+            return;
+        }
+
+        // FIX 2: Corrected email regex
+        const emailRegex = /^[^\s]+[^\s]+\.[^\s]+$/;
+        if (!emailRegex.test(email)) {
+            Swal.fire("Invalid Email", "Please enter valid email.", "error");
+            return;
+        }
+
+        const phoneRegex = /^[0-9]{10,15}$/;
+        if (!phoneRegex.test(phone)) {
+            Swal.fire("Invalid Phone", "Phone must be 10-15 digits.", "error");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Swal.fire("Error", "Passwords do not match.", "error");
+            return;
+        }
+
+        if (!termsChecked) {
+            Swal.fire("Error", "Please accept Terms and Privacy Policy.", "error");
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append("FirstName", firstName);
+        formData.append("LastName", lastName);
+        formData.append("Email", email);
+        var _regDial = (document.getElementById("phone").dataset.dial || "");
+        formData.append("PhoneNo", _regDial ? (_regDial + " " + phone) : phone);
+        formData.append("Password", password);
+        formData.append("TradeLicenseFile", tradeLicense);
+
+        for (let i = 0; i < otherFiles.length; i++) {
+            formData.append("OtherFile", otherFiles[i]);
+        }
+
+        $.ajax({
+            url: "/Website/Home/Registration",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    // FIX 3: Reload after user clicks OK
+                    Swal.fire("Success", "Account created successfully!", "success")
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire("Registration Failed", response.message, "error")
+                        .then(() => location.reload());
+                }
+            },
+            error: function () {
+                Swal.fire("Error", "Something went wrong!", "error")
+                    .then(() => location.reload());
+            }
+        });
+
+    });
+
+});
+</script>
+
+
+<script>
+    $("#loginForm").submit(function (e) {
+        e.preventDefault();
+
+        let email = $("#email").val().trim();
+        let password = $("#password").val().trim();
+
+        if (!email) {
+            Swal.fire("Validation Error", "Email is required", "warning");
+            return;
+        }
+
+        if (!password) {
+            Swal.fire("Validation Error", "Password is required", "warning");
+            return;
+        }
+
+        $.ajax({
+            url: "/Website/Home/Login",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                userName: email,
+                password: password,
+                rememberMe: $("#rememberMe").is(":checked")
+            }),
+            beforeSend: function () {
+                Swal.fire({
+                    title: "Signing in...",
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            },
+            success: function (res) {
+                Swal.close();
+
+                if (res.success) {
+                    sessionStorage.setItem('restoreGuestCart', '1');
+                    Swal.fire("Success", "Login successful!", "success")
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire("Login Failed", res.message || "Login failed.", "error");
+                }
+            },
+            error: function (xhr) {
+                Swal.close();
+
+                let msg = "Invalid request";
+
+                if (xhr.responseJSON?.errors) {
+                    msg = Object.values(xhr.responseJSON.errors).flat().join("\n");
+                }
+
+                Swal.fire("Validation Error", msg, "error");
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const popupOverlayLogin = document.getElementById('popupOverlayLogin');
+        const popupOverlayRegister = document.getElementById('popupOverlayRegister');
+        const popupOverlayForgotPassword = document.getElementById('popupOverlayForgotPassword');
+
+        const switchToRegister = document.getElementById('switchToRegister');
+        if (switchToRegister) {
+            switchToRegister.addEventListener('click', function () {
+                if (popupOverlayLogin) popupOverlayLogin.style.display = 'none';
+                if (popupOverlayRegister) popupOverlayRegister.style.display = 'flex';
+            });
+        }
+
+        const switchToLoginFromRegister = document.getElementById('switchToLoginFromRegister');
+        if (switchToLoginFromRegister) {
+            switchToLoginFromRegister.addEventListener('click', function () {
+                if (popupOverlayRegister) popupOverlayRegister.style.display = 'none';
+                if (popupOverlayLogin) popupOverlayLogin.style.display = 'flex';
+            });
+        }
+
+        const openPopupForgotPassword = document.getElementById('openPopupForgotPassword');
+        if (openPopupForgotPassword) {
+            openPopupForgotPassword.addEventListener('click', function () {
+                if (popupOverlayLogin) popupOverlayLogin.style.display = 'none';
+                if (popupOverlayForgotPassword) popupOverlayForgotPassword.style.display = 'flex';
+            });
+        }
+
+        const closePopupForgotPassword = document.getElementById('closePopupForgotPassword');
+        if (closePopupForgotPassword) {
+            closePopupForgotPassword.addEventListener('click', function () {
+                if (popupOverlayForgotPassword) popupOverlayForgotPassword.style.display = 'none';
+            });
+        }
+
+        const switchToLoginFromForgot = document.getElementById('switchToLoginFromForgot');
+        if (switchToLoginFromForgot) {
+            switchToLoginFromForgot.addEventListener('click', function () {
+                if (popupOverlayForgotPassword) popupOverlayForgotPassword.style.display = 'none';
+                if (popupOverlayLogin) popupOverlayLogin.style.display = 'flex';
+            });
+        }
+
+        if (popupOverlayForgotPassword) {
+            window.addEventListener('click', function (e) {
+                if (e.target === popupOverlayForgotPassword) {
+                    popupOverlayForgotPassword.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    $("#btnSendOtp").click(function () {
+        let email = $("#forgotEmail").val().trim();
+
+        if (!email) {
+            Swal.fire("Validation Error", "Email is required", "warning");
+            return;
+        }
+
+        $.ajax({
+            url: "/Website/Home/ForgotPassword",
+            type: "POST",
+            data: { email: email },
+            beforeSend: function () {
+                Swal.fire({
+                    title: "Sending OTP...",
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            },
+            success: function (res) {
+                Swal.close();
+
+                if (res.success) {
+                    Swal.fire("Success", res.message || "OTP sent to your email.", "success");
+                    $("#otpBlock").show();
+                    $("#newPasswordBlock").show();
+                    $("#btnSendOtp").hide();
+                    $("#btnResetPassword").show();
+                    $("#forgotEmail").prop("readonly", true);
+                } else {
+                    Swal.fire("Error", res.message || "Failed to send OTP.", "error");
+                }
+            },
+            error: function () {
+                Swal.close();
+                Swal.fire("Error", "Something went wrong while sending OTP.", "error");
+            }
+        });
+    });
+
+    $("#forgotPasswordForm").submit(function (e) {
+        e.preventDefault();
+
+        let email = $("#forgotEmail").val().trim();
+        let otp = $("#forgotOtp").val().trim();
+        let password = $("#forgotPasswordInput").val();
+        let confirmPassword = $("#confirmForgotPasswordInput").val();
+
+        if (!email || !otp || !password || !confirmPassword) {
+            Swal.fire("Validation Error", "Email, OTP, Password, and Confirm Password are required", "warning");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Swal.fire("Validation Error", "Passwords do not match", "warning");
+            return;
+        }
+
+        $.ajax({
+            url: "/Website/Home/ForgotPassword",
+            type: "POST",
+            data: { email: email, otp: otp, password: password },
+            beforeSend: function () {
+                Swal.fire({
+                    title: "Processing...",
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            },
+            success: function (res) {
+                Swal.close();
+
+                if (res.success) {
+                    Swal.fire("Success", res.message || "Password reset successfully.", "success")
+                        .then(() => {
+                            $("#popupOverlayForgotPassword").css("display", "none");
+                            $("#forgotEmail").val("").prop("readonly", false);
+                            $("#forgotOtp").val("");
+                            $("#forgotPasswordInput").val("");
+                            $("#confirmForgotPasswordInput").val("");
+                            $("#otpBlock").hide();
+                            $("#newPasswordBlock").hide();
+                            $("#btnSendOtp").show();
+                            $("#btnResetPassword").hide();
+                            
+                            // Optionally switch back to login
+                            if (document.getElementById('popupOverlayLogin')) {
+                                document.getElementById('popupOverlayLogin').style.display = 'flex';
+                            }
+                        });
+                } else {
+                    Swal.fire("Error", res.message || "Failed to reset password.", "error");
+                }
+            },
+            error: function () {
+                Swal.close();
+                Swal.fire("Error", "Something went wrong.", "error");
+            }
+        });
+    });
+</script>
+
+
+
+
+
+
+
+<script>
+    window.activeCurrency = {
+        id:   1,
+        code: 'AED',
+        symbol: 'AED',
+        rate: 1.000000
+    };
+
+    function selectCurrency(id) {
+        document.cookie = 'selected_currency_id=' + id + '; path=/; max-age=2592000; SameSite=Lax';
+        location.reload();
+    }
+
+    function applyCurrencyToCart() {
+        var rate = window.activeCurrency ? window.activeCurrency.rate : 1;
+        var symbol = window.activeCurrency ? window.activeCurrency.symbol : 'د.إ';
+        if (rate === 1 && symbol === 'د.إ') return;
+        $('.cart_item_price').each(function () {
+            var unitPrice = parseFloat($(this).data('unit-price')) || 0;
+            var qty = parseInt($(this).closest('tr').find('.qty_count').val()) || 1;
+            $(this).text(symbol + ' ' + (unitPrice * qty * rate).toFixed(2));
+        });
+    }
+
+    function convertAllPrices() {
+        if (!window.activeCurrency || window.activeCurrency.rate === 1) return;
+        var rate = window.activeCurrency.rate;
+        var symbol = window.activeCurrency.symbol;
+        $('.currency-price[data-price-aed]').each(function () {
+            var aedPrice = parseFloat($(this).data('price-aed'));
+            if (!isNaN(aedPrice) && aedPrice > 0) {
+                $(this).text(symbol + ' ' + (aedPrice * rate).toFixed(2));
+            }
+        });
+    }
+
+    function saveGuestCartItem(masterId, skuId, currencyId, supplierId, qty, qty1, qty2, qty3, price1, price2, price3) {
+        try {
+            var guestCart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+            var cartKey = masterId + '_' + skuId;
+            var idx = guestCart.findIndex(function(i) { return i.k === cartKey; });
+            if (idx >= 0) {
+                guestCart[idx].qty += qty;
+                if (guestCart[idx].qty <= 0) guestCart.splice(idx, 1);
+            } else if (qty > 0) {
+                guestCart.push({ k: cartKey, masterId: masterId, skuId: skuId,
+                    currencyId: currencyId, supplierId: supplierId, qty: qty,
+                    qty1: qty1, qty2: qty2, qty3: qty3,
+                    price1: price1, price2: price2, price3: price3 });
+            }
+            localStorage.setItem('guest_cart', JSON.stringify(guestCart));
+        } catch(e) {}
+    }
+
+    function AddCart(button ,productMasterId, productSubSKUId, currencyId, supplierId,qty1, qty2, qty3, price1, price2, price3) {
+
+        // Save tier pricing so cart +/- buttons can recalculate price
+        try {
+            localStorage.setItem(
+                'sku_pricing_' + productMasterId + '_' + productSubSKUId,
+                JSON.stringify({ qty1: qty1, qty2: qty2, qty3: qty3, price1: price1, price2: price2, price3: price3 })
+            );
+        } catch(e) {}
+
+         let qty = parseInt($(button).closest('.product-card').find('.qty_count').val());
+        if (!checkCartStock(button, qty)) return;
+        $.ajax({
+            url: '/Website/Booking/AddCart',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                productMasterId: productMasterId,
+                qty: qty,
+                productSubSKUId: productSubSKUId,
+                currencyId: currencyId,
+                supplierId: supplierId,
+                qty1: qty1,
+                qty2: qty2,
+                qty3: qty3,
+                price1: price1,
+                price2: price2,
+                price3:price3,
+            },
+            success: function (response) {
+                console.log("AddCart Response:", response);
+                if (response.success) {
+                   let cartBadge = $("#txtCartNumber");
+                   if (cartBadge.length > 0) {
+                       cartBadge.text(response.totalQty);
+                       console.log(response.totalQty);
+                   } else {
+                       console.warn("Element #txtCartNumber not found in DOM!");
+                   }
+                   saveGuestCartItem(productMasterId, productSubSKUId, currencyId, supplierId, qty, qty1, qty2, qty3, price1, price2, price3);
+                   Swal.fire({
+                       icon: 'success',
+                       title: 'Added!',
+                       text: 'Product added successfully',
+                       timer: 2000,
+                       showConfirmButton: false
+                   });
+                } else {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Oops...',
+                       text: response.message || 'Failed to add product to cart'
+                   });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("AddCart Error:", error);
+                console.error("AddCart Status:", status);
+                console.dir(xhr);
+                alert('Something went wrong. Please check console.');
+            }
+        });
+    }
+</script>
+
+<script>
+$(document).ready(function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('externalLogin')) {
+        var result = urlParams.get('externalLogin');
+        var message = urlParams.get('message') || '';
+
+        if (result === 'success') {
+            Swal.fire("Success", "Logged in successfully!", "success")
+                .then(() => {
+                    window.location.href = '/website/home';
+                });
+        } else {
+            Swal.fire("Error", message || "Login failed", "error")
+                .then(() => {
+                    window.location.href = '/website/home';
+                });
+        }
+    }
+
+    applyCurrencyToCart();
+    convertAllPrices();
+
+    // Restore guest cart after login if the TempId session was lost
+    if (sessionStorage.getItem('restoreGuestCart') === '1') {
+        sessionStorage.removeItem('restoreGuestCart');
+        var cartQty = parseInt($('#txtCartNumber').text()) || 0;
+        var savedCart = [];
+        try { savedCart = JSON.parse(localStorage.getItem('guest_cart') || '[]'); } catch(e) {}
+
+        if (savedCart.length > 0 && cartQty === 0) {
+            var restoreQueue = savedCart.filter(function(i) { return i.qty > 0; });
+            localStorage.removeItem('guest_cart');
+            (function restoreNext() {
+                if (restoreQueue.length === 0) {
+                    $.ajax({ url: '/Website/Booking/CartList', type: 'GET', success: function(html) {
+                        if ($('#allcartData').length) $('#allcartData').html(html);
+                    }});
+                    return;
+                }
+                var it = restoreQueue.shift();
+                $.ajax({
+                    url: '/Website/Booking/AddCart', type: 'POST',
+                    data: { productMasterId: it.masterId, qty: it.qty, productSubSKUId: it.skuId,
+                            currencyId: it.currencyId, supplierId: it.supplierId,
+                            qty1: it.qty1, qty2: it.qty2, qty3: it.qty3,
+                            price1: it.price1, price2: it.price2, price3: it.price3 },
+                    success: function(r) { if (r.success) $('#txtCartNumber').text(r.totalQty); restoreNext(); },
+                    error: restoreNext
+                });
+            })();
+        } else {
+            localStorage.removeItem('guest_cart');
+        }
+    }
+    // Fallback: If cartQty is 0, trust localStorage
+    var currentBadgeQty = parseInt($('#txtCartNumber').text()) || 0;
+    if (currentBadgeQty === 0) {
+        try {
+            var localCart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+            if (localCart.length > 0) {
+                var sumQty = localCart.reduce(function(acc, val) { return acc + val.qty; }, 0);
+                if (sumQty > 0) {
+                    $('#txtCartNumber').text(sumQty);
+                }
+            }
+        } catch(e) {}
+    }
+});
+</script>
+
+<style>
+    .search-outer-wrapper {
+        position: relative;
+    }
+    .search-suggestions {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        max-height: 380px;
+        overflow-y: auto;
+        z-index: 9999;
+    }
+    .search-suggestions.active {
+        display: block;
+    }
+    .search-suggestion-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        text-decoration: none;
+        color: #333;
+        border-bottom: 1px solid #f5f5f5;
+        transition: background 0.15s;
+    }
+    .search-suggestion-item:last-child {
+        border-bottom: none;
+    }
+    .search-suggestion-item:hover {
+        background: #f8f8f8;
+    }
+    .search-suggestion-item img {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+        background: #f0f0f0;
+    }
+    .search-suggestion-item span {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+    .search-suggestions-empty {
+        padding: 14px;
+        color: #999;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+</style>
+
+<script>
+(function () {
+    var input    = document.querySelector('.search-input');
+    var category = document.querySelector('.search-category');
+    var box      = document.getElementById('searchSuggestions');
+    if (!input || !box) return;
+
+    var debounce;
+
+    input.addEventListener('input', function () {
+        var q = this.value.trim();
+        clearTimeout(debounce);
+
+        if (q.length < 2) {
+            hide();
+            return;
+        }
+
+        debounce = setTimeout(function () {
+            var catId = category ? category.value : '';
+            var url = '/website/home/SearchSuggestions?query=' + encodeURIComponent(q);
+            if (catId) url += '&categoryId=' + encodeURIComponent(catId);
+            fetch(url)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data || data.length === 0) {
+                        box.innerHTML = '<div class="search-suggestions-empty">No results found</div>';
+                        box.classList.add('active');
+                        return;
+                    }
+                    var html = '';
+                    data.forEach(function (item) {
+                        html += '<a href="/website/home/ProductDetails?key=' + item.uniqueKey + '" class="search-suggestion-item">';
+                        html += '<img src="' + (item.image || '') + '" alt="" onerror="this.style.display=\'none\'">';
+                        html += '<span>' + item.name + '</span>';
+                        html += '</a>';
+                    });
+                    box.innerHTML = html;
+                    box.classList.add('active');
+                })
+                .catch(function () { hide(); });
+        }, 300);
+    });
+
+    input.addEventListener('focus', function () {
+        if (this.value.trim().length >= 2 && box.innerHTML) {
+            box.classList.add('active');
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!input.contains(e.target) && !box.contains(e.target)) {
+            hide();
+        }
+    });
+
+    function hide() {
+        box.classList.remove('active');
+    }
+})();
+
+    // Toggle password visibility
+    $(document).on('click', '.toggle-password', function() {
+        $(this).toggleClass('bi-eye bi-eye-slash');
+        var input = $(this).siblings('input');
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+        } else {
+            input.attr('type', 'password');
+        }
+    });
+</script>
+
+
+
+<script>
+/* ===== Quote cart (browser localStorage) ===== */
+(function () {
+    window.QUOTE_KEY = 'aussie_quote_cart';
+    window.getQuote = function () {
+        try { return JSON.parse(localStorage.getItem(window.QUOTE_KEY)) || []; }
+        catch (e) { return []; }
+    };
+    window.saveQuote = function (arr) {
+        localStorage.setItem(window.QUOTE_KEY, JSON.stringify(arr));
+        window.updateQuoteBadge();
+    };
+    window.updateQuoteBadge = function () {
+        var el = document.getElementById('txtQuoteNumber');
+        if (el) el.textContent = window.getQuote().length;
+    };
+    window.addToQuote = function (item) {
+        if (!item || !item.productMasterId) return;
+        var arr = window.getQuote();
+        var idx = arr.findIndex(function (x) { return x.productMasterId == item.productMasterId && x.skuId == item.skuId; });
+        if (idx >= 0) { arr[idx].qty = item.qty; arr[idx].variant = item.variant; arr[idx].price = item.price; }
+        else { arr.push(item); }
+        window.saveQuote(arr);
+        if (window.Swal) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Added to quote list', showConfirmButton: false, timer: 1500 });
+        }
+    };
+    window.removeFromQuote = function (masterId, skuId) {
+        var arr = window.getQuote().filter(function (x) { return !(x.productMasterId == masterId && x.skuId == skuId); });
+        window.saveQuote(arr);
+    };
+    window.clearQuote = function () { localStorage.removeItem(window.QUOTE_KEY); window.updateQuoteBadge(); };
+    document.addEventListener('DOMContentLoaded', window.updateQuoteBadge);
+})();
+</script>
+
+
+        <main class="page-wrapper">
+
+            <section class="section page_breadcrum_section">
+                <div class="container-xxl container p-0 page_breadcrumb">
+                    <div class="page_title_div">
+                        <h3>Privacy Policy</h3>
+                        <p><a href="/">Home</a>&nbsp;&nbsp;>&nbsp;&nbsp;Privacy Policy</p>
+                    </div>
+                </div>
+            </section>
+
+                <section class="section corporate-travel-we-offer" data-aos="fade-up">
+                    <div class="container-xxl container p-0">
+                        <div class="corporate-travel-inner-content-box">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="section-title text-left mb-3 no_icon_style">
+                                        <h3>privacy-policy</h3>
+                                    </div>
+                                    <div class="content-text">
+                                        <!--
+  AUSSIEMED - PRIVACY POLICY
+  ==========================
+  Paste everything below into: Admin > Content > Web Html > New
+      PageIdentifier : privacy-policy
+      Title          : Privacy Policy              (rendered as the section heading - do NOT repeat it below)
+      Description    : the HTML below
+      Position       : 1
+      LanguageId     : your default language
+
+  The page renders Title as an <h3> and Description through @Html.Raw(), so this file is a BODY
+  FRAGMENT on purpose - no <html>, <head> or <body> tags, and no <h1>.
+
+  Replace every [SQUARE BRACKET] placeholder before publishing.
+  Written to match what the Platform actually collects (accounts, addresses, KYC documents, OTPs,
+  carts and guest cart cookies, wishlists, product views, notify-me subscriptions, email logs,
+  payment-provider and courier data). If you add analytics, advertising pixels or live chat, the
+  Cookies and Disclosure sections must be updated - see the note at the end of clause 6.
+
+  This is a starting template, not legal advice. Have an Australian privacy lawyer review it.
+-->
+<p>&nbsp;</p>
+<p>[LEGAL COMPANY NAME] (ABN [ABN]) trading as Aussiemed ("Aussiemed", "we", "us", "our") respects your privacy. This Privacy Policy explains how we collect, use, disclose, store and protect personal information when you use [WEBSITE URL] and any related mobile applications (the "Platform").</p>
+<p>We handle personal information in accordance with the <em>Privacy Act 1988</em> (Cth) and the Australian Privacy Principles ("APPs"). This Policy forms part of our <a href="../../website/home/TermsAndConditions">Terms and Conditions</a>.</p>
+<h2>1. The Personal Information We Collect</h2>
+<h3>1.1 Information you give us</h3>
+<ul>
+<li><strong>Account details</strong> - first and last name, email address, mobile and alternate phone numbers, username and password (stored in hashed form), gender and date of birth where you choose to provide them, and your account or customer type.</li>
+<li><strong>Delivery and billing details</strong> - delivery addresses, building or unit details, nearby-landmark information, suburb, state, country, and the name and contact number of the person receiving a delivery.</li>
+<li><strong>Business details</strong> - business or practice name, department, purchase order number, ABN and tax or VAT registration number.</li>
+<li><strong>Verification documents</strong> - where a Product is restricted to healthcare professionals or licensed practices, the professional registration, licence or accreditation details and any supporting documents you upload.</li>
+<li><strong>Order and enquiry content</strong> - your orders, quotation and bulk-purchase requests, special delivery instructions, cancellation and return reasons, support messages, contact-form enquiries and any reviews or ratings you submit.</li>
+</ul>
+<h3>1.2 Information we generate about your use of the Platform</h3>
+<ul>
+<li><strong>Shopping activity</strong> - items in your cart (including carts you do not check out, which we may flag as abandoned), wishlist items, products you view, and "Notify Me" back-in-stock subscriptions.</li>
+<li><strong>Verification codes</strong> - one-time passcodes issued for email or phone verification and password resets, which are short-lived.</li>
+<li><strong>Communications log</strong> - a record of transactional emails and notifications we send you, including the recipient address, subject, content and delivery outcome, kept for support and audit purposes.</li>
+<li><strong>Technical data</strong> - IP address, browser and device information, and pages or products accessed.</li>
+</ul>
+<h3>1.3 Information from third parties</h3>
+<ul>
+<li>Payment confirmation and status from our payment provider (we do not receive your full card number).</li>
+<li>Delivery and tracking updates from our courier.</li>
+<li>Where you sign in using a third-party account, the basic profile details that provider shares with us.</li>
+<li>Where you provide a professional registration number, verification results from the relevant registration authority.</li>
+</ul>
+<h3>1.4 Sensitive information</h3>
+<p>We do not seek health information about you. Please do not send us clinical details, patient information or health records through the Platform, contact forms or support messages. Professional registration and licence details are collected only to confirm eligibility to purchase regulated Products, and are treated as confidential.</p>
+<h2>2. How We Collect It</h2>
+<p>We collect personal information directly from you when you register, place an order, request a quotation, upload a document, contact us or subscribe to notifications; automatically as you use the Platform; and from the third parties described in clause 1.3. Where it is reasonable and practicable to do so, we collect personal information directly from you.</p>
+<h2>3. Why We Collect and Use It</h2>
+<ul>
+<li>To create and administer your account and verify your identity or professional eligibility.</li>
+<li>To process, fulfil, invoice, deliver and support your orders, including splitting an order into a separate invoice for each supplier.</li>
+<li>To take payment and to verify a payment with our payment provider before fulfilment.</li>
+<li>To arrange delivery and provide tracking information.</li>
+<li>To handle cancellations, returns, refunds and warranty or consumer-guarantee claims.</li>
+<li>To send transactional messages - order confirmations, invoices, status updates, back-in-stock notifications and password resets.</li>
+<li>To send a reminder where you leave items in your cart, and marketing communications where you have consented or where you would reasonably expect it (see clause 4).</li>
+<li>To respond to enquiries, quotation requests and support requests.</li>
+<li>To maintain security, detect and prevent fraud, and enforce our Terms.</li>
+<li>To improve the Platform, our product range and our service, using aggregated or de-identified data wherever possible.</li>
+<li>To meet our legal, tax, accounting and regulatory obligations, including record-keeping for therapeutic goods and medical devices.</li>
+</ul>
+<p>We will not use your personal information for an unrelated purpose unless you would reasonably expect it, you consent, or the law permits or requires it.</p>
+<h2>4. Marketing and Your Choices</h2>
+<ol>
+<li>We send transactional messages about your account and orders as part of providing the service. These are not marketing and cannot be opted out of while your account is active.</li>
+<li>We send marketing emails only where you have opted in or where you are an existing customer and would reasonably expect them.</li>
+<li>Every marketing email contains an unsubscribe link. You can also change your preferences in your account or email us at [PRIVACY EMAIL]. We will action an opt-out promptly.</li>
+<li>Push notifications, where enabled, can be turned off in your device settings.</li>
+</ol>
+<h2>5. Who We Disclose It To</h2>
+<p>We disclose personal information only as needed for the purposes above, to:</p>
+<ul>
+<li><strong>Suppliers</strong> - where a product on your order is supplied or fulfilled by a third-party supplier, we share the details needed to pick, pack and dispatch it, including the delivery name, address, contact number and the items ordered. Suppliers are not permitted to use your details for their own marketing.</li>
+<li><strong>Couriers and logistics providers</strong> - recipient name, delivery address, contact number and consignment details.</li>
+<li><strong>Payment providers</strong> - the information required to process and verify a payment or refund.</li>
+<li><strong>Service providers</strong> - hosting, email delivery, SMS and push-notification providers, and IT support, under confidentiality obligations and only to the extent needed to perform their service.</li>
+<li><strong>Professional advisers</strong> - accountants, auditors, insurers and lawyers.</li>
+<li><strong>Regulators and authorities</strong> - where required or authorised by law, including for product recall, adverse-event reporting or therapeutic goods compliance.</li>
+<li><strong>A purchaser</strong> - if we sell or restructure our business, subject to the purchaser agreeing to handle the information consistently with this Policy.</li>
+</ul>
+<p>We do not sell your personal information.</p>
+<h2>6. Cookies and Tracking</h2>
+<p>We use a small number of cookies that are necessary for the Platform to work:</p>
+<ul>
+<li><strong>Authentication cookie</strong> - keeps you signed in.</li>
+<li><strong>Guest cart cookie (<code>tempId</code>)</strong> - an encrypted identifier that lets a shopping cart persist for up to 30 days before you sign in. It contains no personal details and is not readable by scripts.</li>
+<li><strong>Currency preference (<code>selected_currency_id</code>)</strong> - remembers the currency you selected.</li>
+<li><strong>Session cookie</strong> - remembers your product filters so pages behave correctly on refresh.</li>
+<li><strong>Antiforgery cookie</strong> - protects forms against cross-site request forgery.</li>
+</ul>
+<p>You can block or delete cookies in your browser settings, but signing in and the shopping cart will not work correctly without the cookies listed above.</p>
+<p>[If you add analytics, advertising or live-chat tools, list them here, describe what they collect, say whether data leaves Australia, and link to their privacy policies and opt-out mechanisms.]</p>
+<h2>7. Security</h2>
+<ol>
+<li>Traffic between your browser and the Platform is encrypted in transit. Passwords are stored hashed, never in plain text, and the guest cart identifier is encrypted.</li>
+<li>We do not store full payment card numbers. Card details are handled by our payment provider.</li>
+<li>Access to customer data in our admin systems is restricted by role-based permissions, so staff and suppliers can only see what their role requires. Suppliers can see only their own orders and products.</li>
+<li>Despite these measures, no method of transmission or storage is completely secure. If a data breach occurs that is likely to result in serious harm, we will notify affected individuals and the Office of the Australian Information Commissioner as required by the Notifiable Data Breaches scheme.</li>
+</ol>
+<h2>8. How Long We Keep It</h2>
+<ol>
+<li>We keep personal information only as long as needed for the purposes in clause 3 or as required by law.</li>
+<li>Order, invoice and tax records are generally retained for [NUMBER] years to meet accounting, taxation and therapeutic-goods record-keeping obligations, even after an account is closed.</li>
+<li>One-time passcodes are short-lived and expire automatically.</li>
+<li>Abandoned cart data, wishlists and product-view history are retained for up to [NUMBER] months.</li>
+<li>Where information is no longer needed and we are not required to keep it, we delete it or de-identify it.</li>
+</ol>
+<h2>9. Overseas Disclosure</h2>
+<p>Some of our service providers - including [hosting, email delivery, payment processing and notification providers] - may store or process personal information outside Australia, in [COUNTRIES]. Where we disclose personal information overseas, we take reasonable steps to ensure the recipient handles it consistently with the APPs.</p>
+<h2>10. Accessing and Correcting Your Information</h2>
+<ol>
+<li>You can view and update most of your details - name, contact details, addresses and preferences - by signing in to your account.</li>
+<li>You may request access to the personal information we hold about you, or ask us to correct it, by emailing [PRIVACY EMAIL]. We will respond within [NUMBER] days.</li>
+<li>We may need to verify your identity before acting on a request. If we refuse access or correction, we will tell you why in writing and how to complain.</li>
+<li>No fee applies to making a request. We may charge a reasonable fee for the cost of providing access to a large volume of information, and will tell you before proceeding.</li>
+</ol>
+<h2>11. Deleting Your Account</h2>
+<p>You can ask us to close your account and delete your personal information by emailing [PRIVACY EMAIL]. We will delete or de-identify what we can, but we may need to retain certain records - in particular order, invoice and regulatory records - for the periods described in clause 8. We will tell you what we have retained and why.</p>
+<h2>12. Anonymity</h2>
+<p>You can browse the Platform and add items to a cart without creating an account. An account and delivery details are required to place an order, and professional verification is required for restricted Products.</p>
+<h2>13. Children</h2>
+<p>The Platform is not intended for anyone under 18 and we do not knowingly collect personal information from children. If you believe we have, contact us at [PRIVACY EMAIL] and we will delete it.</p>
+<h2>14. Complaints</h2>
+<p>If you believe we have mishandled your personal information or breached the APPs, contact our Privacy Officer at [PRIVACY EMAIL] with the details. We will acknowledge your complaint within [NUMBER] business days and aim to resolve it within [NUMBER] days.</p>
+<p>If you are not satisfied with our response, you can complain to the Office of the Australian Information Commissioner: <a href="https://www.oaic.gov.au" target="_blank" rel="noopener">www.oaic.gov.au</a>, phone 1300 363 992.</p>
+<h2>15. Changes to This Policy</h2>
+<p>We may update this Policy from time to time. The current version is always published on this page with a revised "Last updated" date. Where a change is significant, we will take reasonable steps to notify you.</p>
+<h2>16. Contact Us</h2>
+<ul>
+<li><strong>Privacy Officer, [LEGAL COMPANY NAME]</strong> trading as Aussiemed</li>
+<li>ABN: [ABN]</li>
+<li>Address: [REGISTERED ADDRESS]</li>
+<li>Email: [PRIVACY EMAIL]</li>
+<li>Phone: [PHONE]</li>
+</ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+        </main>
+
+        
+<footer class="section footer-section">
+    <div class="footer-section-top">
+        <div class="container-xxl container">
+            <div class="footer-top d-block">
+                <div class="row g-4">
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-sm-6 col-12">
+                        <div class="footer-menu upcoming-service-widget">
+                            <h4>Quick Link</h4>
+                            <ul class="list-items">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/website/home/ProductRange">Product Range</a></li>
+                                <li><a href="/website/home/AboutUs">About Us</a></li>
+                                <li><a href="/website/home/ContactUs">Contact Us</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-xxl-4 col-lg-3 col-md-4 col-sm-6 col-12">
+                        <div class="footer-menu upcoming-service-widget">
+                            <h4>Product Category</h4>
+                            <ul>
+                                    <li><a href="/website/home/GoCategory/15">Medical Consumables</a></li>
+                                    <li><a href="/website/home/GoCategory/16">Wound Care, First Aid &amp; Safety</a></li>
+                                    <li><a href="/website/home/GoCategory/17">Kitchen</a></li>
+                                    <li><a href="/website/home/GoCategory/18">Laboratory </a></li>
+                                    <li><a href="/website/home/GoCategory/19">Protective Wear PPE</a></li>
+                                    <li><a href="/website/home/GoCategory/20">Beauty, Skin &amp; Personal Care</a></li>
+                                    <li><a href="/website/home/GoCategory/24">Instruments &amp; Diagnostics</a></li>
+                                    <li><a href="/website/home/GoCategory/25">Dental</a></li>
+                                    <li><a href="/website/home/GoCategory/26">Cleaning &amp; Hygiene</a></li>
+                                    <li><a href="/website/home/GoCategory/27">Office &amp; Stationery Supplies</a></li>
+                                    <li><a href="/website/home/GoCategory/28">Pet Care</a></li>
+                             
+                            
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-xxl-3 col-lg-3 col-md-4 col-sm-6 col-12">
+                        <div class="footer-menu upcoming-service-widget">
+                            <h4>Legal</h4>
+                            <ul class="list-items">
+                                <li><a href="/website/home/TermsAndConditions">Terms & Conditions</a></li>
+                                <li><a href="/website/home/PrivacyPolicy">Privacy Policy</a></li>
+                            </ul>
+                        </div>
+                        <div class="footer-menu upcoming-service-widget mt-5">
+                            <h4>Customer Service</h4>
+                            <ul class="list-items">
+                                <li><a href="/website/home/OrderSupport">Order & Support</a></li>
+                                <li><a href="#" id="footerForgotPassword">Forgot Password</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-xxl-3 col-lg-3 col-md-4 col-sm-6 col-12">
+                        <div class="footer-menu upcoming-service-widget">
+                            <h4>Contact Us 24/7</h4>
+                            <!-- Start footer-info-box -->
+                            <div class="footer-info-box">
+                                <i class="bi bi-geo-alt"></i>
+                                <div class="info-box-body">
+                                    <span>Location</span>
+                                    <p>582 Grand blv - Craigieburn - Melbourne, Australia</p>
+                                </div>
+                            </div>
+                            <div class="footer-info-box">
+                                <i class="bi bi-envelope"></i>
+                                <div class="info-box-body">
+                                    <span>Support</span>
+                                    <a href="mailto:info@assuiemed.com">info@AUSSIEMED.com</a>
+                                </div>
+                            </div>
+                            <div class="footer-info-box">
+                                <i class="bi bi-telephone"></i>
+                                <div class="info-box-body call_us">
+                                    <span>Call Us</span>
+                                    <p>0585060541</p>
+                                </div>
+                            </div>
+                            <!-- End footer-info-box -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-middle">
+                <div class="interest-box">
+                    <h4> Aussemed's Newsletter</h4>
+                    <p>Be the first to hear about all the latest news, drops, Offers, and more!</p>
+                    <div class="email-form">
+                        <form onsubmit="submitEmail(event)">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" class="form-control" placeholder="Enter your email address" required="">
+                                <button type="submit" class="btn">Subscribe</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-section-bottom">
+        <div class="container-xxl container">
+            <div class="footer-bottom">
+                <div class="row gy-2 gy-lg-0 justify-content-between align-items-center">
+                    <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12">
+                        <div class="copywright text-center text-lg-start">
+                            <p>Copyright © <script> document.write(new Date().getFullYear())</script> <span>Assuie Med.</span> All rights reserved.</p>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12">
+                        <div class="social-icons-box w-auto">
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Facebook">
+                                <img src="/assets/img/icons/f-icon.png" alt="facebook" class="img-fluid">
+                            </a>
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Twitter-x">
+                                <img src="/assets/img/icons/x-icon.png" alt="twitter-x" class="img-fluid">
+                            </a>
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Instegram">
+                                <img src="/assets/img/icons/ins-icon.png" alt="instegram" class="img-fluid">
+                            </a>
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Tiktok">
+                                <img src="/assets/img/icons/t-icon.png" alt="Tiktok" class="img-fluid">
+                            </a>
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="linkedin">
+                                <img src="/assets/img/icons/link-icon.png" alt="linkedin" class="img-fluid">
+                            </a>
+                            <a href="#" class="social-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="YouTube">
+                                <img src="/assets/img/icons/u-icon.png" alt="you-tube" class="img-fluid">
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12">
+                        <div class="cradit-info text-lg-end text-center">
+                            <p><a href="#">Designed and developed by Royex Technologies.</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const footerForgot = document.getElementById('footerForgotPassword');
+        const popupOverlayForgotPassword = document.getElementById('popupOverlayForgotPassword');
+        const popupOverlayLogin = document.getElementById('popupOverlayLogin');
+        
+        if (footerForgot && popupOverlayForgotPassword) {
+            footerForgot.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (popupOverlayLogin) popupOverlayLogin.style.display = 'none';
+                popupOverlayForgotPassword.style.display = 'flex';
+            });
+        }
+    });
+</script>
+
+    </div>
+
+    <div id="scrollToTop" class="scroll-to-top">
+        <i class="bi bi-chevron-up"></i>
+    </div>
+
+    <style>
+    .swal2-popup .swal2-input,
+    .swal2-popup .swal2-textarea {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .swal2-popup .swal2-html-container { overflow: visible !important; }
+    .product-card { position: relative; }
+    .wishlist-heart {
+        position: absolute; top: 10px; right: 10px; z-index: 6;
+        background: rgba(255,255,255,.92); border: none; border-radius: 50%;
+        width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.15); padding: 0;
+    }
+    .wishlist-heart i { font-size: 1rem; color: #9aa0a6; transition: color .15s; }
+    .wishlist-heart:hover i, .wishlist-heart.active i { color: #e74c3c; }
+</style>
+<script>
+    // ---- Notify Me (shared, for cards) ----
+    function notifyMeForProduct(productMasterId, subSkuId) {
+        doNotifyRequest('productMasterId=' + productMasterId + '&subSkuId=' + (subSkuId || 0));
+    }
+    function doNotifyRequest(body) {
+        fetch('/website/home/NotifyMe', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.requireEmail) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Notify Me',
+                            text: "Enter your email and we'll let you know when this product is back in stock.",
+                            input: 'email',
+                            inputPlaceholder: 'you@example.com',
+                            showCancelButton: true,
+                            confirmButtonText: 'Notify Me',
+                            confirmButtonColor: '#e11d2e',
+                            cancelButtonColor: '#8a93a5',
+                            reverseButtons: true,
+                            inputValidator: function (v) { if (!v) { return 'Please enter your email address.'; } }
+                        }).then(function (res) {
+                            if (res.isConfirmed && res.value) { doNotifyRequest(body + '&email=' + encodeURIComponent(res.value)); }
+                        });
+                    } else {
+                        var em = prompt('Enter your email to be notified when this product is back in stock:');
+                        if (em) { doNotifyRequest(body + '&email=' + encodeURIComponent(em)); }
+                    }
+                    return;
+                }
+                if (typeof Swal !== 'undefined') { Swal.fire('', d.message || 'Saved.', d.success ? 'success' : 'error'); }
+                else { alert(d.message || 'Saved.'); }
+            }).catch(function () { });
+    }
+
+    // Out-of-stock product cards: show a label and turn 'Add to Cart' into 'Notify Me'.
+    // Driven ONLY by the product's IsOutOfStock switch (data-outofstock="1"). No stock maths.
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.cart-btn[data-outofstock="1"]').forEach(function (btn) {
+            btn.innerHTML = '<i class="bi bi-bell"></i> Notify Me';
+            btn.classList.add('is-out-of-stock');
+            var pid = btn.getAttribute('data-product') || 0;
+            var sku = btn.getAttribute('data-sku') || 0;
+            btn.onclick = function (e) { if (e) { e.preventDefault(); } notifyMeForProduct(pid, sku); return false; };
+
+            // Out of Stock label on the card, above the button.
+            if (!btn.parentNode || btn.parentNode.querySelector('.oos-card-badge')) { return; }
+            var tag = document.createElement('span');
+            tag.className = 'oos-card-badge';
+            tag.innerHTML = 'Out of Stock';
+            btn.parentNode.insertBefore(tag, btn);
+        });
+    });
+
+    // ---- Cart quantity check (shared) ----
+    // Stock is never calculated. An out-of-stock product has no Add to Cart button at all
+    // (it was replaced with Notify Me above), so the only thing worth checking is the number.
+    function checkCartStock(button, qty) {
+        if (button && button.getAttribute('data-outofstock') === '1') {
+            if (typeof Swal !== 'undefined') { Swal.fire('Out of stock', 'This item is currently out of stock.', 'warning'); }
+            else { alert('This item is currently out of stock.'); }
+            return false;
+        }
+        if (!(qty > 0)) {
+            if (typeof Swal !== 'undefined') { Swal.fire('Invalid quantity', 'Please enter a quantity of at least 1.', 'warning'); }
+            else { alert('Please enter a quantity of at least 1.'); }
+            return false;
+        }
+        return true;
+    }
+
+</script>
+<style>
+    /* Out-of-stock label on product cards (inserted next to the Notify Me button). */
+    .oos-card-badge {
+        display: block;
+        margin-bottom: 6px;
+        padding: 3px 10px;
+        border-radius: 4px;
+        background: #fdecea;
+        color: #b3261e;
+        border: 1px solid #f5c2bd;
+        font-size: .75rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    .cart-btn.is-out-of-stock { opacity: .95; }
+</style>
+<script>
+    // ---- Wishlist (available site-wide via _Script) ----
+    function toggleWishlist(productMasterId, el) {
+        fetch("/website/home/ToggleWishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "productMasterId=" + productMasterId
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.requireLogin) {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({ title: "Please sign in", text: d.message || "Log in to use your wishlist.", icon: "info" });
+                } else { alert(d.message || "Please log in to use your wishlist."); }
+                return;
+            }
+            if (d.success && el) {
+                el.classList.toggle("active", d.isAdded);
+                el.setAttribute("data-in-wishlist", d.isAdded ? "true" : "false");
+                var icon = el.querySelector("i");
+                if (icon) { icon.className = "bi " + (d.isAdded ? "bi-heart-fill" : "bi-heart"); }
+                var badge = document.getElementById("txtWishlistNumber");
+                if (badge) { badge.textContent = d.count; }
+            }
+        })
+        .catch(function () { });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var badge = document.getElementById("txtWishlistNumber");
+        if (!badge) return;
+        fetch("/website/home/WishlistCount")
+            .then(function (r) { return r.json(); })
+            .then(function (d) { badge.textContent = (d && d.count) ? d.count : 0; })
+            .catch(function () { });
+    });
+
+    // Paint hearts red for products already in the logged-in customer's wishlist.
+    document.addEventListener("DOMContentLoaded", function () {
+        var hearts = document.querySelectorAll(".wishlist-heart[data-product-id], .wishlist-heart-detail[data-product-id]");
+        if (!hearts.length) return;
+        fetch("/website/home/WishlistProductIds")
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var ids = (d && d.ids) ? d.ids : [];
+                var set = {};
+                ids.forEach(function (x) { set[String(x)] = true; });
+                hearts.forEach(function (h) {
+                    if (set[String(h.getAttribute("data-product-id"))]) {
+                        h.classList.add("active");
+                        h.setAttribute("data-in-wishlist", "true");
+                        var i = h.querySelector("i");
+                        if (i) { i.className = "bi bi-heart-fill"; }
+                    }
+                });
+            }).catch(function () { });
+    });
+    const openPopup = document.getElementById('openPopupLogin');
+    const closePopup = document.getElementById('closePopupLogin');
+    const popupOverlay = document.getElementById('popupOverlayLogin');
+
+    openPopup.addEventListener('click', () => {
+      popupOverlay.style.display = 'flex';
+    });
+
+    closePopup.addEventListener('click', () => {
+      popupOverlay.style.display = 'none';
+    });
+
+    // Close popup when clicking outside box
+    window.addEventListener('click', (e) => {
+      if (e.target === popupOverlay) {
+        popupOverlay.style.display = 'none';
+      }
+    });
+
+    const openPopupRegister = document.getElementById('openPopupRegister');
+    const closePopupRegister = document.getElementById('closePopupRegister');
+    const popupOverlayRegister = document.getElementById('popupOverlayRegister');
+
+    openPopupRegister.addEventListener('click', () => {
+      popupOverlayRegister.style.display = 'flex';
+    });
+
+    closePopupRegister.addEventListener('click', () => {
+      popupOverlayRegister.style.display = 'none';
+    });
+
+    // Close popup when clicking outside box
+    window.addEventListener('click', (e) => {
+      if (e.target === popupOverlayRegister) {
+        popupOverlayRegister.style.display = 'none';
+      }
+    });
+</script>
+
+
+<!-- jQuery (Necessary for All JavaScript Plugins) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Popper js -->
+<script src="https://cdn.jsdelivr.net/npm/popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+<!-- Bootstrap js -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+<script src="/assets/js/aos.js"></script>
+<!-- Plugins js -->
+<script src="/assets/js/plugins.js"></script>
+<!-- Owl Carousel JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+<!-- <script src="~/assets/js/owl.carousel.min.js"></script> -->
+<!-- Classy Nav js -->
+<script src="/assets/js/classy-nav.min.js"></script>
+<script src="/assets/vendor/glightbox/js/glightbox.min.js"></script>
+<!-- Active js -->
+<script src="/assets/js/wow.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script src="/assets/js/swiper-slider.js"></script>
+<script src="/assets/js/active.js"></script>
+<script src="/assets/js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+<!-- <script src="assets/js/countdown.js"></script> -->
+<style>
+    .pcc__row { display: flex; gap: 8px; align-items: center; }
+    .pcc__row .pcc__phone { flex: 1 1 auto; min-width: 0; }
+    .pcc { position: relative; flex: 0 0 auto; }
+    .pcc__btn { display: flex; align-items: center; gap: 6px; cursor: pointer; background: #fff; border: 1px solid #d8d8d8; border-radius: 6px; padding: 9px 12px; font: inherit; color: #111; white-space: nowrap; line-height: 1; }
+    .pcc__btn:hover { border-color: #b9b9b9; }
+    .pcc__caret { color: #8a8a8a; font-size: 11px; }
+    .pcc__menu { position: absolute; z-index: 1080; top: calc(100% + 6px); left: 0; min-width: 250px; background: #fff; border: 1px solid #e2e2e2; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.14); display: none; }
+    .pcc__menu.open { display: block; }
+    .pcc__search { width: 100%; box-sizing: border-box; border: 0; border-bottom: 1px solid #eee; padding: 10px 12px; outline: none; font: inherit; }
+    .pcc__list { list-style: none; margin: 0; padding: 6px; max-height: 240px; overflow-y: auto; }
+    .pcc__item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+    .pcc__item:hover { background: #f4f6f8; }
+    .pcc__dial { font-weight: 600; color: #111; min-width: 52px; }
+    .pcc__name { color: #666; font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+<script>
+    window.PhoneCC = (function () {
+        var cache = null;
+        function load() {
+            if (cache) return cache;
+            cache = fetch('/Website/Home/GetCountryCodes', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { return Array.isArray(d) ? d : (d && d.data ? d.data : []); })
+                .catch(function () { return []; });
+            return cache;
+        }
+        function attach(input, defaultDial) {
+            if (!input || input.dataset.pccBound === '1') return;
+            input.dataset.pccBound = '1';
+            defaultDial = defaultDial || '+971';
+            input.dataset.dial = defaultDial;
+
+            var row = document.createElement('div'); row.className = 'pcc__row';
+            input.parentNode.insertBefore(row, input);
+
+            var pcc = document.createElement('div'); pcc.className = 'pcc';
+            var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pcc__btn';
+            var lbl = document.createElement('span'); lbl.className = 'pcc__lbl'; lbl.textContent = defaultDial;
+            var car = document.createElement('span'); car.className = 'pcc__caret'; car.innerHTML = '&#9662;';
+            btn.appendChild(lbl); btn.appendChild(car);
+            var menu = document.createElement('div'); menu.className = 'pcc__menu';
+            var srch = document.createElement('input'); srch.type = 'text'; srch.className = 'pcc__search'; srch.placeholder = 'Search country';
+            var ul = document.createElement('ul'); ul.className = 'pcc__list';
+            menu.appendChild(srch); menu.appendChild(ul);
+            pcc.appendChild(btn); pcc.appendChild(menu);
+
+            row.appendChild(pcc);
+            input.classList.add('pcc__phone');
+            row.appendChild(input);
+
+            function setDial(d) { input.dataset.dial = d; lbl.textContent = d; }
+            function openM() { menu.classList.add('open'); srch.value = ''; filt(''); setTimeout(function () { srch.focus(); }, 20); }
+            function closeM() { menu.classList.remove('open'); }
+            function filt(q) { Array.prototype.forEach.call(ul.children, function (li) { li.style.display = (li.getAttribute('data-s') || '').indexOf(q) >= 0 ? '' : 'none'; }); }
+            btn.addEventListener('click', function (e) { e.stopPropagation(); menu.classList.contains('open') ? closeM() : openM(); });
+            document.addEventListener('click', function (e) { if (!pcc.contains(e.target)) closeM(); });
+            srch.addEventListener('input', function () { filt(this.value.toLowerCase()); });
+
+            load().then(function (list) {
+                (list || []).forEach(function (c) {
+                    var dial = c.phoneCode || c.PhoneCode; if (!dial) return;
+                    dial = '+' + String(dial).replace(/^\+/, '');
+                    var name = c.name || c.Name || '';
+                    var li = document.createElement('li'); li.className = 'pcc__item';
+                    li.setAttribute('data-s', (name + ' ' + dial).toLowerCase());
+                    li.innerHTML = '<span class="pcc__dial">' + dial + '</span><span class="pcc__name">' + name + '</span>';
+                    li.addEventListener('click', function () { setDial(dial); closeM(); });
+                    ul.appendChild(li);
+                });
+            });
+            var _pre = (input.value || '').match(/^\s*(\+\d+)[\s-]+(.*)$/);
+            if (_pre) { setDial(_pre[1]); input.value = _pre[2]; }
+            return input;
+        }
+        // Combine the chosen dial code with the number, avoiding a double prefix.
+        function combine(input) {
+            if (!input) return '';
+            var raw = (input.value || '').replace(/^\s*\+\d+[\s-]*/, '').trim();
+            var dial = input.dataset.dial || '';
+            return raw ? (dial + ' ' + raw) : raw;
+        }
+        function init(root) {
+            (root || document).querySelectorAll('input[data-intl-phone]').forEach(function (i) {
+                attach(i, i.getAttribute('data-intl-phone') || '+971');
+            });
+        }
+        return { attach: attach, load: load, combine: combine, init: init };
+    })();
+
+    document.addEventListener('DOMContentLoaded', function () { window.PhoneCC.init(document); });
+</script>
+
+</body>
+</html>
