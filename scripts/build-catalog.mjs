@@ -126,6 +126,78 @@ function normaliseTiers(tierQty, tierPrice, basePrice) {
 const round2 = (n) => Math.round(n * 100) / 100;
 
 /* ------------------------------------------------------------------ *
+ * Packs, tax and specs
+ *
+ * Modelled on how trade medical suppliers actually sell: the same line is
+ * bought by the box or by the carton at different prices, so the pack is the
+ * purchasable thing, not the product.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Builds the pack list for a product. Where a base pack has an obvious outer
+ * (a box that comes 10 to a carton), the carton is generated at a discount,
+ * because buying an outer is always cheaper per unit than buying its contents
+ * separately — that is the entire reason a trade buyer orders one.
+ */
+function buildPacks(sku, unit, packSize, basePrice, tiers, outOfStock, outer) {
+  const base = {
+    id: "base",
+    sku,
+    label: packSize ? `${packSize.replace(/pack/i, "Pieces")}/${unit}` : unit,
+    shortLabel: unit,
+    eachesPerPack: 1,
+    priceAED: round2(basePrice),
+    tiers,
+    outOfStock,
+  };
+
+  if (!outer) return [base];
+
+  const [perOuter, outerName] = outer;
+  // Buying the outer earns a further discount on top of the best unit tier.
+  const bestUnit = tiers.length ? tiers[tiers.length - 1].priceAED : basePrice;
+  const outerPrice = round2(bestUnit * perOuter * 0.97);
+
+  return [
+    base,
+    {
+      id: "outer",
+      sku: `${sku}-${perOuter}`,
+      label: `${perOuter} ${unit}${perOuter > 1 ? "es" : ""}/${outerName}`
+        .replace("Boxes/", "Boxes/")
+        .replace("Eaches/", "Each/"),
+      shortLabel: outerName,
+      eachesPerPack: perOuter,
+      priceAED: outerPrice,
+      tiers: [
+        { minQty: 4, priceAED: round2(outerPrice * 0.97) },
+        { minQty: 10, priceAED: round2(outerPrice * 0.94) },
+      ],
+      outOfStock,
+    },
+  ];
+}
+
+/**
+ * VAT treatment. In the UAE a defined list of medical equipment and supplies is
+ * zero-rated rather than standard-rated at 5%. These assignments are OUR
+ * reading of the product names and must be confirmed by the client's tax
+ * adviser before launch — getting this wrong misstates a tax document.
+ */
+const ZERO_RATED_PATTERNS = [
+  /glove/i,
+  /face mask|respirator|surgical mask/i,
+  /gown|bouffant/i,
+  /syringe|needle|lancet|cannula/i,
+  /gauze|dressing|bandage|suture/i,
+  /catheter|incontinence|pads extra/i,
+  /thermometer|oximeter|sphygmomanometer|stethoscope|blood pressure/i,
+];
+
+const taxClassFor = (name) =>
+  ZERO_RATED_PATTERNS.some((re) => re.test(name)) ? "zero-rated" : "standard";
+
+/* ------------------------------------------------------------------ *
  * 3. The 11 real products — enrichment the extract could not carry
  * ------------------------------------------------------------------ */
 
@@ -317,6 +389,88 @@ const OUT_OF_STOCK_NAMES = new Set([
   "Fluoride Varnish Unit Dose 0.4mL",
 ]);
 
+// Lines that also sell by the outer. [units per outer, outer name].
+const OUTER_PACKS = {
+  "Nitrile Examination Gloves Powder Free Medium": [10, "Carton"],
+  "Nitrile Examination Gloves Powder Free Large": [10, "Carton"],
+  "Latex Examination Gloves Powder Free Small": [10, "Carton"],
+  "Type IIR Surgical Face Mask Level 2": [20, "Carton"],
+  "P2/N95 Respirator Flat Fold": [8, "Carton"],
+  "Alcohol Hand Rub Gel 70% 500mL Pump": [12, "Carton"],
+  "Surface Disinfectant Wipes Canister": [6, "Carton"],
+  "Sterile Gauze Swabs 7.5cm x 7.5cm": [25, "Carton"],
+  "Micropore Surgical Tape 2.5cm x 9m": [24, "Carton"],
+  "Alcohol Prep Pads Sterile": [20, "Carton"],
+  "Luer Lock Syringe 10mL Sterile": [10, "Carton"],
+  "Hypodermic Needle 21G x 38mm": [10, "Carton"],
+  "Examination Couch Roll 50cm x 50m": [12, "Carton"],
+  "Dental Bibs 2-Ply Blue": [10, "Carton"],
+  "Specimen Container 70mL Sterile": [10, "Carton"],
+};
+
+// Variant axes. Options a buyer can see but not currently buy stay listed and
+// disabled — hiding them makes the range look narrower than it is.
+const SIZE_AXIS = (current) => ({
+  name: "Size",
+  selected: current,
+  options: ["Extra Small", "Small", "Medium", "Large", "Extra Large"].map(
+    (value) => ({ value, available: value !== "Extra Small" || current === "Extra Small" })
+  ),
+});
+
+const VARIANT_AXES = {
+  "Nitrile Examination Gloves Powder Free Medium": [
+    SIZE_AXIS("Medium"),
+    { name: "Colour", selected: "Blue", options: [{ value: "Blue", available: true }, { value: "Black", available: true }] },
+  ],
+  "Nitrile Examination Gloves Powder Free Large": [SIZE_AXIS("Large")],
+  "Latex Examination Gloves Powder Free Small": [SIZE_AXIS("Small")],
+  "Disposable Isolation Gown AAMI Level 2": [
+    { name: "Size", selected: "Universal", options: [{ value: "Universal", available: true }, { value: "Large", available: false }] },
+  ],
+  "Mens Scrub Top": [
+    SIZE_AXIS("Medium"),
+    {
+      name: "Colour",
+      selected: "Teal",
+      options: [
+        { value: "Teal", available: true },
+        { value: "Navy", available: true },
+        { value: "Ceil Blue", available: true },
+      ],
+    },
+  ],
+};
+
+// Merchandising flags. Real ones come from sales data; these are seeded so the
+// badge treatments are reviewable.
+const BADGES = {
+  "Nitrile Examination Gloves Powder Free Medium": ["top-seller"],
+  "Alcohol Hand Rub Gel 70% 500mL Pump": ["top-seller"],
+  "Sterile Gauze Swabs 7.5cm x 7.5cm": ["top-seller"],
+  "Infrared Non-Contact Forehead Thermometer": ["back-soon"],
+  "Fingertip Pulse Oximeter": ["new"],
+  "Adjustable Volume Micropipette 100-1000uL": ["new"],
+  "Fluoride Varnish Unit Dose 0.4mL": ["back-soon"],
+  "P2/N95 Respirator Flat Fold": ["back-soon"],
+};
+
+/** Structured specs. Filterable later; for now they render as a details table. */
+function buildAttributes({ brand, unit, packSize, categoryPath, taxClass, supplierName }) {
+  const rows = [];
+  if (brand) rows.push({ label: "Brand", value: brand });
+  rows.push({ label: "Unit", value: unit });
+  if (packSize) rows.push({ label: "Pack size", value: packSize });
+  const category = categoryPath.at(-1)?.name;
+  if (category) rows.push({ label: "Category", value: category });
+  if (supplierName) rows.push({ label: "Supplier", value: supplierName });
+  rows.push({
+    label: "VAT treatment",
+    value: taxClass === "zero-rated" ? "Zero-rated" : "Standard rated (5%)",
+  });
+  return rows;
+}
+
 /* ------------------------------------------------------------------ *
  * 5. Build
  * ------------------------------------------------------------------ */
@@ -355,69 +509,122 @@ const uniqueSlug = (base) => {
 
 const products = [];
 
+const supplierName = (id) => SUPPLIERS.find((s) => s.id === id)?.name ?? null;
+
+/** Assembles the shared shape so real and placeholder products cannot drift. */
+function buildProduct({
+  id, skuId, sku, name, brand, description, categoryId, basePrice, unit,
+  packSize, supplierId, outOfStock, images, tiers, isPlaceholder,
+  detailKey = null, sourceNote = null,
+}) {
+  const path = categoryId ? categoryPath(categoryId) : [];
+  const taxClass = taxClassFor(name);
+  const packs = buildPacks(
+    sku, unit, packSize, basePrice, tiers, outOfStock, OUTER_PACKS[name]
+  );
+
+  return {
+    id,
+    skuId,
+    slug: uniqueSlug(slugify(name)),
+    sku,
+    name,
+    brand: brand ?? null,
+    description: description ?? null,
+    categoryId: categoryId ?? null,
+    categoryPath: path,
+    // Mirrors the default pack so listings need not resolve packs to show a
+    // price. check-catalog.mjs asserts the two never diverge.
+    priceAED: basePrice,
+    unit,
+    packSize: packSize || null,
+    supplierId,
+    outOfStock,
+    images,
+    tiers,
+    taxClass,
+    packs,
+    defaultPackId: packs[0].id,
+    variants: VARIANT_AXES[name] ?? [],
+    attributes: buildAttributes({
+      brand,
+      unit,
+      packSize,
+      categoryPath: path,
+      taxClass,
+      supplierName: supplierName(supplierId),
+    }),
+    // No real SDS or spec sheets were supplied. The field exists because
+    // medical and laboratory buyers expect them, and often need them.
+    documents: [],
+    badges: BADGES[name] ?? [],
+    isPlaceholder,
+    detailKey,
+    sourceNote,
+  };
+}
+
 // --- real products -------------------------------------------------
 for (const row of rawProducts) {
   const meta = REAL_PRODUCT_META[row.productMasterId] ?? {};
   const name = tidyName(row.name);
   const basePrice = round2(row.displayPriceAED);
 
-  products.push({
-    id: row.productMasterId,
-    skuId: row.skuId,
-    slug: uniqueSlug(slugify(name)),
-    sku: meta.sku ?? `AM-${row.productMasterId}`,
-    name,
-    brand: meta.brand ?? null,
-    description: meta.description ?? null,
-    categoryId: meta.categoryId ?? null,
-    categoryPath: meta.categoryId ? categoryPath(meta.categoryId) : [],
-    priceAED: basePrice,
-    unit: row.unit ?? "Each",
-    packSize: meta.packSize || null,
-    supplierId: row.supplierId,
-    outOfStock: Boolean(row.outOfStock),
-    // listImage/pdpImages in the source are social icons, the site logo, and a
-    // scraped JS template fragment — no product imagery. Discarded entirely.
-    images: meta.images ?? [],
-    tiers: normaliseTiers(row.tierQty, row.tierPriceAED, basePrice),
-    isPlaceholder: false,
-    detailKey: row.detailKey ?? null,
-    sourceNote: row._note ?? null,
-  });
+  products.push(
+    buildProduct({
+      id: row.productMasterId,
+      skuId: row.skuId,
+      sku: meta.sku ?? `AM-${row.productMasterId}`,
+      name,
+      brand: meta.brand,
+      description: meta.description,
+      categoryId: meta.categoryId,
+      basePrice,
+      unit: row.unit ?? "Each",
+      packSize: meta.packSize,
+      supplierId: row.supplierId,
+      outOfStock: Boolean(row.outOfStock),
+      // listImage/pdpImages in the source are social icons, the site logo, and
+      // a scraped JS template fragment — no imagery. Discarded entirely.
+      images: meta.images ?? [],
+      tiers: normaliseTiers(row.tierQty, row.tierPriceAED, basePrice),
+      isPlaceholder: false,
+      detailKey: row.detailKey ?? null,
+      sourceNote: row._note ?? null,
+    })
+  );
 }
 
 // --- placeholders --------------------------------------------------
 let nextId = 1000;
 for (const [name, brand, categoryId, price, unit, packSize, tiers] of PLACEHOLDERS) {
   const basePrice = round2(price);
-  products.push({
-    id: nextId,
-    skuId: nextId,
-    slug: uniqueSlug(slugify(name)),
-    sku: `PL-${nextId}`,
-    name,
-    brand,
-    description: `${name}. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.`,
-    categoryId,
-    categoryPath: categoryPath(categoryId),
-    priceAED: basePrice,
-    unit,
-    packSize: packSize || null,
-    supplierId: SUPPLIER_BY_BRAND[brand] ?? 21,
-    outOfStock: OUT_OF_STOCK_NAMES.has(name),
-    images: [],
-    // Run placeholder tiers through the same normaliser as the real ones, so
-    // a typo in the seed table cannot produce a tier shape the storefront
-    // never has to handle for real data.
-    tiers: normaliseTiers(
-      tiers.map(([minQty]) => minQty),
-      tiers.map(([, priceAED]) => priceAED),
-      basePrice
-    ),
-    isPlaceholder: true,
-    detailKey: null,
-    sourceNote: null,
-  });
+  products.push(
+    buildProduct({
+      id: nextId,
+      skuId: nextId,
+      sku: `PL-${nextId}`,
+      name,
+      brand,
+      description: `${name}. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.`,
+      categoryId,
+      basePrice,
+      unit,
+      packSize,
+      supplierId: SUPPLIER_BY_BRAND[brand] ?? 21,
+      outOfStock: OUT_OF_STOCK_NAMES.has(name),
+      images: [],
+      // Run placeholder tiers through the same normaliser as the real ones, so
+      // a typo in the seed table cannot produce a tier shape the storefront
+      // never has to handle for real data.
+      tiers: normaliseTiers(
+        tiers.map(([minQty]) => minQty),
+        tiers.map(([, priceAED]) => priceAED),
+        basePrice
+      ),
+      isPlaceholder: true,
+    })
+  );
   nextId += 1;
 }
 

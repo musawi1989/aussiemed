@@ -1,5 +1,5 @@
 import { getProductById, getSupplierName } from "./catalog";
-import { lineTotal, round2, unitPriceFor, VAT_RATE } from "./money";
+import { lineTotal, round2, unitPriceFor, vatRateFor } from "./money";
 import type { Product } from "./types";
 
 /**
@@ -133,7 +133,13 @@ export function resolveOrder(order: DemoOrder): ResolvedOrder {
       const subtotal = round2(
         supplierLines.reduce((sum, l) => sum + l.lineTotalAED, 0)
       );
-      const vat = round2(subtotal * VAT_RATE);
+      // VAT per line, since some medical lines are zero-rated.
+      const vat = round2(
+        supplierLines.reduce(
+          (sum, l) => sum + l.lineTotalAED * vatRateFor(l.product.taxClass),
+          0
+        )
+      );
       return {
         supplierId,
         supplierName: getSupplierName(supplierId),
@@ -146,7 +152,9 @@ export function resolveOrder(order: DemoOrder): ResolvedOrder {
     });
 
   const subtotal = round2(lines.reduce((sum, l) => sum + l.lineTotalAED, 0));
-  const vat = round2(subtotal * VAT_RATE);
+  const vat = round2(
+    lines.reduce((sum, l) => sum + l.lineTotalAED * vatRateFor(l.product.taxClass), 0)
+  );
 
   return {
     reference: order.reference,

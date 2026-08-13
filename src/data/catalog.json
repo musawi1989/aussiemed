@@ -962,6 +962,50 @@
           "priceAED": 179.99
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "OMR-HEM7156T",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 186.99,
+          "tiers": [
+            {
+              "minQty": 3,
+              "priceAED": 179.99
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Omron"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Diagnostics & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "8f344f80-3915-4a10-8ec6-76bfd4d9b17d",
       "sourceNote": null
@@ -999,6 +1043,54 @@
           "priceAED": 11.99
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "TEN-PAD-EX24",
+          "label": "24 pack/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 12.49,
+          "tiers": [
+            {
+              "minQty": 6,
+              "priceAED": 11.99
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "TENA"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "24 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Incontinence Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "b210d66f-4324-4f05-8670-906b30b28578",
       "sourceNote": null
@@ -1031,6 +1123,49 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "KLX-AV95",
+          "label": "95 pack/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 2.99,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Kleenex"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "95 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Tissues"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "972edc7c-9f1d-4075-afbc-41b1da601093",
       "sourceNote": null
@@ -1068,6 +1203,54 @@
           "priceAED": 2.79
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "SWP-CT240",
+          "label": "240 pack/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 2.99,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 2.79
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Swisspers"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "240 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Cotton Products"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "3626a2b1-9e24-433e-bd58-3cccd6168c12",
       "sourceNote": null
@@ -1100,6 +1283,49 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "FES-NS75",
+          "label": "75 mL/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 15.99,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "FESS"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "75 mL"
+        },
+        {
+          "label": "Category",
+          "value": "Respiratory Management"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "dc3b544d-702d-4c3b-9973-fefcfbf66a9d",
       "sourceNote": null
@@ -1137,6 +1363,54 @@
           "priceAED": 11.49
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "CCL-SPF50-110",
+          "label": "110 mL/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 11.99,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 11.49
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Cancer Council"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "110 mL"
+        },
+        {
+          "label": "Category",
+          "value": "Skin Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "22b455a9-6ee0-4282-9f06-08baeaae6269",
       "sourceNote": null
@@ -1169,6 +1443,45 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "MAN-NC-FILE",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 5.99,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Manicare"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Nail Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "5cddb9d7-b388-4556-a24f-02c010caee45",
       "sourceNote": null
@@ -1206,6 +1519,54 @@
           "priceAED": 24.99
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "BDC-FAK126",
+          "label": "126 pieces/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 25.99,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 24.99
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Bodichek"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "126 pieces"
+        },
+        {
+          "label": "Category",
+          "value": "First Aid Kits & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "f7238d73-76d5-4693-9ea3-4a886d8ca3dd",
       "sourceNote": null
@@ -1238,6 +1599,49 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "VCK-VR100",
+          "label": "100 g/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 13.99,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Vicks"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 g"
+        },
+        {
+          "label": "Category",
+          "value": "Gels, Lubrication & Creams"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "a6ce0e8e-584a-4fd3-a37b-7f47816639d3",
       "sourceNote": null
@@ -1270,6 +1674,49 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "VAS-PJ100",
+          "label": "100 g/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 5.99,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Vaseline"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 g"
+        },
+        {
+          "label": "Category",
+          "value": "Skin Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "b88dc64c-ba7c-479e-9806-dd95231f1394",
       "sourceNote": "Present on storefront listing at 12:45 UTC, absent by 13:05 UTC same day — evidence for the 'products disappearing from listing' issue. PDP still loads directly via detailKey."
@@ -1314,6 +1761,99 @@
           "priceAED": 90
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "AMD-SCRUB-M",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 100,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 95
+            },
+            {
+              "minQty": 10,
+              "priceAED": 90
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [
+        {
+          "name": "Size",
+          "selected": "Medium",
+          "options": [
+            {
+              "value": "Extra Small",
+              "available": false
+            },
+            {
+              "value": "Small",
+              "available": true
+            },
+            {
+              "value": "Medium",
+              "available": true
+            },
+            {
+              "value": "Large",
+              "available": true
+            },
+            {
+              "value": "Extra Large",
+              "available": true
+            }
+          ]
+        },
+        {
+          "name": "Colour",
+          "selected": "Teal",
+          "options": [
+            {
+              "value": "Teal",
+              "available": true
+            },
+            {
+              "value": "Navy",
+              "available": true
+            },
+            {
+              "value": "Ceil Blue",
+              "available": true
+            }
+          ]
+        }
+      ],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "AussieMed"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Body Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "Northline Uniforms"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": false,
       "detailKey": "bf11d270-088a-49a7-99d8-87f2937d1828",
       "sourceNote": null
@@ -1354,6 +1894,120 @@
           "minQty": 50,
           "priceAED": 30.5
         }
+      ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1000",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 34.5,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 32.9
+            },
+            {
+              "minQty": 50,
+              "priceAED": 30.5
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1000-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 295.85,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 286.97
+            },
+            {
+              "minQty": 10,
+              "priceAED": 278.1
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [
+        {
+          "name": "Size",
+          "selected": "Medium",
+          "options": [
+            {
+              "value": "Extra Small",
+              "available": false
+            },
+            {
+              "value": "Small",
+              "available": true
+            },
+            {
+              "value": "Medium",
+              "available": true
+            },
+            {
+              "value": "Large",
+              "available": true
+            },
+            {
+              "value": "Extra Large",
+              "available": true
+            }
+          ]
+        },
+        {
+          "name": "Colour",
+          "selected": "Blue",
+          "options": [
+            {
+              "value": "Blue",
+              "available": true
+            },
+            {
+              "value": "Black",
+              "available": true
+            }
+          ]
+        }
+      ],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Hand Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "top-seller"
       ],
       "isPlaceholder": true,
       "detailKey": null,
@@ -1396,6 +2050,104 @@
           "priceAED": 30.5
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1001",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 34.5,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 32.9
+            },
+            {
+              "minQty": 50,
+              "priceAED": 30.5
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1001-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 295.85,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 286.97
+            },
+            {
+              "minQty": 10,
+              "priceAED": 278.1
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [
+        {
+          "name": "Size",
+          "selected": "Large",
+          "options": [
+            {
+              "value": "Extra Small",
+              "available": false
+            },
+            {
+              "value": "Small",
+              "available": true
+            },
+            {
+              "value": "Medium",
+              "available": true
+            },
+            {
+              "value": "Large",
+              "available": true
+            },
+            {
+              "value": "Extra Large",
+              "available": true
+            }
+          ]
+        }
+      ],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Hand Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1433,6 +2185,100 @@
           "priceAED": 27.5
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1002",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 28.9,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 27.5
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1002-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 266.75,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 258.75
+            },
+            {
+              "minQty": 10,
+              "priceAED": 250.74
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [
+        {
+          "name": "Size",
+          "selected": "Small",
+          "options": [
+            {
+              "value": "Extra Small",
+              "available": false
+            },
+            {
+              "value": "Small",
+              "available": true
+            },
+            {
+              "value": "Medium",
+              "available": true
+            },
+            {
+              "value": "Large",
+              "available": true
+            },
+            {
+              "value": "Extra Large",
+              "available": true
+            }
+          ]
+        }
+      ],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Hand Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1474,6 +2320,77 @@
           "priceAED": 15.9
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1003",
+          "label": "50 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 18.75,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 17.25
+            },
+            {
+              "minQty": 100,
+              "priceAED": 15.9
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1003-20",
+          "label": "20 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 20,
+          "priceAED": 308.46,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 299.21
+            },
+            {
+              "minQty": 10,
+              "priceAED": 289.95
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Face Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1510,6 +2427,75 @@
           "minQty": 10,
           "priceAED": 58.5
         }
+      ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1004",
+          "label": "20 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 62,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 58.5
+            }
+          ],
+          "outOfStock": true
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1004-8",
+          "label": "8 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 8,
+          "priceAED": 453.96,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 440.34
+            },
+            {
+              "minQty": 10,
+              "priceAED": 426.72
+            }
+          ],
+          "outOfStock": true
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "20 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Face Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "back-soon"
       ],
       "isPlaceholder": true,
       "detailKey": null,
@@ -1548,6 +2534,69 @@
           "priceAED": 91
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1005",
+          "label": "50 pack/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 1,
+          "priceAED": 96,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 91
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [
+        {
+          "name": "Size",
+          "selected": "Universal",
+          "options": [
+            {
+              "value": "Universal",
+              "available": true
+            },
+            {
+              "value": "Large",
+              "available": false
+            }
+          ]
+        }
+      ],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Carton"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Body Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1580,6 +2629,49 @@
       "outOfStock": false,
       "images": [],
       "tiers": [],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1006",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 12.4,
+          "tiers": [],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Head Protection"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1621,6 +2713,79 @@
           "priceAED": 18.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1007",
+          "label": "500 mL/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 21.9,
+          "tiers": [
+            {
+              "minQty": 12,
+              "priceAED": 19.99
+            },
+            {
+              "minQty": 48,
+              "priceAED": 18.5
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1007-12",
+          "label": "12 Each/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 12,
+          "priceAED": 215.34,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 208.88
+            },
+            {
+              "minQty": 10,
+              "priceAED": 202.42
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Puracleanse"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "500 mL"
+        },
+        {
+          "label": "Category",
+          "value": "Hand Hygiene"
+        },
+        {
+          "label": "Supplier",
+          "value": "Puracleanse Hygiene"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "top-seller"
+      ],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1658,6 +2823,54 @@
           "priceAED": 73.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1008",
+          "label": "5 L/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 78,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 73.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Puracleanse"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "5 L"
+        },
+        {
+          "label": "Category",
+          "value": "Hand Hygiene"
+        },
+        {
+          "label": "Supplier",
+          "value": "Puracleanse Hygiene"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1699,6 +2912,77 @@
           "priceAED": 28.4
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1009",
+          "label": "200 wipes/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 32.5,
+          "tiers": [
+            {
+              "minQty": 6,
+              "priceAED": 30
+            },
+            {
+              "minQty": 24,
+              "priceAED": 28.4
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1009-6",
+          "label": "6 Each/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 6,
+          "priceAED": 165.29,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 160.33
+            },
+            {
+              "minQty": 10,
+              "priceAED": 155.37
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Puracleanse"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "200 wipes"
+        },
+        {
+          "label": "Category",
+          "value": "Swabs & Wipes"
+        },
+        {
+          "label": "Supplier",
+          "value": "Puracleanse Hygiene"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1736,6 +3020,54 @@
           "priceAED": 105
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1010",
+          "label": "5 L/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 112,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 105
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Puracleanse"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "5 L"
+        },
+        {
+          "label": "Category",
+          "value": "Cleaning Chemicals"
+        },
+        {
+          "label": "Supplier",
+          "value": "Puracleanse Hygiene"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1773,6 +3105,54 @@
           "priceAED": 138
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1011",
+          "label": "100 pack/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 1,
+          "priceAED": 145,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 138
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Puracleanse"
+        },
+        {
+          "label": "Unit",
+          "value": "Carton"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Waste Disposal"
+        },
+        {
+          "label": "Supplier",
+          "value": "Puracleanse Hygiene"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1814,6 +3194,79 @@
           "priceAED": 7.6
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1012",
+          "label": "100 pack/Pack",
+          "shortLabel": "Pack",
+          "eachesPerPack": 1,
+          "priceAED": 8.9,
+          "tiers": [
+            {
+              "minQty": 25,
+              "priceAED": 8.25
+            },
+            {
+              "minQty": 100,
+              "priceAED": 7.6
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1012-25",
+          "label": "25 Packes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 25,
+          "priceAED": 184.3,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 178.77
+            },
+            {
+              "minQty": 10,
+              "priceAED": 173.24
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Pack"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Wound Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "top-seller"
+      ],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1851,6 +3304,54 @@
           "priceAED": 22.9
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1013",
+          "label": "50 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 24.5,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 22.9
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Wound Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1888,6 +3389,50 @@
           "priceAED": 3.85
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1014",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 4.25,
+          "tiers": [
+            {
+              "minQty": 50,
+              "priceAED": 3.85
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Wound Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1929,6 +3474,73 @@
           "priceAED": 3.05
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1015",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 3.6,
+          "tiers": [
+            {
+              "minQty": 24,
+              "priceAED": 3.3
+            },
+            {
+              "minQty": 96,
+              "priceAED": 3.05
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1015-24",
+          "label": "24 Each/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 24,
+          "priceAED": 71,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 68.87
+            },
+            {
+              "minQty": 10,
+              "priceAED": 66.74
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Tapes & Adhesives"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -1966,6 +3578,54 @@
           "priceAED": 25.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1016",
+          "label": "500 mL/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 27,
+          "tiers": [
+            {
+              "minQty": 12,
+              "priceAED": 25.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "500 mL"
+        },
+        {
+          "label": "Category",
+          "value": "Antiseptics"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2003,6 +3663,73 @@
           "priceAED": 13.75
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1017",
+          "label": "200 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 14.9,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 13.75
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1017-20",
+          "label": "20 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 20,
+          "priceAED": 266.75,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 258.75
+            },
+            {
+              "minQty": 10,
+              "priceAED": 250.74
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "200 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Swabs & Wipes"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2040,6 +3767,50 @@
           "priceAED": 5.95
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1018",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 6.5,
+          "tiers": [
+            {
+              "minQty": 24,
+              "priceAED": 5.95
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Woundline"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Emergency & Rescue"
+        },
+        {
+          "label": "Supplier",
+          "value": "Woundline Medical"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2077,6 +3848,50 @@
           "priceAED": 39.5
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1019",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 42,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 39.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Diagnostics & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2118,6 +3933,56 @@
           "priceAED": 149
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1020",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 165,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 156
+            },
+            {
+              "minQty": 20,
+              "priceAED": 149
+            }
+          ],
+          "outOfStock": true
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Diagnostics & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "back-soon"
+      ],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2154,6 +4019,52 @@
           "minQty": 5,
           "priceAED": 112
         }
+      ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1021",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 118,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 112
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Monitoring & Testing"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "new"
       ],
       "isPlaceholder": true,
       "detailKey": null,
@@ -2192,6 +4103,50 @@
           "priceAED": 129
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1022",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 138,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 129
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Medical"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2229,6 +4184,50 @@
           "priceAED": 165
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1023",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 175,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 165
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Diagnostics & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2266,6 +4265,50 @@
           "priceAED": 20.9
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1024",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 22.5,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 20.9
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Diagnostics & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2303,6 +4346,54 @@
           "priceAED": 84
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1025",
+          "label": "50 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 89,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 84
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Monitoring & Testing"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2340,6 +4431,54 @@
           "priceAED": 43.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1026",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 46,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 43.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Blades & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2377,6 +4516,50 @@
           "priceAED": 54
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1027",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 58,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 54
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Scissors"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2414,6 +4597,50 @@
           "priceAED": 36.5
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1028",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 39,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 36.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Forceps"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2455,6 +4682,77 @@
           "priceAED": 34.2
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1029",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 38.5,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 36
+            },
+            {
+              "minQty": 50,
+              "priceAED": 34.2
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1029-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 331.74,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 321.79
+            },
+            {
+              "minQty": 10,
+              "priceAED": 311.84
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Syringes & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2492,6 +4790,73 @@
           "priceAED": 29
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1030",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 31,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 29
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1030-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 281.3,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 272.86
+            },
+            {
+              "minQty": 10,
+              "priceAED": 264.42
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Needles & Accessories"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2529,6 +4894,54 @@
           "priceAED": 50.5
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1031",
+          "label": "200 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 54,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 50.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "200 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Blood Collection"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2566,6 +4979,50 @@
           "priceAED": 11.9
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1032",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 12.9,
+          "tiers": [
+            {
+              "minQty": 25,
+              "priceAED": 11.9
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "I.V Administration"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2603,6 +5060,50 @@
           "priceAED": 8.6
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1033",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 9.4,
+          "tiers": [
+            {
+              "minQty": 25,
+              "priceAED": 8.6
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Respiratory Management"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2640,6 +5141,50 @@
           "priceAED": 15.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1034",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 16.8,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 15.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Aerosol Masks"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2681,6 +5226,73 @@
           "priceAED": 22.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1035",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 26,
+          "tiers": [
+            {
+              "minQty": 12,
+              "priceAED": 24
+            },
+            {
+              "minQty": 48,
+              "priceAED": 22.5
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1035-12",
+          "label": "12 Each/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 12,
+          "priceAED": 261.9,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 254.04
+            },
+            {
+              "minQty": 10,
+              "priceAED": 246.19
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Clinical Supplies"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2718,6 +5330,50 @@
           "priceAED": 41
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1036",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 44,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 41
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medcore"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Hollow Ware"
+        },
+        {
+          "label": "Supplier",
+          "value": "Medcore Instruments"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2755,6 +5411,54 @@
           "priceAED": 31
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1037",
+          "label": "5 L/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 33.5,
+          "tiers": [
+            {
+              "minQty": 12,
+              "priceAED": 31
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "5 L"
+        },
+        {
+          "label": "Category",
+          "value": "Waste Disposal"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2792,6 +5496,54 @@
           "priceAED": 39.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1038",
+          "label": "200 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 42,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 39.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "200 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Sterilisation"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2829,6 +5581,50 @@
           "priceAED": 10.6
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1039",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 11.5,
+          "tiers": [
+            {
+              "minQty": 24,
+              "priceAED": 10.6
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Medisafe"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Sterilisation"
+        },
+        {
+          "label": "Supplier",
+          "value": "AussieMed Distribution"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2866,6 +5662,73 @@
           "priceAED": 27
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1040",
+          "label": "500 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 29,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 27
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1040-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 261.9,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 254.04
+            },
+            {
+              "minQty": 10,
+              "priceAED": 246.19
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Dentiva"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "500 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Dental Bibs & Chains"
+        },
+        {
+          "label": "Supplier",
+          "value": "Dentiva Dental Supply"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2903,6 +5766,54 @@
           "priceAED": 16.2
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1041",
+          "label": "100 pack/Bag",
+          "shortLabel": "Bag",
+          "eachesPerPack": 1,
+          "priceAED": 17.5,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 16.2
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Dentiva"
+        },
+        {
+          "label": "Unit",
+          "value": "Bag"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Evacuation"
+        },
+        {
+          "label": "Supplier",
+          "value": "Dentiva Dental Supply"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2940,6 +5851,54 @@
           "priceAED": 64
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1042",
+          "label": "200 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 68,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 64
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Dentiva"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "200 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Finishing & Polishing"
+        },
+        {
+          "label": "Supplier",
+          "value": "Dentiva Dental Supply"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -2977,6 +5936,54 @@
           "priceAED": 50.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1043",
+          "label": "500 g/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 54,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 50.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Dentiva"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "500 g"
+        },
+        {
+          "label": "Category",
+          "value": "Impression Materials"
+        },
+        {
+          "label": "Supplier",
+          "value": "Dentiva Dental Supply"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -3013,6 +6020,56 @@
           "minQty": 5,
           "priceAED": 175
         }
+      ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1044",
+          "label": "50 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 185,
+          "tiers": [
+            {
+              "minQty": 5,
+              "priceAED": 175
+            }
+          ],
+          "outOfStock": true
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Dentiva"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Preventive Oral Care"
+        },
+        {
+          "label": "Supplier",
+          "value": "Dentiva Dental Supply"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "back-soon"
       ],
       "isPlaceholder": true,
       "detailKey": null,
@@ -3051,6 +6108,73 @@
           "priceAED": 45
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1045",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 48,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 45
+            }
+          ],
+          "outOfStock": false
+        },
+        {
+          "id": "outer",
+          "sku": "PL-1045-10",
+          "label": "10 Boxes/Carton",
+          "shortLabel": "Carton",
+          "eachesPerPack": 10,
+          "priceAED": 436.5,
+          "tiers": [
+            {
+              "minQty": 4,
+              "priceAED": 423.41
+            },
+            {
+              "minQty": 10,
+              "priceAED": 410.31
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Labworks"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Plasticware"
+        },
+        {
+          "label": "Supplier",
+          "value": "Labworks Scientific"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -3088,6 +6212,54 @@
           "priceAED": 20.5
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1046",
+          "label": "50 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 22,
+          "tiers": [
+            {
+              "minQty": 20,
+              "priceAED": 20.5
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Labworks"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "50 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Labware"
+        },
+        {
+          "label": "Supplier",
+          "value": "Labworks Scientific"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -3125,6 +6297,54 @@
           "priceAED": 17.4
         }
       ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1047",
+          "label": "250 mL/Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 18.9,
+          "tiers": [
+            {
+              "minQty": 12,
+              "priceAED": 17.4
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Labworks"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Pack size",
+          "value": "250 mL"
+        },
+        {
+          "label": "Category",
+          "value": "Glassware"
+        },
+        {
+          "label": "Supplier",
+          "value": "Labworks Scientific"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -3162,6 +6382,54 @@
           "priceAED": 37
         }
       ],
+      "taxClass": "zero-rated",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1048",
+          "label": "100 pack/Box",
+          "shortLabel": "Box",
+          "eachesPerPack": 1,
+          "priceAED": 39.5,
+          "tiers": [
+            {
+              "minQty": 10,
+              "priceAED": 37
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Labworks"
+        },
+        {
+          "label": "Unit",
+          "value": "Box"
+        },
+        {
+          "label": "Pack size",
+          "value": "100 pack"
+        },
+        {
+          "label": "Category",
+          "value": "Lab Safety"
+        },
+        {
+          "label": "Supplier",
+          "value": "Labworks Scientific"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Zero-rated"
+        }
+      ],
+      "documents": [],
+      "badges": [],
       "isPlaceholder": true,
       "detailKey": null,
       "sourceNote": null
@@ -3198,6 +6466,52 @@
           "minQty": 3,
           "priceAED": 399
         }
+      ],
+      "taxClass": "standard",
+      "packs": [
+        {
+          "id": "base",
+          "sku": "PL-1049",
+          "label": "Each",
+          "shortLabel": "Each",
+          "eachesPerPack": 1,
+          "priceAED": 420,
+          "tiers": [
+            {
+              "minQty": 3,
+              "priceAED": 399
+            }
+          ],
+          "outOfStock": false
+        }
+      ],
+      "defaultPackId": "base",
+      "variants": [],
+      "attributes": [
+        {
+          "label": "Brand",
+          "value": "Labworks"
+        },
+        {
+          "label": "Unit",
+          "value": "Each"
+        },
+        {
+          "label": "Category",
+          "value": "Laboratory Equipment and Apparatus"
+        },
+        {
+          "label": "Supplier",
+          "value": "Labworks Scientific"
+        },
+        {
+          "label": "VAT treatment",
+          "value": "Standard rated (5%)"
+        }
+      ],
+      "documents": [],
+      "badges": [
+        "new"
       ],
       "isPlaceholder": true,
       "detailKey": null,

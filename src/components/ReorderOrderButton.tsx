@@ -26,7 +26,7 @@ export function ReorderOrderButton({
         unavailable += 1;
         continue;
       }
-      addToCart(line.productId, line.qty);
+      addToCart(line.productId, product.defaultPackId, line.qty);
     }
 
     if (unavailable > 0) {

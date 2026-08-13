@@ -12,8 +12,13 @@ import {
   savingPercent,
   totalsFor,
   unitPriceFor,
+  vatRateFor,
+  displayPrice,
+  packFor,
+  pricePerEach,
+  type PriceableLine,
 } from "./money.ts";
-import type { PriceTier } from "./types.ts";
+import type { Pack, PriceTier, Product } from "./types.ts";
 
 /** Omron, after normalisation: base 186.99, one break at 3+. */
 const OMRON: PriceTier[] = [{ minQty: 3, priceAED: 179.99 }];
@@ -142,9 +147,9 @@ describe("line totals", () => {
 });
 
 describe("cart totals", () => {
-  const lines = [
-    { basePriceAED: 186.99, tiers: OMRON, qty: 4 },
-    { basePriceAED: 34.5, tiers: [{ minQty: 10, priceAED: 32.9 }], qty: 12 },
+  const lines: PriceableLine[] = [
+    { basePriceAED: 186.99, tiers: OMRON, qty: 4, taxClass: "standard" },
+    { basePriceAED: 34.5, tiers: [{ minQty: 10, priceAED: 32.9 }], qty: 12, taxClass: "standard" },
   ];
 
   it("matches the totals verified end to end in the browser", () => {
@@ -157,7 +162,7 @@ describe("cart totals", () => {
 
   it("applies VAT at 5% of the subtotal", () => {
     assert.equal(VAT_RATE, 0.05);
-    const totals = totalsFor([{ basePriceAED: 100, tiers: [], qty: 1 }]);
+    const totals = totalsFor([{ basePriceAED: 100, tiers: [], qty: 1, taxClass: "standard" }]);
     assert.equal(totals.vatAED, 5);
     assert.equal(totals.totalAED, 105);
   });
@@ -177,12 +182,85 @@ describe("cart totals", () => {
       vatAED: 0,
       totalAED: 0,
       itemCount: 0,
+      zeroRatedAED: 0,
     });
   });
 
   it("counts items as whole units", () => {
-    const totals = totalsFor([{ basePriceAED: 10, tiers: [], qty: 2.8 }]);
+    const totals = totalsFor([{ basePriceAED: 10, tiers: [], qty: 2.8, taxClass: "standard" }]);
     assert.equal(totals.itemCount, 2);
+  });
+});
+
+describe("VAT treatment", () => {
+  it("charges nothing on a zero-rated line", () => {
+    assert.equal(vatRateFor("zero-rated"), 0);
+    assert.equal(vatRateFor("standard"), 0.05);
+
+    const totals = totalsFor([
+      { basePriceAED: 100, tiers: [], qty: 1, taxClass: "zero-rated" },
+    ]);
+    assert.equal(totals.subtotalAED, 100);
+    assert.equal(totals.vatAED, 0);
+    assert.equal(totals.totalAED, 100);
+    assert.equal(totals.zeroRatedAED, 100);
+  });
+
+  it("charges VAT only on the standard-rated part of a mixed cart", () => {
+    const totals = totalsFor([
+      { basePriceAED: 100, tiers: [], qty: 1, taxClass: "zero-rated" },
+      { basePriceAED: 200, tiers: [], qty: 1, taxClass: "standard" },
+    ]);
+    assert.equal(totals.subtotalAED, 300);
+    assert.equal(totals.vatAED, 10); // 5% of 200 only, not of 300
+    assert.equal(totals.totalAED, 310);
+    assert.equal(totals.zeroRatedAED, 100);
+  });
+
+  it("shows a zero-rated price unchanged when the buyer switches to inc. VAT", () => {
+    assert.equal(displayPrice(100, "zero-rated", true), 100);
+    assert.equal(displayPrice(100, "zero-rated", false), 100);
+    assert.equal(displayPrice(100, "standard", true), 105);
+    assert.equal(displayPrice(100, "standard", false), 100);
+  });
+
+  it("rounds the inc-VAT price to the cent", () => {
+    assert.equal(displayPrice(34.5, "standard", true), 36.23); // 36.225
+    assert.equal(displayPrice(11.77, "standard", true), 12.36);
+  });
+});
+
+describe("packs", () => {
+  const box: Pack = {
+    id: "base", sku: "PL-1", label: "100 Pieces/Box", shortLabel: "Box",
+    eachesPerPack: 1, priceAED: 34.5,
+    tiers: [{ minQty: 10, priceAED: 32.9 }], outOfStock: false,
+  };
+  const carton: Pack = {
+    id: "outer", sku: "PL-1-10", label: "10 Boxes/Carton", shortLabel: "Carton",
+    eachesPerPack: 10, priceAED: 295.85, tiers: [], outOfStock: false,
+  };
+  const product = {
+    packs: [box, carton], defaultPackId: "base",
+  } as unknown as Product;
+
+  it("resolves the requested pack", () => {
+    assert.equal(packFor(product, "outer").id, "outer");
+    assert.equal(packFor(product, "base").id, "base");
+  });
+
+  it("falls back to the default for an unknown pack id", () => {
+    // A stale cart entry must not crash or silently price the wrong unit.
+    assert.equal(packFor(product, "nope").id, "base");
+    assert.equal(packFor(product, undefined).id, "base");
+  });
+
+  it("computes a comparable per-unit price across pack sizes", () => {
+    assert.equal(pricePerEach(box, 1), 34.5);
+    // The carton must genuinely beat buying its contents separately, or there
+    // is no reason for a trade buyer to order one.
+    assert.equal(pricePerEach(carton, 1), 29.59);
+    assert.ok(pricePerEach(carton, 1) < pricePerEach(box, 10));
   });
 });
 

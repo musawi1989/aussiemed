@@ -67,7 +67,7 @@ function ReorderRow({ entry }: { entry: ReorderEntry }) {
               <button
                 type="button"
                 onClick={() => {
-                  addToCart(product.id, qty);
+                  addToCart(product.id, product.defaultPackId, qty);
                   setAdded(true);
                   window.setTimeout(() => setAdded(false), 1600);
                 }}

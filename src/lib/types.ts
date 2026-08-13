@@ -18,6 +18,55 @@ export type PriceTier = {
   priceAED: number;
 };
 
+/**
+ * A purchasable unit of measure. The same product is commonly sold both by the
+ * box and by the carton at different prices, so the pack — not the product —
+ * is what a buyer actually adds to their cart.
+ */
+export type Pack = {
+  /** Stable id, unique within the product. Also the SKU suffix. */
+  id: string;
+  sku: string;
+  /** Full label, e.g. "100 Pieces/Box" or "10 Boxes/Carton". */
+  label: string;
+  /** Short label shown beside Add to cart, e.g. "Box". */
+  shortLabel: string;
+  /** How many base units this pack contains — used for per-unit comparison. */
+  eachesPerPack: number;
+  priceAED: number;
+  tiers: PriceTier[];
+  outOfStock: boolean;
+};
+
+/**
+ * A variant axis such as Size or Colour. Options that are unavailable stay
+ * visible but disabled, so a buyer can see the range exists.
+ */
+export type VariantAxis = {
+  name: string;
+  /** The value this particular product represents. */
+  selected: string;
+  options: { value: string; available: boolean }[];
+};
+
+export type SpecAttribute = {
+  label: string;
+  value: string;
+};
+
+export type ProductDocument = {
+  label: string;
+  href: string;
+};
+
+/**
+ * VAT treatment. Not every medical line is standard-rated, and applying 5% to
+ * a zero-rated product overcharges the customer on a document they keep.
+ */
+export type TaxClass = "standard" | "zero-rated";
+
+export type ProductBadge = "top-seller" | "new" | "back-soon" | "clearance";
+
 export type Product = {
   id: number;
   skuId: number;
@@ -28,6 +77,7 @@ export type Product = {
   description: string | null;
   categoryId: number | null;
   categoryPath: CategoryRef[];
+  /** Mirrors the default pack, so listings have one price without resolving packs. */
   priceAED: number;
   unit: string;
   packSize: string | null;
@@ -35,6 +85,13 @@ export type Product = {
   outOfStock: boolean;
   images: string[];
   tiers: PriceTier[];
+  taxClass: TaxClass;
+  packs: Pack[];
+  defaultPackId: string;
+  variants: VariantAxis[];
+  attributes: SpecAttribute[];
+  documents: ProductDocument[];
+  badges: ProductBadge[];
   /** True for seed data invented during the rebuild. Never ship these. */
   isPlaceholder: boolean;
   detailKey: string | null;

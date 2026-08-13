@@ -80,6 +80,72 @@ check(
   badTierOrder && `${badTierOrder.name}: ${JSON.stringify(badTierOrder.tiers)}`
 );
 
+/* --- packs and VAT ------------------------------------------------ */
+
+const badTax = catalog.products.find(
+  (p) => !["standard", "zero-rated"].includes(p.taxClass)
+);
+check(
+  "every product has a valid VAT treatment",
+  badTax === undefined,
+  badTax && `${badTax.name} -> ${badTax.taxClass}`
+);
+
+const noPack = catalog.products.find((p) => !p.packs || p.packs.length === 0);
+check(
+  "every product has at least one purchasable pack",
+  noPack === undefined,
+  noPack && noPack.name
+);
+
+const badDefault = catalog.products.find(
+  (p) => !p.packs.some((pack) => pack.id === p.defaultPackId)
+);
+check(
+  "the default pack exists on every product",
+  badDefault === undefined,
+  badDefault && `${badDefault.name} -> ${badDefault.defaultPackId}`
+);
+
+// The listing price is mirrored from the default pack for speed. If the two
+// drift, a card advertises one price and the buy box charges another.
+const priceDrift = catalog.products.find((p) => {
+  const def = p.packs.find((pack) => pack.id === p.defaultPackId);
+  return !def || def.priceAED !== p.priceAED;
+});
+check(
+  "listing price matches the default pack price",
+  priceDrift === undefined,
+  priceDrift && priceDrift.name
+);
+
+const dupPackSku = catalog.products.find((p) => {
+  const skus = p.packs.map((pack) => pack.sku);
+  return new Set(skus).size !== skus.length;
+});
+check(
+  "pack SKUs are unique within a product",
+  dupPackSku === undefined,
+  dupPackSku && dupPackSku.name
+);
+
+// An outer that is not cheaper per unit than its contents has no reason to
+// exist, and a trade buyer will notice immediately.
+const badOuter = catalog.products
+  .filter((p) => p.packs.length > 1)
+  .find((p) => {
+    const [base, outer] = p.packs;
+    const bestBase = base.tiers.length
+      ? base.tiers[base.tiers.length - 1].priceAED
+      : base.priceAED;
+    return outer.priceAED / outer.eachesPerPack >= bestBase;
+  });
+check(
+  "buying the outer beats buying its contents separately",
+  badOuter === undefined,
+  badOuter && badOuter.name
+);
+
 /* --- categories --------------------------------------------------- */
 
 const categoryIds = new Set();

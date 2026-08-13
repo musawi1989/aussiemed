@@ -70,7 +70,7 @@ export function QuoteView() {
   const indicative = round2(
     quoteLines.reduce(
       (sum, line) =>
-        sum + lineTotal(line.product.priceAED, line.product.tiers, line.qty),
+        sum + lineTotal(line.pack.priceAED, line.pack.tiers, line.qty),
       0
     )
   );
@@ -82,7 +82,7 @@ export function QuoteView() {
         <ul className="space-y-3">
           {quoteLines.map((line) => (
             <li
-              key={line.productId}
+              key={`${line.productId}:${line.packId}`}
               className="rounded-panel border border-border-base bg-surface p-3 shadow-card"
             >
               <div className="flex gap-4">
@@ -115,7 +115,7 @@ export function QuoteView() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeFromQuote(line.productId)}
+                      onClick={() => removeFromQuote(line.productId, line.packId)}
                       className="shrink-0 rounded-card px-2 py-1 text-xs text-text-muted transition-colors hover:bg-danger-soft hover:text-danger"
                     >
                       Remove
@@ -125,17 +125,13 @@ export function QuoteView() {
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <QtyInput
                       value={line.qty}
-                      onChange={(qty) => setQuoteQty(line.productId, qty)}
+                      onChange={(qty) => setQuoteQty(line.productId, line.packId, qty)}
                       size="sm"
                     />
                     <p className="text-xs text-text-muted tnum">
                       Listed at{" "}
                       {formatAED(
-                        lineTotal(
-                          line.product.priceAED,
-                          line.product.tiers,
-                          line.qty
-                        )
+                        lineTotal(line.pack.priceAED, line.pack.tiers, line.qty)
                       )}
                     </p>
                   </div>

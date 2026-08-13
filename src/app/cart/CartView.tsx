@@ -42,8 +42,8 @@ export function CartView() {
   }
 
   const savings = lines.reduce((sum, line) => {
-    const unit = unitPriceFor(line.product.priceAED, line.product.tiers, line.qty);
-    return sum + (line.product.priceAED - unit) * line.qty;
+    const unit = unitPriceFor(line.pack.priceAED, line.pack.tiers, line.qty);
+    return sum + (line.pack.priceAED - unit) * line.qty;
   }, 0);
 
   return (
@@ -51,22 +51,14 @@ export function CartView() {
       <div>
         <ul className="space-y-3">
           {lines.map((line) => {
-            const unit = unitPriceFor(
-              line.product.priceAED,
-              line.product.tiers,
-              line.qty
-            );
-            const total = lineTotal(
-              line.product.priceAED,
-              line.product.tiers,
-              line.qty
-            );
-            const nextTier = nextTierFor(line.product.tiers, line.qty);
-            const discounted = unit < line.product.priceAED;
+            const unit = unitPriceFor(line.pack.priceAED, line.pack.tiers, line.qty);
+            const total = lineTotal(line.pack.priceAED, line.pack.tiers, line.qty);
+            const nextTier = nextTierFor(line.pack.tiers, line.qty);
+            const discounted = unit < line.pack.priceAED;
 
             return (
               <li
-                key={line.productId}
+                key={`${line.productId}:${line.packId}`}
                 className="rounded-panel border border-border-base bg-surface p-3 shadow-card"
               >
                 <div className="flex gap-4">
@@ -100,14 +92,13 @@ export function CartView() {
                           </Link>
                         </h2>
                         <p className="mt-0.5 text-xs text-text-subtle tnum">
-                          {line.product.sku}
-                          {line.product.packSize ? ` · ${line.product.packSize}` : ""}
+                          {line.pack.sku} &middot; {line.pack.label}
                         </p>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(line.productId)}
+                        onClick={() => removeFromCart(line.productId, line.packId)}
                         className="shrink-0 rounded-card px-2 py-1 text-xs text-text-muted transition-colors hover:bg-danger-soft hover:text-danger"
                       >
                         Remove
@@ -117,17 +108,17 @@ export function CartView() {
                     <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
                       <QtyInput
                         value={line.qty}
-                        onChange={(qty) => setQty(line.productId, qty)}
+                        onChange={(qty) => setQty(line.productId, line.packId, qty)}
                         size="sm"
                       />
 
                       <div className="text-right">
                         <p className="text-xs text-text-muted tnum">
-                          {formatAED(unit)} per {line.product.unit.toLowerCase()}
+                          {formatAED(unit)} per {line.pack.shortLabel.toLowerCase()}
                           {discounted && (
                             <span className="ml-1.5 font-medium text-accent">
                               &minus;
-                              {savingPercent(line.product.priceAED, unit)}%
+                              {savingPercent(line.pack.priceAED, unit)}%
                             </span>
                           )}
                         </p>
@@ -187,6 +178,15 @@ export function CartView() {
                 <dt className="text-accent">Volume savings</dt>
                 <dd className="font-medium tnum text-accent">
                   &minus;{formatAED(savings)}
+                </dd>
+              </div>
+            )}
+
+            {totals.zeroRatedAED > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-success">Of which VAT free</dt>
+                <dd className="font-medium tnum text-success">
+                  {formatAED(totals.zeroRatedAED)}
                 </dd>
               </div>
             )}

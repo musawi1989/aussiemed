@@ -88,6 +88,8 @@ export function Header({ departments }: { departments: Department[] }) {
             Business portal
           </Link>
 
+          <VatToggle />
+
           <span className="hidden items-center gap-1 text-sm font-semibold text-text sm:flex">
             AED
           </span>
@@ -217,6 +219,45 @@ function NavLink({
       {/* The theme marks the current section with a short red underline. */}
       <span className="absolute inset-x-5 bottom-0 h-[3px] scale-x-0 bg-red transition-transform group-hover:scale-x-100 lg:inset-x-6" />
     </Link>
+  );
+}
+
+/**
+ * Ex/Inc VAT switch. Procurement compares ex-VAT, the person approving the
+ * invoice reads inc-VAT — so the same buyer needs both during one order. The
+ * preference persists per browser.
+ */
+function VatToggle() {
+  const { includeVat, setIncludeVat, ready } = useStore();
+
+  return (
+    <div
+      role="group"
+      aria-label="Price display"
+      className="hidden items-center rounded-card border border-border-strong text-xs font-bold sm:flex"
+    >
+      {[
+        { label: "Ex. VAT", value: false },
+        { label: "Inc. VAT", value: true },
+      ].map((option) => {
+        const active = ready && includeVat === option.value;
+        return (
+          <button
+            key={option.label}
+            type="button"
+            onClick={() => setIncludeVat(option.value)}
+            aria-pressed={active}
+            className={`px-2.5 py-1.5 transition-colors first:rounded-l-card last:rounded-r-card ${
+              active
+                ? "bg-navy text-on-navy"
+                : "bg-surface text-text-muted hover:text-navy"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

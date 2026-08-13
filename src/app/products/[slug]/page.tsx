@@ -149,35 +149,64 @@ export default async function ProductPage({ params }: { params: Params }) {
               {product.name}
             </h1>
 
-            <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-border-base py-4 text-sm sm:grid-cols-4">
-              <div>
-                <dt className="text-text-subtle">SKU</dt>
-                <dd className="mt-0.5 font-medium tnum text-text">{product.sku}</dd>
-              </div>
-              <div>
-                <dt className="text-text-subtle">Unit</dt>
-                <dd className="mt-0.5 font-medium text-text">{product.unit}</dd>
-              </div>
-              {product.packSize && (
-                <div>
-                  <dt className="text-text-subtle">Pack size</dt>
-                  <dd className="mt-0.5 font-medium text-text">{product.packSize}</dd>
-                </div>
-              )}
-              {category && (
-                <div>
-                  <dt className="text-text-subtle">Category</dt>
-                  <dd className="mt-0.5 font-medium text-text">{category.name}</dd>
-                </div>
-              )}
-            </dl>
+            <p className="mt-2 text-sm font-semibold text-text-subtle tnum">
+              Item No: {product.sku}
+            </p>
 
             {product.description && (
-              <div className="mt-5">
-                <h2 className="text-sm font-semibold text-text">Description</h2>
+              <div className="mt-6 border-t border-border-base pt-5">
+                <h2 className="text-base font-bold text-text">Description</h2>
                 <p className="mt-2 max-w-prose leading-relaxed text-text-muted">
                   {product.description}
                 </p>
+              </div>
+            )}
+
+            {/* Structured specs. Trade buyers check standards, materials and
+                pack sizes before ordering — and these become filters later. */}
+            {product.attributes.length > 0 && (
+              <div className="mt-6 border-t border-border-base pt-5">
+                <h2 className="text-base font-bold text-text">Details</h2>
+                <dl className="mt-3 overflow-hidden rounded-card border border-border-base">
+                  {product.attributes.map((attr, i) => (
+                    <div
+                      key={attr.label}
+                      className={`flex gap-4 px-4 py-2.5 text-sm ${
+                        i % 2 === 0 ? "bg-surface-sunken" : "bg-surface"
+                      }`}
+                    >
+                      <dt className="w-40 shrink-0 font-semibold text-text-muted">
+                        {attr.label}
+                      </dt>
+                      <dd className="text-text">{attr.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+
+            {/* Safety data sheets and spec sheets. For laboratory and medical
+                buyers an SDS is frequently a compliance requirement, not a
+                nicety — the section stays hidden until real files exist. */}
+            {product.documents.length > 0 && (
+              <div className="mt-6 border-t border-border-base pt-5">
+                <h2 className="text-base font-bold text-text">Documents</h2>
+                <ul className="mt-3 space-y-2">
+                  {product.documents.map((doc) => (
+                    <li key={doc.href}>
+                      <a
+                        href={doc.href}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-navy hover:underline"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                          <path d="M6 3h8l4 4v14H6z" />
+                          <path d="M14 3v4h4" />
+                        </svg>
+                        {doc.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

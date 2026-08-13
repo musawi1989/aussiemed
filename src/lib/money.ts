@@ -1,4 +1,4 @@
-import type { PriceTier } from "./types";
+import type { Pack, PriceTier, Product, TaxClass } from "./types";
 
 /**
  * Currency rules, in one place so they cannot drift.
@@ -72,29 +72,81 @@ export function lineTotal(
   return round2(unitPriceFor(basePriceAED, tiers, qty) * normaliseQty(qty));
 }
 
+/**
+ * VAT rate for a line. A defined list of medical supplies is zero-rated in the
+ * UAE, and charging 5% on those overstates a tax document the customer keeps.
+ */
+export function vatRateFor(taxClass: TaxClass): number {
+  return taxClass === "zero-rated" ? 0 : VAT_RATE;
+}
+
 export type CartTotals = {
   subtotalAED: number;
   vatAED: number;
   totalAED: number;
   itemCount: number;
+  /** Portion of the subtotal that attracted no VAT. */
+  zeroRatedAED: number;
 };
 
-export function totalsFor(
-  lines: { basePriceAED: number; tiers: PriceTier[]; qty: number }[]
-): CartTotals {
-  const subtotal = round2(
-    lines.reduce(
-      (sum, line) => sum + lineTotal(line.basePriceAED, line.tiers, line.qty),
-      0
-    )
-  );
-  const vat = round2(subtotal * VAT_RATE);
+export type PriceableLine = {
+  basePriceAED: number;
+  tiers: PriceTier[];
+  qty: number;
+  taxClass: TaxClass;
+};
+
+export function totalsFor(lines: PriceableLine[]): CartTotals {
+  let subtotal = 0;
+  let vat = 0;
+  let zeroRated = 0;
+
+  // VAT is accumulated per line and rounded once at the end. Rounding each
+  // line's VAT before summing drifts against the per-supplier invoice split.
+  for (const line of lines) {
+    const net = lineTotal(line.basePriceAED, line.tiers, line.qty);
+    subtotal += net;
+    vat += net * vatRateFor(line.taxClass);
+    if (line.taxClass === "zero-rated") zeroRated += net;
+  }
+
+  const subtotalR = round2(subtotal);
+  const vatR = round2(vat);
+
   return {
-    subtotalAED: subtotal,
-    vatAED: vat,
-    totalAED: round2(subtotal + vat),
+    subtotalAED: subtotalR,
+    vatAED: vatR,
+    totalAED: round2(subtotalR + vatR),
     itemCount: lines.reduce((sum, line) => sum + normaliseQty(line.qty), 0),
+    zeroRatedAED: round2(zeroRated),
   };
+}
+
+/** Resolves the pack a buyer selected, falling back to the product default. */
+export function packFor(product: Product, packId?: string): Pack {
+  return (
+    product.packs.find((p) => p.id === packId) ??
+    product.packs.find((p) => p.id === product.defaultPackId) ??
+    product.packs[0]
+  );
+}
+
+/**
+ * Price shown to the buyer, honouring their Ex/Inc VAT preference. Trade
+ * buyers compare ex-VAT; the person approving the invoice reads inc-VAT.
+ */
+export function displayPrice(
+  netAED: number,
+  taxClass: TaxClass,
+  includeVat: boolean
+): number {
+  return includeVat ? round2(netAED * (1 + vatRateFor(taxClass))) : round2(netAED);
+}
+
+/** Per-base-unit price, so a box and a carton can be compared honestly. */
+export function pricePerEach(pack: Pack, qty = 1): number {
+  const each = pack.eachesPerPack > 0 ? pack.eachesPerPack : 1;
+  return round2(unitPriceFor(pack.priceAED, pack.tiers, qty) / each);
 }
 
 /** Percentage saved against the base price, for tier badges. */
