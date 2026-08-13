@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -8,242 +9,249 @@ import { formatAED } from "@/lib/money";
 import { useStore } from "@/lib/store";
 import type { Department } from "@/lib/types";
 
+/**
+ * Mirrors the live AussieMed header: a white utility bar (logo, scoped search,
+ * business portal, currency, account, badges) sitting above a navy nav bar with
+ * the red "Browse All Category" block on the left.
+ */
+
+const MAIN_NAV = [
+  { label: "Home", href: "/" },
+  { label: "Product Range", href: "/products" },
+  { label: "About Us", href: "/about" },
+  { label: "Get Bulk Prices", href: "/bulk-buy" },
+  { label: "Contact Us", href: "/contact" },
+];
+
 export function Header({ departments }: { departments: Department[] }) {
   const { totals, wishlist, quoteLines, ready } = useStore();
-  const [openDept, setOpenDept] = useState<number | null>(null);
+  const [browseOpen, setBrowseOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
-  const navRef = useRef<HTMLDivElement>(null);
+  const browseRef = useRef<HTMLDivElement>(null);
 
-  // Close the department flyout on outside click or Escape.
   useEffect(() => {
-    if (openDept === null) return;
+    if (!browseOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenDept(null);
+      if (browseRef.current && !browseRef.current.contains(e.target as Node)) {
+        setBrowseOpen(false);
       }
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenDept(null);
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setBrowseOpen(false);
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("mousedown", onClick);
       document.removeEventListener("keydown", onKey);
     };
-  }, [openDept]);
+  }, [browseOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-base bg-surface">
-      {/* Trade strip */}
-      <div className="border-b border-border-base bg-surface-sunken">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs text-text-muted">
-          <p>Trade supply for clinics, laboratories and aged care across the UAE</p>
-          <p className="hidden sm:block">
-            All prices in AED, excluding 5% VAT
-          </p>
-        </div>
-      </div>
-
-      {/* Wraps on small screens so the search box drops to its own full-width
-          row rather than disappearing — search is the primary way a trade buyer
-          finds a known SKU. */}
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
+    <header className="sticky top-0 z-40 bg-surface shadow-card">
+      {/* ---------- utility bar ---------- */}
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3">
         <button
           type="button"
           onClick={() => setMobileNav((v) => !v)}
-          aria-label="Toggle category menu"
+          aria-label="Toggle menu"
           aria-expanded={mobileNav}
-          className="-ml-1 rounded-card p-2 text-text-muted hover:bg-surface-hover lg:hidden"
+          className="-ml-1 rounded-card p-2 text-navy hover:bg-surface-hover lg:hidden"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
 
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-card bg-brand text-on-brand">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2}>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-          <span className="text-lg font-semibold tracking-tight text-text">
-            AussieMed
-          </span>
+        <Link href="/" className="shrink-0" aria-label="AussieMed home">
+          <Image
+            src="/brand/logo.png"
+            alt="AussieMed"
+            width={220}
+            height={82}
+            priority
+            className="h-14 w-auto object-contain sm:h-16"
+          />
         </Link>
 
-        {/* Only the search box needs a Suspense boundary (it reads
-            useSearchParams). Keeping the boundary this small means the rest of
-            the header hydrates in the normal pass — when the whole header was
-            suspended, the store's mount effect landed first and the cart badge
-            hydrated against server HTML that had no badge. */}
         <Suspense
           fallback={
-            <div className="order-last h-10 w-full min-w-0 md:order-none md:w-auto md:flex-1" />
+            <div className="order-last h-11 w-full min-w-0 md:order-none md:w-auto md:flex-1" />
           }
         >
-          <SearchBox />
+          <SearchBox departments={departments} />
         </Suspense>
 
-        <div className="ml-auto flex items-center gap-1">
-          {/* Account stays visible on mobile — reorder-first is the primary
-              path for a returning buyer. Quote and wishlist fall back to the
-              footer on the narrowest screens. */}
+        <div className="ml-auto flex items-center gap-3 sm:gap-4">
           <Link
             href="/account"
-            className="rounded-card p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
-            aria-label="Your account"
+            className="hidden shrink-0 rounded-card bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover lg:block"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
+            Business portal
+          </Link>
+
+          <span className="hidden items-center gap-1 text-sm font-semibold text-text sm:flex">
+            AED
+          </span>
+
+          <Link
+            href="/account"
+            className="hidden items-center gap-1.5 text-sm font-semibold text-text transition-colors hover:text-navy sm:flex"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7}>
               <circle cx="12" cy="8.5" r="3.7" />
               <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
             </svg>
+            Account
           </Link>
 
-          <Link
-            href="/quote"
-            className="relative hidden rounded-card p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text sm:block"
-            aria-label="Quote request"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M6 3h8l4 4v14H6z" />
-              <path d="M14 3v4h4M9 12h6M9 16h4" />
-            </svg>
-            {ready && quoteLines.length > 0 && (
-              <Badge count={quoteLines.length} />
-            )}
-          </Link>
+          <IconLink href="/quote" label="Quote request" count={ready ? quoteLines.length : 0}>
+            <path d="M6 3h8l4 4v14H6z" />
+            <path d="M14 3v4h4M9 12h6M9 16h4" />
+          </IconLink>
 
-          <Link
-            href="/wishlist"
-            className="relative hidden rounded-card p-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text sm:block"
-            aria-label="Wishlist"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M12 20.5 4.2 12.9a4.7 4.7 0 0 1 0-6.7 4.8 4.8 0 0 1 6.8 0l1 1 1-1a4.8 4.8 0 0 1 6.8 0 4.7 4.7 0 0 1 0 6.7Z" />
-            </svg>
-            {ready && wishlist.length > 0 && <Badge count={wishlist.length} />}
-          </Link>
+          <IconLink href="/wishlist" label="Wishlist" count={ready ? wishlist.length : 0}>
+            <path d="M12 20.5 4.2 12.9a4.7 4.7 0 0 1 0-6.7 4.8 4.8 0 0 1 6.8 0l1 1 1-1a4.8 4.8 0 0 1 6.8 0 4.7 4.7 0 0 1 0 6.7Z" />
+          </IconLink>
 
-          <Link
-            href="/cart"
-            className="relative flex items-center gap-2 rounded-card px-2.5 py-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
-            aria-label="Cart"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M3 4h2.2l2.1 11.2A2 2 0 0 0 9.3 17h8.1a2 2 0 0 0 2-1.6L21 7H6.3" />
-              <circle cx="10" cy="20" r="1.3" />
-              <circle cx="18" cy="20" r="1.3" />
-            </svg>
-            {ready && totals.itemCount > 0 && <Badge count={totals.itemCount} />}
-          </Link>
+          <IconLink href="/cart" label="Cart" count={ready ? totals.itemCount : 0}>
+            <path d="M3 4h2.2l2.1 11.2A2 2 0 0 0 9.3 17h8.1a2 2 0 0 0 2-1.6L21 7H6.3" />
+            <circle cx="10" cy="20" r="1.3" />
+            <circle cx="18" cy="20" r="1.3" />
+          </IconLink>
         </div>
       </div>
 
-      {/* Department bar */}
-      <div
-        ref={navRef}
-        className={`border-t border-border-base ${mobileNav ? "block" : "hidden"} lg:block`}
-      >
-        {/* Eleven department names do not fit on one row at every width. Rather
-            than let them wrap into a ragged three-line block, keep them on a
-            single line and scroll horizontally when space runs out. */}
-        <div className="mx-auto max-w-7xl px-4 lg:overflow-x-auto">
-          <ul className="flex flex-col lg:flex-row lg:items-center lg:gap-0.5 lg:whitespace-nowrap">
-            <li>
-              <Link
-                href="/products"
-                className="block py-2.5 text-sm font-medium text-text hover:text-brand lg:px-2.5"
-              >
-                All products
-              </Link>
-            </li>
-            {departments.map((dept) => (
-              <li key={dept.id} className="relative">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenDept((cur) => (cur === dept.id ? null : dept.id))
-                  }
-                  aria-expanded={openDept === dept.id}
-                  className={`flex w-full items-center gap-1 py-2.5 text-left text-sm transition-colors hover:text-brand lg:w-auto lg:px-2.5 ${
-                    openDept === dept.id ? "text-brand" : "text-text-muted"
-                  }`}
-                >
-                  {dept.name}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className={`h-3.5 w-3.5 transition-transform ${
-                      openDept === dept.id ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
+      {/* ---------- navy nav bar ---------- */}
+      <div className="bg-navy">
+        <div className="mx-auto flex max-w-[1600px] items-stretch px-0 lg:px-4">
+          <div ref={browseRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setBrowseOpen((v) => !v)}
+              aria-expanded={browseOpen}
+              className="flex h-full items-center gap-2.5 bg-red px-5 py-3.5 text-sm font-bold uppercase tracking-wide text-on-red transition-colors hover:bg-red-hover lg:px-6"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              <span className="hidden sm:inline">Browse All Category</span>
+              <span className="sm:hidden">Categories</span>
+            </button>
 
-                {openDept === dept.id && (
-                  <div className="z-30 w-full rounded-panel border-border-base bg-surface pb-3 lg:absolute lg:left-0 lg:top-full lg:w-80 lg:border lg:p-3 lg:shadow-raised">
+            {browseOpen && (
+              <div className="absolute left-0 top-full z-40 max-h-[70vh] w-[min(92vw,20rem)] overflow-y-auto border border-border-base bg-surface py-1 shadow-raised">
+                {departments.map((dept) => (
+                  <div key={dept.id} className="border-b border-border-base last:border-0">
                     <Link
                       href={`/products?category=${dept.slug}`}
-                      onClick={() => {
-                        setOpenDept(null);
-                        setMobileNav(false);
-                      }}
-                      className="block rounded-card px-2 py-1.5 text-sm font-medium text-brand hover:bg-surface-hover"
+                      onClick={() => setBrowseOpen(false)}
+                      className="block px-4 py-2.5 text-sm font-bold text-text transition-colors hover:bg-navy-soft hover:text-navy"
                     >
-                      All {dept.name}
+                      {dept.name}
                     </Link>
-                    <ul className="mt-1 max-h-80 overflow-y-auto">
-                      {dept.children.map((child) => (
+                    <ul className="pb-1.5">
+                      {dept.children.slice(0, 6).map((child) => (
                         <li key={child.id}>
                           <Link
                             href={`/products?category=${child.slug}`}
-                            onClick={() => {
-                              setOpenDept(null);
-                              setMobileNav(false);
-                            }}
-                            className="block rounded-card px-2 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text"
+                            onClick={() => setBrowseOpen(false)}
+                            className="block px-4 py-1 pl-6 text-sm text-text-muted transition-colors hover:text-red"
                           >
                             {child.name}
                           </Link>
                         </li>
                       ))}
+                      {dept.children.length > 6 && (
+                        <li>
+                          <Link
+                            href={`/products?category=${dept.slug}`}
+                            onClick={() => setBrowseOpen(false)}
+                            className="block px-4 py-1 pl-6 text-xs font-semibold text-navy hover:underline"
+                          >
+                            + {dept.children.length - 6} more
+                          </Link>
+                        </li>
+                      )}
                     </ul>
                   </div>
-                )}
-              </li>
-            ))}
-            <li className="lg:ml-auto">
-              <Link
-                href="/bulk-buy"
-                className="block py-2.5 text-sm font-medium text-accent hover:underline lg:px-3"
-              >
-                Bulk buy enquiry
-              </Link>
-            </li>
-          </ul>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <nav
+            aria-label="Main"
+            className={`${mobileNav ? "block" : "hidden"} w-full lg:ml-auto lg:block lg:w-auto`}
+          >
+            <ul className="flex flex-col lg:flex-row lg:items-stretch">
+              {MAIN_NAV.map((item) => (
+                <li key={item.href}>
+                  <NavLink href={item.href} onNavigate={() => setMobileNav(false)}>
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
     </header>
   );
 }
 
-function Badge({ count }: { count: number }) {
+function NavLink({
+  href,
+  children,
+  onNavigate,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onNavigate: () => void;
+}) {
   return (
-    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold tnum text-on-brand">
-      {count > 99 ? "99+" : count}
-    </span>
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className="group relative flex items-center px-5 py-3.5 text-sm font-bold uppercase tracking-wide text-on-navy/90 transition-colors hover:text-on-navy lg:px-6"
+    >
+      {children}
+      {/* The theme marks the current section with a short red underline. */}
+      <span className="absolute inset-x-5 bottom-0 h-[3px] scale-x-0 bg-red transition-transform group-hover:scale-x-100 lg:inset-x-6" />
+    </Link>
   );
 }
 
-function SearchBox() {
+function IconLink({
+  href,
+  label,
+  count,
+  children,
+}: {
+  href: string;
+  label: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      className="relative shrink-0 text-text transition-colors hover:text-navy"
+    >
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.7}>
+        {children}
+      </svg>
+      <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red px-1 text-[10px] font-bold tnum text-on-red">
+        {count > 99 ? "99+" : count}
+      </span>
+    </Link>
+  );
+}
+
+function SearchBox({ departments }: { departments: Department[] }) {
   const router = useRouter();
   const params = useSearchParams();
   const [term, setTerm] = useState(params.get("q") ?? "");
+  const [scope, setScope] = useState(params.get("category") ?? "");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -252,9 +260,7 @@ function SearchBox() {
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -267,18 +273,21 @@ function SearchBox() {
   };
 
   const submit = () => {
-    const q = term.trim();
     if (highlight >= 0 && matches[highlight]) {
       go(`/products/${matches[highlight].slug}`);
       return;
     }
-    go(q ? `/products?q=${encodeURIComponent(q)}` : "/products");
+    const search = new URLSearchParams();
+    if (term.trim()) search.set("q", term.trim());
+    if (scope) search.set("category", scope);
+    const qs = search.toString();
+    go(qs ? `/products?${qs}` : "/products");
   };
 
   return (
     <div
       ref={boxRef}
-      className="order-last w-full min-w-0 md:order-none md:w-auto md:flex-1"
+      className="order-last w-full min-w-0 md:order-none md:w-auto md:max-w-2xl md:flex-1"
     >
       <form
         role="search"
@@ -287,18 +296,25 @@ function SearchBox() {
           submit();
         }}
       >
-        <div className="relative mx-auto max-w-xl">
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            aria-hidden="true"
+        <div className="relative flex items-stretch rounded-card border border-border-strong bg-surface">
+          {/* Category-scoped search, as on the live site. */}
+          <label className="sr-only" htmlFor="search-scope">
+            Search within
+          </label>
+          <select
+            id="search-scope"
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            className="hidden max-w-[9rem] shrink-0 rounded-l-card border-r border-border-base bg-surface px-3 text-sm text-text-muted sm:block"
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.2-3.2" />
-          </svg>
+            <option value="">All</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.slug}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
+
           <input
             type="search"
             value={term}
@@ -324,10 +340,21 @@ function SearchBox() {
             aria-expanded={matches.length > 0}
             aria-controls="search-suggestions"
             aria-autocomplete="list"
-            placeholder="Search products, brands or SKUs"
+            placeholder="What can we help you find?"
             aria-label="Search products"
-            className="h-10 w-full rounded-card border border-border-base bg-canvas pl-9 pr-3 text-sm text-text placeholder:text-text-subtle focus:border-brand"
+            className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-text placeholder:text-text-subtle"
           />
+
+          <button
+            type="submit"
+            aria-label="Search"
+            className="flex w-12 shrink-0 items-center justify-center rounded-r-card bg-red text-on-red transition-colors hover:bg-red-hover"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.2-3.2" />
+            </svg>
+          </button>
 
           {matches.length > 0 && (
             <ul
@@ -342,11 +369,11 @@ function SearchBox() {
                     onMouseEnter={() => setHighlight(i)}
                     onClick={() => go(`/products/${product.slug}`)}
                     className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${
-                      i === highlight ? "bg-surface-hover" : ""
+                      i === highlight ? "bg-navy-soft" : ""
                     }`}
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-text">
+                      <span className="block truncate font-medium text-text">
                         {product.name}
                       </span>
                       <span className="block truncate text-xs text-text-subtle tnum">
@@ -354,7 +381,7 @@ function SearchBox() {
                         {product.brand ? ` · ${product.brand}` : ""}
                       </span>
                     </span>
-                    <span className="shrink-0 text-xs font-medium tnum text-text-muted">
+                    <span className="shrink-0 text-xs font-bold tnum text-navy">
                       {formatAED(product.priceAED)}
                     </span>
                   </button>
@@ -364,7 +391,7 @@ function SearchBox() {
                 <button
                   type="button"
                   onClick={submit}
-                  className="w-full px-3 py-2 text-left text-sm font-medium text-brand hover:bg-surface-hover"
+                  className="w-full px-3 py-2 text-left text-sm font-bold text-red hover:bg-surface-hover"
                 >
                   See all results for &ldquo;{term.trim()}&rdquo;
                 </button>

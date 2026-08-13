@@ -1,11 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const COLUMNS = [
   {
     title: "Shop",
     links: [
-      { label: "All products", href: "/products" },
-      { label: "Bulk buy enquiry", href: "/bulk-buy" },
+      { label: "Product range", href: "/products" },
+      { label: "Get bulk prices", href: "/bulk-buy" },
       { label: "Quote request", href: "/quote" },
       { label: "Wishlist", href: "/wishlist" },
       { label: "Cart", href: "/cart" },
@@ -14,6 +15,7 @@ const COLUMNS = [
   {
     title: "Your account",
     links: [
+      { label: "Business portal", href: "/account" },
       { label: "Reorder", href: "/account" },
       { label: "Your orders", href: "/account/orders" },
     ],
@@ -22,7 +24,7 @@ const COLUMNS = [
     title: "Company",
     links: [
       { label: "About us", href: "/about" },
-      { label: "Contact", href: "/contact" },
+      { label: "Contact us", href: "/contact" },
       { label: "Order support", href: "/order-support" },
     ],
   },
@@ -37,32 +39,46 @@ const COLUMNS = [
 
 export function Footer() {
   return (
-    <footer className="mt-16 border-t border-border-base bg-surface">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-card bg-brand text-on-brand">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2}>
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </span>
-            <span className="font-semibold tracking-tight text-text">AussieMed</span>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-text-muted">
-            Medical, dental and laboratory supplies for trade buyers. Volume
-            pricing on every line, with one reference number per order.
+    <footer className="mt-20 bg-navy-deep text-white/70">
+      <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="lg:pr-6">
+          {/* The logo lockup is dark-on-light, so it needs a light plate here. */}
+          <span className="inline-flex rounded-card bg-white px-3 py-2">
+            <Image
+              src="/brand/logo.png"
+              alt="AussieMed"
+              width={140}
+              height={52}
+              className="h-10 w-auto object-contain"
+            />
+          </span>
+          <p className="mt-4 text-sm leading-relaxed">
+            One-stop online medical supply partner. From clinics to hospitals,
+            we provide the essentials that keep healthcare moving.
+          </p>
+          <p className="mt-4 text-sm">
+            {/* TODO: confirm the final address — the old site used a
+                misspelled domain. */}
+            <a
+              href="mailto:info@aussiemed.com"
+              className="font-semibold text-white transition-colors hover:text-red"
+            >
+              info@aussiemed.com
+            </a>
           </p>
         </div>
 
         {COLUMNS.map((column) => (
           <div key={column.title}>
-            <h2 className="text-sm font-semibold text-text">{column.title}</h2>
-            <ul className="mt-3 space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-white">
+              {column.title}
+            </h2>
+            <ul className="mt-4 space-y-2.5">
               {column.links.map((link) => (
-                <li key={link.href}>
+                <li key={`${column.title}-${link.label}`}>
                   <Link
                     href={link.href}
-                    className="text-sm text-text-muted transition-colors hover:text-brand"
+                    className="text-sm transition-colors hover:text-red"
                   >
                     {link.label}
                   </Link>
@@ -73,12 +89,10 @@ export function Footer() {
         ))}
       </div>
 
-      <div className="border-t border-border-base">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs text-text-subtle">
-          <p>&copy; {new Date().getFullYear()} AussieMed. All prices in AED.</p>
-          {/* TODO: confirm the final contact address before launch — the old
-              site used a misspelled domain. */}
-          <p>info@aussiemed.com</p>
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs">
+          <p>&copy; {new Date().getFullYear()} AussieMed. All rights reserved.</p>
+          <p>All prices in AED, excluding 5% VAT.</p>
         </div>
       </div>
     </footer>

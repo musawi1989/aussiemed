@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Figtree } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getDepartments } from "@/lib/catalog";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
-const inter = Inter({
+/**
+ * Body typeface. Gilroy Regular/Medium were never delivered with the theme, so
+ * body copy needs a stand-in; Figtree is a close geometric sans. Headings use
+ * real Gilroy (Bold/Black), self-hosted from public/fonts.
+ *
+ * When licensed Gilroy Regular/Medium arrive, add them as @font-face in
+ * globals.css and point --font-body at Gilroy. Nothing else changes.
+ */
+const bodyFont = Figtree({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -22,6 +30,7 @@ export const metadata: Metadata = {
   },
   description:
     "Trade supplier of medical, dental and laboratory consumables and equipment across the UAE, with volume pricing on every line.",
+  icons: { icon: "/brand/favicon.png" },
   robots: {
     // Staging only. Remove before production launch.
     index: false,
@@ -35,7 +44,7 @@ export default function RootLayout({
   const departments = getDepartments();
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={bodyFont.variable}>
       <body className="flex min-h-screen flex-col">
         <StoreProvider>
           <a

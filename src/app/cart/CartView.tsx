@@ -210,7 +210,7 @@ export function CartView() {
 
           <Link
             href="/checkout"
-            className="mt-5 flex h-11 items-center justify-center rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover"
+            className="mt-5 flex h-11 items-center justify-center rounded-card bg-red font-bold text-on-red transition-colors hover:bg-red-hover"
           >
             Proceed to checkout
           </Link>

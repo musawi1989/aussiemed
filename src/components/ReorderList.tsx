@@ -71,7 +71,7 @@ function ReorderRow({ entry }: { entry: ReorderEntry }) {
                   setAdded(true);
                   window.setTimeout(() => setAdded(false), 1600);
                 }}
-                className="h-8 flex-1 whitespace-nowrap rounded-card bg-brand px-2 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
+                className="h-8 flex-1 whitespace-nowrap rounded-card bg-red px-2 text-sm font-bold text-on-red transition-colors hover:bg-red-hover"
               >
                 {added ? "Added" : "Add"}
               </button>

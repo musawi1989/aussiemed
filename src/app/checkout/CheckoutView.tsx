@@ -183,7 +183,7 @@ export function CheckoutView() {
 
           <button
             type="submit"
-            className="mt-5 h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover"
+            className="mt-5 h-11 w-full rounded-card bg-red font-bold text-on-red transition-colors hover:bg-red-hover"
           >
             Place order
           </button>

@@ -94,7 +94,7 @@ export function ProductCard({ product }: { product: Product }) {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="h-9 w-full whitespace-nowrap rounded-card bg-brand px-3 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
+                className="h-9 w-full whitespace-nowrap rounded-card bg-red px-3 text-sm font-bold text-on-red transition-colors hover:bg-red-hover"
               >
                 {added ? "Added" : "Add to cart"}
               </button>

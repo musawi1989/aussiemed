@@ -101,7 +101,7 @@ export function BuyBox({ product }: { product: Product }) {
                 setAdded(true);
                 window.setTimeout(() => setAdded(false), 1800);
               }}
-              className="h-11 flex-1 rounded-card bg-brand px-4 font-medium text-on-brand transition-colors hover:bg-brand-hover"
+              className="h-11 flex-1 rounded-card bg-red px-4 font-bold text-on-red transition-colors hover:bg-red-hover"
             >
               {added ? "Added to cart" : "Add to cart"}
             </button>

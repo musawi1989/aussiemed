@@ -1,81 +1,134 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Design tokens — clinical B2B
+ * Brand typography — Gilroy
  *
- * Light is the primary surface (buyers work in bright rooms, and print/
- * procurement workflows assume it). Dark is a faithful inversion, not a
- * separate design. Every colour is defined on bare :root first so no token
- * exists only inside a media query.
+ * Only Black, Bold and Light exist in the extraction. Gilroy-Medium and
+ * Gilroy-Regular are referenced by the old stylesheet but the files were never
+ * delivered, so the live site already falls back to a generic sans for body
+ * copy. Gilroy is a commercial typeface, so the missing weights need buying or
+ * obtaining from the agency.
+ *
+ * Until then: Gilroy for display type (the part that carries the brand), and a
+ * close geometric sans for body text. Swap --font-body when the real files
+ * arrive — nothing else needs to change.
+ * ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Design tokens
+ *
+ * Colours read from the live site's computed styles, not eyeballed:
+ *   #29387d  brand navy   — main nav bar
+ *   #ea2227  brand red    — CTAs, active nav underline, category button
+ *   #040922  deep navy    — footer
+ *   #f4f5f8  light surface
+ *   #666666  body text    #202020 headings
  * ------------------------------------------------------------------ */
 
 :root {
-  /* Neutrals — cool grey, slightly desaturated for long reading sessions */
-  --canvas: #f4f6f8;
+  --canvas: #ffffff;
   --surface: #ffffff;
-  --surface-sunken: #eef1f4;
-  --surface-hover: #f7f9fa;
-  --border: #dde3e8;
-  --border-strong: #c3ccd4;
+  --surface-sunken: #f4f5f8;
+  --surface-hover: #eef0f5;
+  --border: #e3e6ed;
+  --border-strong: #c9cedb;
 
-  --text: #16212b;
-  --text-muted: #5a6b7a;
-  --text-subtle: #8494a1;
+  --text: #202020;
+  --text-muted: #666666;
+  --text-subtle: #8b90a0;
 
-  /* Brand — deep clinical teal */
-  --brand: #0c6b66;
-  --brand-hover: #095551;
-  --brand-soft: #e2f1f0;
-  --brand-border: #a9d5d2;
-  --on-brand: #ffffff;
+  /* Navy is the brand's structural colour: nav, headings, key surfaces. */
+  --navy: #29387d;
+  --navy-hover: #1f2c64;
+  --navy-soft: #eef0f8;
+  --navy-border: #c3cae4;
+  --navy-deep: #040922;
 
-  /* Accent — volume-break savings, deliberately warm against the teal */
+  /* Red is the action colour: buy, submit, active state. Used sparingly. */
+  --red: #ea2227;
+  --red-hover: #c9161b;
+  --red-soft: #fdeced;
+  --red-border: #f5b8ba;
+
+  --on-navy: #ffffff;
+  --on-red: #ffffff;
+
+  /* Volume-break savings — reads as a gain, distinct from the brand red. */
   --accent: #9a5b12;
   --accent-soft: #fdf3e4;
   --accent-border: #eccfa3;
 
   --success: #146c43;
   --success-soft: #e4f2ea;
-  --danger: #a52834;
-  --danger-soft: #fbeaec;
+  --danger: #c9161b;
+  --danger-soft: #fdeced;
 
-  --focus: #0c6b66;
+  --focus: #29387d;
 
-  /* Product placeholder tiles. Hue comes per-product from --thumb-h; only the
-     saturation and lightness change between themes, so a category keeps its
-     identity in both. */
-  --thumb-sat: 32%;
+  --thumb-sat: 26%;
   --thumb-l1: 96%;
   --thumb-l2: 91%;
   --thumb-grid-l: 78%;
-  --thumb-ink-s: 30%;
-  --thumb-ink-l: 38%;
+  --thumb-ink-s: 28%;
+  --thumb-ink-l: 40%;
 
-  --radius: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius: 0.4375rem; /* 7px — matches the theme's button radius */
+  --radius-lg: 0.625rem;
 
-  --shadow-card: 0 1px 2px rgb(16 30 43 / 0.06), 0 1px 3px rgb(16 30 43 / 0.04);
-  --shadow-raised: 0 4px 12px rgb(16 30 43 / 0.08), 0 1px 3px rgb(16 30 43 / 0.06);
+  --shadow-card: 0 1px 2px rgb(41 56 125 / 0.06), 0 1px 3px rgb(41 56 125 / 0.05);
+  --shadow-raised: 0 6px 18px rgb(41 56 125 / 0.1), 0 1px 3px rgb(41 56 125 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --canvas: #0d1418;
-    --surface: #141e24;
-    --surface-sunken: #0f181d;
-    --surface-hover: #1a262d;
-    --border: #253440;
-    --border-strong: #354756;
+    --canvas: #070b1c;
+    --surface: #0e142c;
+    --surface-sunken: #0a0f22;
+    --surface-hover: #161d3a;
+    --border: #1f2947;
+    --border-strong: #303c60;
 
-    --text: #e8eef2;
-    --text-muted: #a0b0bc;
-    --text-subtle: #7A8B98;
+    --text: #eef1f8;
+    --text-muted: #a6adc4;
+    --text-subtle: #7f879e;
 
-    --brand: #3fada6;
-    --brand-hover: #57c2ba;
-    --brand-soft: #10302f;
-    --brand-border: #1d4d4a;
-    --on-brand: #04211f;
+    --navy: #5b6cc4;
+    --navy-hover: #7385d8;
+    --navy-soft: #141c3c;
+    --navy-border: #263159;
+    --navy-deep: #04081a;
+
+    --red: #f4474b;
+    --red-hover: #ff6165;
+    --red-soft: #2a1114;
+    --red-border: #4a1e21;
+
+    --on-navy: #ffffff;
+    --on-red: #ffffff;
 
     --accent: #dda45c;
     --accent-soft: #2b2013;
@@ -83,10 +136,10 @@
 
     --success: #5bbd8a;
     --success-soft: #10281c;
-    --danger: #e88b95;
-    --danger-soft: #2c1417;
+    --danger: #f4787c;
+    --danger-soft: #2a1114;
 
-    --focus: #3fada6;
+    --focus: #7385d8;
 
     --thumb-sat: 20%;
     --thumb-l1: 17%;
@@ -96,27 +149,35 @@
     --thumb-ink-l: 66%;
 
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
-    --shadow-raised: 0 4px 14px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+    --shadow-raised: 0 6px 18px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
   }
 }
 
 :root[data-theme="dark"] {
-  --canvas: #0d1418;
-  --surface: #141e24;
-  --surface-sunken: #0f181d;
-  --surface-hover: #1a262d;
-  --border: #253440;
-  --border-strong: #354756;
+  --canvas: #070b1c;
+  --surface: #0e142c;
+  --surface-sunken: #0a0f22;
+  --surface-hover: #161d3a;
+  --border: #1f2947;
+  --border-strong: #303c60;
 
-  --text: #e8eef2;
-  --text-muted: #a0b0bc;
-  --text-subtle: #7a8b98;
+  --text: #eef1f8;
+  --text-muted: #a6adc4;
+  --text-subtle: #7f879e;
 
-  --brand: #3fada6;
-  --brand-hover: #57c2ba;
-  --brand-soft: #10302f;
-  --brand-border: #1d4d4a;
-  --on-brand: #04211f;
+  --navy: #5b6cc4;
+  --navy-hover: #7385d8;
+  --navy-soft: #141c3c;
+  --navy-border: #263159;
+  --navy-deep: #04081a;
+
+  --red: #f4474b;
+  --red-hover: #ff6165;
+  --red-soft: #2a1114;
+  --red-border: #4a1e21;
+
+  --on-navy: #ffffff;
+  --on-red: #ffffff;
 
   --accent: #dda45c;
   --accent-soft: #2b2013;
@@ -124,10 +185,10 @@
 
   --success: #5bbd8a;
   --success-soft: #10281c;
-  --danger: #e88b95;
-  --danger-soft: #2c1417;
+  --danger: #f4787c;
+  --danger-soft: #2a1114;
 
-  --focus: #3fada6;
+  --focus: #7385d8;
 
   --thumb-sat: 20%;
   --thumb-l1: 17%;
@@ -137,7 +198,7 @@
   --thumb-ink-l: 66%;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
-  --shadow-raised: 0 4px 14px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 6px 18px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
 }
 
 @theme inline {
@@ -152,11 +213,25 @@
   --color-text-muted: var(--text-muted);
   --color-text-subtle: var(--text-subtle);
 
-  --color-brand: var(--brand);
-  --color-brand-hover: var(--brand-hover);
-  --color-brand-soft: var(--brand-soft);
-  --color-brand-border: var(--brand-border);
-  --color-on-brand: var(--on-brand);
+  --color-navy: var(--navy);
+  --color-navy-hover: var(--navy-hover);
+  --color-navy-soft: var(--navy-soft);
+  --color-navy-border: var(--navy-border);
+  --color-navy-deep: var(--navy-deep);
+  --color-on-navy: var(--on-navy);
+
+  --color-red: var(--red);
+  --color-red-hover: var(--red-hover);
+  --color-red-soft: var(--red-soft);
+  --color-red-border: var(--red-border);
+  --color-on-red: var(--on-red);
+
+  /* Legacy aliases so existing components keep working while they migrate. */
+  --color-brand: var(--navy);
+  --color-brand-hover: var(--navy-hover);
+  --color-brand-soft: var(--navy-soft);
+  --color-brand-border: var(--navy-border);
+  --color-on-brand: var(--on-navy);
 
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
@@ -173,35 +248,66 @@
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Gilroy", var(--font-body), ui-sans-serif, sans-serif;
 }
 
 /* ------------------------------------------------------------------ *
  * Base
  * ------------------------------------------------------------------ */
 
-* {
-  border-color: var(--border);
+/* These MUST sit inside @layer base. Unlayered rules beat every layered
+   Tailwind utility, so an unlayered `h1 { color }` would override `text-white`
+   on a heading and silently break light-on-dark sections. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-muted);
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings carry the brand: Gilroy, heavy, tight, near-black. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Gilroy", var(--font-body), ui-sans-serif, sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  background-color: var(--canvas);
-  color: var(--text);
-  font-family: var(--font-sans);
-  font-feature-settings: "cv05", "ss01";
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Tabular figures everywhere money or quantity appears — columns of prices
-   must align, which proportional digits break. */
+/* Tabular figures wherever money or quantity appears — columns of prices must
+   align, which proportional digits break. */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* Section heading with the theme's red double-chevron lead-in. */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.section-heading::before {
+  content: "»";
+  color: var(--red);
+  font-size: 1.6em;
+  line-height: 1;
+  font-weight: 700;
 }
 
 /* Placeholder product tile. --thumb-h is set per product inline. */
