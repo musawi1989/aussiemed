@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**79 items** · 59 outstanding · **22 outstanding P1**
+**82 items** · 61 outstanding · **23 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -73,12 +73,14 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| BE-01 | Build the backend | Dev | P1 | Open | Express and Prisma per extraction/BACKEND_SPEC.md: roles, auth, orders, invoices, emails. Eight phases. |
+| BE-01 | Build the backend | Dev | P1 | In progress | Express and Prisma per extraction/BACKEND_SPEC.md: roles, auth, orders, invoices, emails. Eight phases. |
 | BE-02 | Build the admin panel | Dev | P1 | Open | Products, categories, suppliers, customers, orders, marketing, reports, settings. |
 | BE-03 | Build the supplier portal | Dev | P1 | Open | Suppliers manage their own products but can never self-approve. Must have a failing-then-passing test. |
 | BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Open | Parsed natively with exceljs, never by splitting on commas — that is what broke comma-containing category names. |
 | BE-05 | Build the email flows | Dev | P2 | Open | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
 | BE-06 | Add an audit log | Dev | P2 | Open | Every status transition and every admin or supplier write should be recorded. |
+| BE-07 | Seed the database from the catalogue | Dev | P1 | Open | The schema exists but is empty. Categories, products, SKUs and suppliers need loading from src/data/catalog.json so the app can run against the database. |
+| BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
 
 ## Infrastructure
 
@@ -124,3 +126,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DN-13 | Catalogue seeded with real products | Dev | P2 | Done | Sixty real items replaced invented placeholders so the storefront can be judged against products that actually exist. |
 | DN-14 | Control characters in generated code | Dev | P1 | Done | Shell escaping wrote literal backspace bytes into regex rules, so every packaging and variant rule silently matched nothing while looking correct in every editor. |
 | DN-15 | Product images added for testing | Dev | P2 | Done | Fifty-two of 71 products now carry real photography so the layout can be judged with images rather than placeholder tiles. |
+| DN-16 | Database schema designed and migrated | Dev | P1 | Done | Thirty tables covering catalogue, packs as SKUs, variants, attributes, documents, batches, orders, per-supplier invoices, quotes, bulk upload and audit. |

@@ -1,0 +1,671 @@
+// AussieMed — database schema
+//
+// Design notes that apply throughout:
+//
+// MONEY is stored as an integer number of fils (1 AED = 100 fils), never a
+// float or a Decimal. SQLite has no native decimal type, so Prisma's Decimal
+// falls back to a float there, and a float is not something to keep a tax
+// invoice in. Integers are exact, behave identically on SQLite and Postgres,
+// and the storefront already rounds to 2 decimals. Every money field is named
+// *Fils so a raw number can never be mistaken for AED.
+//
+// ENUMS are modelled as String with the permitted values listed in a comment.
+// SQLite does not support native enums, and the spec requires the datasource
+// to be swappable to Postgres without rewriting SQL. Validation lives in the
+// service layer (zod) rather than the database.
+//
+// JSON is stored as String for the same portability reason.
+//
+// A SKU is the purchasable thing, not the product. The same line sells by the
+// box and by the carton at different prices, so unit of measure lives on the
+// SKU. This is the single most important shape in the schema.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------------------
+// People and organisations
+// ---------------------------------------------------------------------------
+
+/// role: Admin | Supplier | Customer
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String?
+  role         String  @default("Customer")
+  name         String
+  phone        String?
+  isVerified   Boolean @default(false)
+  isDisabled   Boolean @default(false)
+
+  /// Email OTP. The spec's sign-in is a code, not a password.
+  otpCode      String?
+  otpExpiresAt DateTime?
+
+  supplier       Supplier?
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+
+  orders       Order[]
+  quotes       QuoteRequest[]
+  wishlist     WishlistItem[]
+  carts        Cart[]
+  auditEntries AuditLog[]     @relation("AuditActor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organisationId])
+}
+
+/// The buying entity — a clinic or laboratory, not the individual.
+/// Trade accounts are held by the organisation and several people may order
+/// against one.
+model Organisation {
+  id      String  @id @default(cuid())
+  name    String
+  /// Tax Registration Number. Required on a UAE tax invoice — see AC-03.
+  trn     String?
+  phone   String?
+  emirate String?
+
+  /// paymentTerms: Prepaid | Net7 | Net30 | Net60
+  paymentTerms    String  @default("Prepaid")
+  creditLimitFils Int     @default(0)
+  isDisabled      Boolean @default(false)
+
+  users     User[]
+  addresses Address[]
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Address {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  label     String?
+  contact   String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  emirate   String
+  country   String  @default("United Arab Emirates")
+  isDefault Boolean @default(false)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+
+  @@index([organisationId])
+}
+
+/// status: Active | Suspended
+model Supplier {
+  id     String  @id @default(cuid())
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  companyName    String
+  /// Both addresses receive order notifications. secondaryEmail is mandatory
+  /// at creation — a locked platform decision, enforced in the service layer
+  /// since the column must stay nullable for existing rows.
+  primaryEmail   String
+  secondaryEmail String
+  phone          String?
+  address        String?
+  /// Suppliers may invoice in their own name, so they need their own TRN.
+  trn            String?
+  status         String  @default("Active")
+
+  products ProductMaster[]
+  invoices OrderSupplierInvoice[]
+  uploads  BulkUploadJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue
+// ---------------------------------------------------------------------------
+
+/// Self-referencing tree. Names MAY contain commas — nothing anywhere may
+/// parse a category list by splitting on commas. That is what broke the old
+/// platform's bulk upload.
+model Category {
+  id       String     @id @default(cuid())
+  name     String
+  /// Unique across the WHOLE tree, not just among siblings. Two categories
+  /// sharing a slug makes one unreachable and the other answer to the wrong
+  /// name — a real defect found during the rebuild.
+  slug     String     @unique
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+  imagePath String?
+
+  products ProductCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model Brand {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  slug     String  @unique
+  isActive Boolean @default(true)
+
+  products ProductMaster[]
+
+  createdAt DateTime @default(now())
+}
+
+/// status: Draft | PendingApproval | Active | Inactive
+///
+/// A Supplier may create and edit their own products but may NEVER move one to
+/// Active. Approval is Admin-only and enforced in the service layer, not just
+/// hidden in the UI. approvedBy/approvedAt record who did it.
+model ProductMaster {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  brandId    String?
+  brand      Brand?   @relation(fields: [brandId], references: [id])
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  status String @default("Draft")
+
+  /// taxClass: Standard | ZeroRated
+  /// Not every medical line is standard-rated. Charging 5% on a zero-rated
+  /// product overstates a document the customer keeps — see AC-02.
+  taxClass String @default("Standard")
+
+  metaTitle       String?
+  metaDescription String?
+
+  createdBy  String?
+  approvedBy String?
+  approvedAt DateTime?
+
+  skus       ProductSku[]
+  categories ProductCategory[]
+  images     ProductImage[]
+  attributes ProductAttribute[]
+  documents  ProductDocument[]
+  options    ProductOption[]
+  wishlisted WishlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([brandId])
+}
+
+model ProductCategory {
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productMasterId, categoryId])
+  @@index([categoryId])
+}
+
+/// A purchasable unit of measure — this is what goes in a cart.
+///
+/// "100 Pieces/Box" and "10 Boxes/Carton" of the same product are two SKUs at
+/// two prices. eachesPerPack lets a box and a carton be compared per unit.
+model ProductSku {
+  id              String        @id @default(cuid())
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  /// The supplier's own item code. Unique across the catalogue.
+  skuCode String @unique
+
+  /// "100 Pieces/Box" — what the buyer sees on the unit selector.
+  unitLabel      String
+  /// "Box" — the short form shown beside Add to cart.
+  unitShortLabel String
+  /// How many base units this pack contains. 1 for the base pack.
+  eachesPerPack  Int    @default(1)
+
+  priceFils Int
+
+  /// Set by an admin or supplier. When it flips back to false, every
+  /// NotifySubscription for this SKU with notifiedAt = null is emailed.
+  manualOutOfStock Boolean @default(false)
+
+  /// Physical detail, used for shipping quotes later.
+  weightGrams Int?
+  barcode     String?
+
+  isActive Boolean @default(true)
+
+  tiers        PriceTier[]
+  optionValues SkuOptionValue[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  quoteItems   QuoteItem[]
+  notify       NotifySubscription[]
+  batches      SkuBatch[]
+  images       ProductImage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productMasterId])
+}
+
+/// Volume break: buying minQty or more drops the unit price.
+///
+/// Thresholds ascend and prices descend. The source data for the rebuild had
+/// these entered backwards, so this is validated on write — see AC-01.
+model PriceTier {
+  id    String     @id @default(cuid())
+  skuId String
+  sku   ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  minQty    Int
+  priceFils Int
+
+  @@unique([skuId, minQty])
+  @@index([skuId])
+}
+
+/// A variant axis such as Size or Colour.
+model ProductOption {
+  id              String        @id @default(cuid())
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  name      String
+  sortOrder Int    @default(0)
+
+  values ProductOptionValue[]
+
+  @@unique([productMasterId, name])
+}
+
+model ProductOptionValue {
+  id       String        @id @default(cuid())
+  optionId String
+  option   ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  value     String
+  sortOrder Int    @default(0)
+
+  skus SkuOptionValue[]
+
+  @@unique([optionId, value])
+}
+
+/// Joins a SKU to the option values it represents, e.g. Size=Large.
+model SkuOptionValue {
+  skuId   String
+  sku     ProductSku         @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  valueId String
+  value   ProductOptionValue @relation(fields: [valueId], references: [id], onDelete: Cascade)
+
+  @@id([skuId, valueId])
+  @@index([valueId])
+}
+
+/// Structured specifications — material, standard, sterility, cuff length.
+/// Trade buyers filter on these, so they are rows rather than prose.
+model ProductAttribute {
+  id              String        @id @default(cuid())
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  label     String
+  value     String
+  sortOrder Int    @default(0)
+
+  @@index([productMasterId])
+  @@index([label])
+}
+
+/// Safety data sheets and specification sheets. For laboratory and medical
+/// buyers an SDS is frequently a compliance requirement, not a nicety.
+model ProductDocument {
+  id              String        @id @default(cuid())
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  label     String
+  path      String
+  /// kind: SDS | Specification | Certificate | Flyer
+  kind      String @default("Specification")
+  sortOrder Int    @default(0)
+
+  @@index([productMasterId])
+}
+
+model ProductImage {
+  id              String        @id @default(cuid())
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+  /// Optional: an image specific to one SKU, e.g. the black glove.
+  skuId           String?
+  sku             ProductSku?   @relation(fields: [skuId], references: [id])
+
+  path      String
+  altText   String?
+  sortOrder Int     @default(0)
+
+  @@index([productMasterId])
+}
+
+/// Batch and expiry. Medical stock expires, and short-dated stock is commonly
+/// sold at a discount. Optional — a SKU with no batches simply has none
+/// tracked. Included now because adding it later means backfilling every
+/// movement, which is the expensive kind of change. See FN-09.
+model SkuBatch {
+  id    String     @id @default(cuid())
+  skuId String
+  sku   ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  batchCode          String
+  expiresOn          DateTime?
+  quantity           Int       @default(0)
+  /// Overrides the SKU price while this batch is being cleared.
+  clearancePriceFils Int?
+
+  createdAt DateTime @default(now())
+
+  @@unique([skuId, batchCode])
+  @@index([expiresOn])
+}
+
+// ---------------------------------------------------------------------------
+// Cart, quotes and wishlist
+// ---------------------------------------------------------------------------
+
+/// cartKey supports guest carts held in a cookie; on sign-in the guest cart
+/// merges into the user's.
+model Cart {
+  id      String  @id @default(cuid())
+  cartKey String  @unique
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id     String     @id @default(cuid())
+  cartId String
+  cart   Cart       @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  skuId  String
+  sku    ProductSku @relation(fields: [skuId], references: [id])
+
+  /// Integer, at least 1. Quantities are never fractional.
+  qty Int
+
+  createdAt DateTime @default(now())
+
+  /// One line per SKU. A box and a carton are different SKUs and stay
+  /// separate lines; the same SKU added twice merges.
+  @@unique([cartId, skuId])
+  @@index([skuId])
+}
+
+model WishlistItem {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productMasterId String
+  product         ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productMasterId])
+  @@index([productMasterId])
+}
+
+/// status: New | Quoted | Accepted | Declined | Expired
+model QuoteRequest {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  reference    String  @unique
+  contactName  String
+  contactEmail String
+  notes        String?
+  status       String  @default("New")
+
+  items QuoteItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuoteItem {
+  id      String       @id @default(cuid())
+  quoteId String
+  quote   QuoteRequest @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  skuId   String
+  sku     ProductSku   @relation(fields: [skuId], references: [id])
+
+  qty             Int
+  /// Filled in when the team responds; null while the quote is open.
+  quotedPriceFils Int?
+
+  @@index([quoteId])
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+/// status: Pending | Processing | Dispatched | Delivered | Cancelled
+///
+/// Customer-facing wording is always "reference number", never "order number".
+model Order {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+
+  addressId        String?
+  address          Address? @relation(fields: [addressId], references: [id])
+  /// The delivery address as it was at the time, so later edits to the
+  /// address book cannot rewrite a historical order.
+  shippingSnapshot String?
+
+  status        String  @default("Pending")
+  /// paymentMethod: OfflinePurchaseOrder | Card | BankTransfer
+  paymentMethod String  @default("OfflinePurchaseOrder")
+  poReference   String?
+
+  subtotalFils       Int
+  vatFils            Int
+  totalFils          Int
+  /// The VAT rate in force when the order was placed, in basis points (500 =
+  /// 5%). Stored so a future rate change cannot rewrite historical orders.
+  vatRateBasisPoints Int @default(500)
+
+  invoices OrderSupplierInvoice[]
+  items    OrderItem[]
+
+  placedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([organisationId])
+  @@index([status])
+}
+
+/// One invoice per supplier per order.
+///
+/// The unique constraint below is the structural fix for the historical
+/// duplicate-invoice bug on multi-supplier orders. It is not a convention —
+/// the database refuses a second invoice for the same supplier on one order.
+model OrderSupplierInvoice {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  invoiceNumber String @unique
+  /// status: Pending | Issued | Paid | Cancelled
+  status        String @default("Pending")
+
+  subtotalFils Int
+  vatFils      Int
+  totalFils    Int
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, supplierId])
+  @@index([supplierId])
+}
+
+model OrderItem {
+  id        String               @id @default(cuid())
+  orderId   String
+  order     Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   OrderSupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  skuId     String
+  sku       ProductSku           @relation(fields: [skuId], references: [id])
+
+  /// Copied at order time. A later price change or rename must never alter a
+  /// historical order line.
+  nameSnapshot      String
+  skuCodeSnapshot   String
+  unitLabelSnapshot String
+  taxClassSnapshot  String
+
+  qty           Int
+  unitPriceFils Int
+  lineTotalFils Int
+  vatFils       Int
+
+  @@index([orderId])
+  @@index([invoiceId])
+  @@index([skuId])
+}
+
+// ---------------------------------------------------------------------------
+// Operations
+// ---------------------------------------------------------------------------
+
+/// Restock alert. When a SKU's manualOutOfStock flips false, everyone here
+/// with notifiedAt = null is emailed and then stamped.
+model NotifySubscription {
+  id    String     @id @default(cuid())
+  skuId String
+  sku   ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  email      String
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([skuId, email])
+  @@index([notifiedAt])
+}
+
+/// status: Pending | Processing | Completed | Failed
+model BulkUploadJob {
+  id         String    @id @default(cuid())
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  uploadedBy String
+  filename   String
+  status     String @default("Pending")
+
+  rowsTotal   Int @default(0)
+  rowsCreated Int @default(0)
+  rowsSkipped Int @default(0)
+  rowsErrored Int @default(0)
+
+  rows BulkUploadRow[]
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([supplierId])
+}
+
+/// outcome: Created | Updated | Skipped | Error
+///
+/// A skipped row always carries a reason. The old platform dropped rows with
+/// unknown brands silently, which is how data went missing without anyone
+/// noticing.
+model BulkUploadRow {
+  id    String        @id @default(cuid())
+  jobId String
+  job   BulkUploadJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  rowNumber       Int
+  outcome         String
+  message         String?
+  productMasterId String?
+
+  @@index([jobId])
+}
+
+/// Every status transition and every admin or supplier write.
+/// before/after hold JSON as text for datasource portability.
+model AuditLog {
+  id          String  @id @default(cuid())
+  actorUserId String?
+  actor       User?   @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  action   String
+  entity   String
+  entityId String
+  before   String?
+  after    String?
+
+  at DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([at])
+}
+
+/// Key/value configuration — VAT rate, email templates, general settings.
+/// Kept as rows so an admin can change them without a deploy.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

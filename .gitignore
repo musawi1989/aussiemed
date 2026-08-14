@@ -14,3 +14,15 @@ outbox/
 .DS_Store
 *.pem
 npm-debug.log*
+
+/src/generated/prisma
+
+# Local development database — recreate with: npx prisma migrate dev
+*.db
+*.db-journal
+
+# Prisma 7 scaffolds AI-agent skill docs on init. Not part of the app.
+.agents/
+.windsurf/
+.claude/skills/prisma-*/
+skills-lock.json
