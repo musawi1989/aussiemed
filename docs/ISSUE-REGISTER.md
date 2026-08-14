@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**78 items** · 59 outstanding · **22 outstanding P1**
+**79 items** · 59 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -27,7 +27,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | --- | --- | --- | --- | --- | --- |
 | DA-01 | Supply the real product catalogue | Client | P1 | Open | 60 of 71 products are seeded from Livingstone and Chemist Warehouse public catalogues for testing. Only 11 are AussieMed products and they carry no categories or images. |
 | DA-02 | Verify the product-to-category mapping | Client | P2 | Open | The extraction had no product-category link at all. All 11 real products were mapped by hand from their names. |
-| DA-03 | Supply product photography | Client | P1 | Open | There is essentially no product imagery. listImage was null or a social-media icon; pdpImages led with a scraped JavaScript fragment. |
+| DA-03 | Supply product photography | Client | P1 | Open | AussieMed has almost no imagery of its own: only 2 usable photos in the whole extraction. The 52 images now on the site are the seed suppliers own photographs used for local testing and cannot ship. |
 | DA-04 | Wrong image on the scrub top | Client | P3 | Open | The product's primary image was a stock photo of a pocket watch. Excluded from the build; the file is still in public/products/. |
 | DA-05 | Approve the product descriptions | Client | P2 | Open | The source had no descriptions. Eleven were written from the product names and need approval before launch. |
 | DA-06 | Supply the real supplier list | Client | P1 | Open | Four suppliers exist: two carried over from the extraction with invented names and two test suppliers (Livingstone and Chemist Warehouse) whose catalogues seeded the products. |
@@ -123,3 +123,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DN-12 | Adopt the existing brand theme | Dev | P2 | Done | Navy #29387d, red #ea2227 and Gilroy, read from the live site's computed styles rather than eyeballed. |
 | DN-13 | Catalogue seeded with real products | Dev | P2 | Done | Sixty real items replaced invented placeholders so the storefront can be judged against products that actually exist. |
 | DN-14 | Control characters in generated code | Dev | P1 | Done | Shell escaping wrote literal backspace bytes into regex rules, so every packaging and variant rule silently matched nothing while looking correct in every editor. |
+| DN-15 | Product images added for testing | Dev | P2 | Done | Fifty-two of 71 products now carry real photography so the layout can be judged with images rather than placeholder tiles. |

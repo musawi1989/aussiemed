@@ -549,8 +549,10 @@ TEST_PRODUCTS.forEach((seed, index) => {
       packSize: seed.packSize,
       supplierId: SUPPLIER_IDS[seed.supplier] ?? 21,
       outOfStock: isOutOfStock(seed.name, index),
-      // No supplier imagery is copied.
-      images: [],
+      // Supplier photography, downloaded for local testing only. These are the
+      // suppliers' own images and must be replaced before launch — DA-03.
+      // Products without one fall back to the generated tile.
+      images: seed.image ? [seed.image] : [],
       // Run seeded tiers through the same normaliser as the real ones, so a
       // typo cannot produce a tier shape the storefront never has to handle.
       tiers: normaliseTiers(

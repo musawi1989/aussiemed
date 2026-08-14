@@ -5,7 +5,7 @@
  * They operate on catalog.json directly so they stay fast and dependency-free.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -269,6 +269,17 @@ check(
   "all image paths are local and resolved",
   absoluteImage === undefined,
   absoluteImage && absoluteImage.images.join(", ")
+);
+
+// A path that points at nothing renders as a broken image in production, and
+// Next's image optimiser fails the request rather than falling back.
+const brokenImage = catalog.products
+  .flatMap((p) => p.images.map((src) => ({ p, src })))
+  .find(({ src }) => !existsSync(resolve(root, "public", `.${src}`)));
+check(
+  "every referenced image file exists on disk",
+  brokenImage === undefined,
+  brokenImage && `${brokenImage.p.name} -> ${brokenImage.src}`
 );
 
 /* --- summary ------------------------------------------------------ */
