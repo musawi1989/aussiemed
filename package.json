@@ -13,7 +13,7 @@
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "verify": "npm run data:build && npm run check && npm run register && npm run test && npm run typecheck",
     "smoke": "node scripts/smoke-api.mjs",
-    "register": "node scripts/register.mjs"
+    "register": "node scripts/register.mjs --md && node scripts/build-spreadsheet.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",
@@ -25,6 +25,7 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "exceljs": "^4.4.0",
     "playwright": "^1.62.1",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",

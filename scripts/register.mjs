@@ -1,72 +1,26 @@
 /**
- * Renders docs/issue-register.csv as a readable summary, and validates it.
+ * Validates docs/issue-register.csv and prints a summary.
  *
- * The CSV is the single source of truth — it imports straight into a
- * spreadsheet. This script exists so the register can be read at a glance and
- * so a malformed row is caught rather than silently mangling the import.
+ * The CSV is the single source of truth. This script guards it, because a
+ * malformed row silently mangles a spreadsheet import — exactly the defect
+ * that broke the old platform's bulk upload.
  *
- * Run with `npm run register`, or `npm run register -- --md` to regenerate
- * docs/ISSUE-REGISTER.md.
+ * `npm run register` validates and prints.
+ * `npm run register -- --md` also regenerates docs/ISSUE-REGISTER.md.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import {
+  COLUMNS,
+  ROOT,
+  VALID_PRIORITY,
+  VALID_STATUS,
+  isOutstanding,
+  loadRegister,
+} from "./register-data.mjs";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const csvPath = resolve(root, "docs/issue-register.csv");
-
-/** Minimal RFC4180 parser — handles quoted fields containing commas. */
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const ch = text[i];
-
-    if (quoted) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i += 1;
-        } else {
-          quoted = false;
-        }
-      } else {
-        field += ch;
-      }
-      continue;
-    }
-
-    if (ch === '"') quoted = true;
-    else if (ch === ",") {
-      row.push(field);
-      field = "";
-    } else if (ch === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else if (ch !== "\r") {
-      field += ch;
-    }
-  }
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows.filter((r) => r.some((c) => c.trim() !== ""));
-}
-
-const rows = parseCsv(readFileSync(csvPath, "utf8"));
-const [header, ...data] = rows;
-const col = Object.fromEntries(header.map((h, i) => [h.trim(), i]));
-
-const REQUIRED = ["ID", "Area", "Item", "Why it matters", "Owner", "Priority", "Status"];
-const VALID_STATUS = new Set(["Open", "In progress", "Done", "Deferred"]);
-const VALID_PRIORITY = new Set(["P1", "P2", "P3"]);
+const { keys, items } = loadRegister();
 
 let problems = 0;
 const fail = (msg) => {
@@ -74,47 +28,51 @@ const fail = (msg) => {
   console.log(`  PROBLEM  ${msg}`);
 };
 
-for (const field of REQUIRED) {
-  if (!(field in col)) fail(`missing required column "${field}"`);
+for (const field of COLUMNS) {
+  if (!keys.includes(field)) fail(`missing required column "${field}"`);
 }
 if (problems > 0) process.exit(1);
 
 const seen = new Set();
-const items = data.map((r, i) => {
-  const item = Object.fromEntries(header.map((h, j) => [h.trim(), (r[j] ?? "").trim()]));
-  const where = `row ${i + 2} (${item.ID || "no id"})`;
+for (const item of items) {
+  const where = `row ${item.__row} (${item.ID || "no id"})`;
 
   if (!item.ID) fail(`${where}: blank ID`);
   if (seen.has(item.ID)) fail(`${where}: duplicate ID`);
   seen.add(item.ID);
 
-  if (!VALID_STATUS.has(item.Status)) fail(`${where}: bad Status "${item.Status}"`);
-  if (!VALID_PRIORITY.has(item.Priority)) fail(`${where}: bad Priority "${item.Priority}"`);
-  if (r.length !== header.length) {
-    fail(`${where}: has ${r.length} fields, header has ${header.length}`);
+  if (!item.Item) fail(`${where}: blank Item`);
+  if (!VALID_STATUS.includes(item.Status)) {
+    fail(`${where}: bad Status "${item.Status}"`);
   }
-  return item;
-});
+  if (!VALID_PRIORITY.includes(item.Priority)) {
+    fail(`${where}: bad Priority "${item.Priority}"`);
+  }
+  // An unquoted comma splits a field and shifts every column after it.
+  if (item.__fieldCount !== keys.length) {
+    fail(
+      `${where}: has ${item.__fieldCount} fields, header has ${keys.length} — check for an unquoted comma`
+    );
+  }
+}
 
 /* ---------- summary ---------- */
 
-const by = (key) =>
-  items.reduce((acc, it) => {
+const tally = (key, list = items) =>
+  list.reduce((acc, it) => {
     acc[it[key]] = (acc[it[key]] ?? 0) + 1;
     return acc;
   }, {});
 
-const outstanding = items.filter(
-  (it) => it.Status === "Open" || it.Status === "In progress"
-);
+const outstanding = items.filter(isOutstanding);
+const blockers = outstanding.filter((it) => it.Priority === "P1");
 
 console.log("\nAussieMed issue register\n");
 console.log(`  ${items.length} items`);
-console.log(`  status:    ${JSON.stringify(by("Status"))}`);
-console.log(`  priority:  ${JSON.stringify(by("Priority"))}`);
-console.log(`  owner:     ${JSON.stringify(by("Owner"))}`);
+console.log(`  status:    ${JSON.stringify(tally("Status"))}`);
+console.log(`  priority:  ${JSON.stringify(tally("Priority", outstanding))} (outstanding)`);
+console.log(`  owner:     ${JSON.stringify(tally("Owner", outstanding))} (outstanding)`);
 
-const blockers = outstanding.filter((it) => it.Priority === "P1");
 if (blockers.length > 0) {
   console.log(`\n  ${blockers.length} outstanding P1 items:\n`);
   for (const it of blockers) {
@@ -125,36 +83,33 @@ if (blockers.length > 0) {
 /* ---------- optional markdown render ---------- */
 
 if (process.argv.includes("--md")) {
-  const esc = (s) => s.replace(/\|/g, "\\|");
-  const section = (title, list) =>
-    list.length === 0
-      ? ""
-      : `\n## ${title}\n\n| ID | Item | Owner | Priority | Why it matters |\n| --- | --- | --- | --- | --- |\n` +
-        list
-          .map(
-            (it) =>
-              `| ${it.ID} | ${esc(it.Item)} | ${it.Owner} | ${it.Priority} | ${esc(it["Why it matters"])} |`
-          )
-          .join("\n") +
-        "\n";
+  const esc = (s) => (s ?? "").replace(/\|/g, "\\|");
+  const table = (list) =>
+    `| ID | Item | Owner | Priority | Status | Why it matters |\n` +
+    `| --- | --- | --- | --- | --- | --- |\n` +
+    list
+      .map(
+        (it) =>
+          `| ${it.ID} | ${esc(it.Item)} | ${it.Owner} | ${it.Priority} | ${it.Status} | ${esc(it["Why it matters"])} |`
+      )
+      .join("\n");
 
   const areas = [...new Set(items.map((it) => it.Area))];
   const md =
-    `# AussieMed issue register\n\n` +
-    `Generated from \`docs/issue-register.csv\` — edit the CSV, not this file.\n` +
-    `Run \`npm run register -- --md\` to regenerate.\n\n` +
+    `# AussieMed — things that need attention\n\n` +
+    `Generated from \`docs/issue-register.csv\`. Edit the CSV, not this file, ` +
+    `then run \`npm run register\`.\n\n` +
     `**${items.length} items** · ${outstanding.length} outstanding · ` +
-    `${blockers.length} outstanding P1\n` +
+    `**${blockers.length} outstanding P1**\n\n` +
+    `A spreadsheet version is at \`docs/Things That Need Attention.xlsx\`.\n` +
     areas
-      .map((area) =>
-        section(
-          area,
-          items.filter((it) => it.Area === area)
-        )
-      )
+      .map((area) => {
+        const list = items.filter((it) => it.Area === area);
+        return list.length ? `\n## ${area}\n\n${table(list)}\n` : "";
+      })
       .join("");
 
-  writeFileSync(resolve(root, "docs/ISSUE-REGISTER.md"), md, "utf8");
+  writeFileSync(resolve(ROOT, "docs/ISSUE-REGISTER.md"), md, "utf8");
   console.log("\n  wrote docs/ISSUE-REGISTER.md");
 }
 
@@ -162,4 +117,4 @@ if (problems > 0) {
   console.log(`\n${problems} problem(s) in the register\n`);
   process.exit(1);
 }
-console.log("\nRegister is well-formed\n");
+console.log("\n  Register is well-formed");

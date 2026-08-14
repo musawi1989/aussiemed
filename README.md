@@ -27,8 +27,24 @@ npm run dev          # http://localhost:3000
 | `npm run check` | 15 data-integrity assertions on the catalogue |
 | `npm test` | 48 unit tests (Node's built-in runner, no test dependencies) |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run verify` | data:build → check → test → typecheck |
+| `npm run register` | Validates the issue register and regenerates the spreadsheet |
+| `npm run verify` | data:build → check → register → test → typecheck |
 | `npm run smoke` | 26 API contract checks (needs a server running) |
+
+## Things that need attention
+
+Every assumption, stand-in and stubbed flow is tracked in one place, with an
+owner and a priority.
+
+- **`docs/Things That Need Attention.xlsx`** — open this. Summary tab, then
+  Needs attention / Deferred / Done, filterable, P1 highlighted in red.
+- `docs/ISSUE-REGISTER.md` — the same list as readable Markdown.
+- `docs/issue-register.csv` — **the source of truth. Edit this one.**
+
+The `.xlsx` and `.md` are generated, so edits to them are overwritten. Change
+the CSV and run `npm run register`. Validation runs inside `npm run verify`,
+because an unquoted comma silently shifts every column after it — which is the
+defect that broke the old platform's bulk upload.
 
 ## Stack
 
