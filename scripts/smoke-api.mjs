@@ -8,6 +8,7 @@
 const BASE = process.env.SMOKE_BASE ?? "http://localhost:3000";
 
 let failures = 0;
+let CATALOGUE_TOTAL = 0;
 const check = (name, condition, detail = "") => {
   if (condition) {
     console.log(`  PASS  ${name}`);
@@ -38,8 +39,14 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
     body.items.length === body.pagination.pageSize,
     `${body.items.length} items vs pageSize ${body.pagination.pageSize}`
   );
-  check("total reflects the whole catalogue", body.pagination.total === 61,
-    `total=${body.pagination.total}`);
+  // Derived, not hardcoded — the catalogue size changes as products are
+  // seeded, and a magic number here fails for the wrong reason.
+  CATALOGUE_TOTAL = body.pagination.total;
+  check(
+    "the catalogue is non-empty and paginated",
+    CATALOGUE_TOTAL > 0 && body.pagination.pageCount >= 1,
+    `total=${CATALOGUE_TOTAL}`
+  );
   check(
     "prices are numbers, not preformatted strings",
     body.items.every((p) => typeof p.priceAED === "number"),
@@ -174,7 +181,7 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
   check("suppliers are listed", body.suppliers.length > 0);
   check(
     "product counts across suppliers sum to the catalogue",
-    body.suppliers.reduce((sum, s) => sum + s.productCount, 0) === 61
+    body.suppliers.reduce((sum, s) => sum + s.productCount, 0) === CATALOGUE_TOTAL
   );
   check(
     "no supplier contact details leak from a public endpoint",

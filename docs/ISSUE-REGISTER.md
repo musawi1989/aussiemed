@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**75 items** · 58 outstanding · **21 outstanding P1**
+**78 items** · 59 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -25,12 +25,12 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| DA-01 | Supply the real product catalogue | Client | P1 | Open | 50 of 61 products are invented placeholders. Only 11 products are real, and they carry no categories, images or descriptions. |
+| DA-01 | Supply the real product catalogue | Client | P1 | Open | 60 of 71 products are seeded from Livingstone and Chemist Warehouse public catalogues for testing. Only 11 are AussieMed products and they carry no categories or images. |
 | DA-02 | Verify the product-to-category mapping | Client | P2 | Open | The extraction had no product-category link at all. All 11 real products were mapped by hand from their names. |
 | DA-03 | Supply product photography | Client | P1 | Open | There is essentially no product imagery. listImage was null or a social-media icon; pdpImages led with a scraped JavaScript fragment. |
 | DA-04 | Wrong image on the scrub top | Client | P3 | Open | The product's primary image was a stock photo of a pocket watch. Excluded from the build; the file is still in public/products/. |
 | DA-05 | Approve the product descriptions | Client | P2 | Open | The source had no descriptions. Eleven were written from the product names and need approval before launch. |
-| DA-06 | Supply the real supplier list | Client | P1 | Open | All seven supplier names are invented. Only supplier IDs 20 and 21 are evidenced by the extraction. |
+| DA-06 | Supply the real supplier list | Client | P1 | Open | Four suppliers exist: two carried over from the extraction with invented names and two test suppliers (Livingstone and Chemist Warehouse) whose catalogues seeded the products. |
 | DA-07 | Supply the hero banner image | Client | P2 | Open | The live site loads Content/Banner/July-2026/u1oannrj.png, which the extraction never captured — only Brand, Category, Product and WebHtml folders were mirrored. |
 | DA-08 | Obtain Gilroy Regular and Medium | Agency | P2 | Open | The theme references them but the files were never delivered, so the live site already falls back to a generic sans for body text. Gilroy is a commercial typeface. |
 | DA-09 | Explain the disappearing product | Client | P3 | Open | Product 180 (Vaseline) was on the storefront listing at 12:45 UTC and gone by 13:05 the same day, while its detail page still loaded. |
@@ -41,6 +41,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-14 | Confirm the brand list | Client | P3 | Open | Brands were assigned by reading product names. |
 | DA-15 | Decide on duplicate categories | Client | P3 | Open | Six category names are duplicated across the tree and two ('Oral Care') are duplicated inside one department. Slugs were disambiguated by appending the ID. |
 | DA-16 | Confirm the missing department | Client | P3 | Open | Livingstone has 12 departments; AussieMed has 11 of them. 'Tattoo & Piercing' is absent. |
+| DA-17 | Replace the test supplier attribution | Client | P1 | Open | Livingstone and Chemist Warehouse are listed as suppliers for testing only. They are unaffiliated third parties and must not appear on a live storefront. |
 
 ## Legal
 
@@ -120,3 +121,5 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DN-10 | Ex VAT / Inc VAT toggle | Dev | P2 | Done | Procurement compares ex-tax and the approver reads inc-tax, so the same buyer needs both during one order. |
 | DN-11 | Pack and unit of measure model | Dev | P1 | Done | The same line sells by the box and by the carton at different prices. Cart lines are keyed by product and pack so they never merge. |
 | DN-12 | Adopt the existing brand theme | Dev | P2 | Done | Navy #29387d, red #ea2227 and Gilroy, read from the live site's computed styles rather than eyeballed. |
+| DN-13 | Catalogue seeded with real products | Dev | P2 | Done | Sixty real items replaced invented placeholders so the storefront can be judged against products that actually exist. |
+| DN-14 | Control characters in generated code | Dev | P1 | Done | Shell escaping wrote literal backspace bytes into regex rules, so every packaging and variant rule silently matched nothing while looking correct in every editor. |

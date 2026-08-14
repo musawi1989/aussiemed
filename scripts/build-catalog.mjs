@@ -14,6 +14,11 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  SUPPLIER_IDS,
+  TEST_PRODUCTS,
+  TEST_SUPPLIERS,
+} from "./seed-catalogue.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => JSON.parse(readFileSync(resolve(root, p), "utf8"));
@@ -143,7 +148,7 @@ function buildPacks(sku, unit, packSize, basePrice, tiers, outOfStock, outer) {
   const base = {
     id: "base",
     sku,
-    label: packSize ? `${packSize.replace(/pack/i, "Pieces")}/${unit}` : unit,
+    label: packSize ? `${packSize.replace(/\bpack\b/i, "Pieces")}/${unit}` : unit,
     shortLabel: unit,
     eachesPerPack: 1,
     priceAED: round2(basePrice),
@@ -301,159 +306,84 @@ const REAL_PRODUCT_META = {
  * 4. Placeholder catalogue
  * ------------------------------------------------------------------ */
 
-// Fake, but plausible for a UAE medical-supplies wholesaler. Every entry is
-// marked isPlaceholder so it can be deleted in one query once the real
-// catalogue arrives. [name, brand, categoryId, priceAED, unit, packSize, tiers]
-const PLACEHOLDERS = [
-  ["Nitrile Examination Gloves Powder Free Medium", "Medisafe", 81, 34.5, "Box", "100 pack", [[10, 32.9], [50, 30.5]]],
-  ["Nitrile Examination Gloves Powder Free Large", "Medisafe", 81, 34.5, "Box", "100 pack", [[10, 32.9], [50, 30.5]]],
-  ["Latex Examination Gloves Powder Free Small", "Medisafe", 81, 28.9, "Box", "100 pack", [[10, 27.5]]],
-  ["Type IIR Surgical Face Mask Level 2", "Medisafe", 79, 18.75, "Box", "50 pack", [[20, 17.25], [100, 15.9]]],
-  ["P2/N95 Respirator Flat Fold", "Medisafe", 79, 62.0, "Box", "20 pack", [[10, 58.5]]],
-  ["Disposable Isolation Gown AAMI Level 2", "Medisafe", 80, 96.0, "Carton", "50 pack", [[5, 91.0]]],
-  ["Bouffant Cap Blue", "Medisafe", 82, 12.4, "Box", "100 pack", []],
-  ["Alcohol Hand Rub Gel 70% 500mL Pump", "Puracleanse", 33, 21.9, "Each", "500 mL", [[12, 19.99], [48, 18.5]]],
-  ["Antibacterial Hand Wash 5L Refill", "Puracleanse", 33, 78.0, "Each", "5 L", [[4, 73.5]]],
-  ["Surface Disinfectant Wipes Canister", "Puracleanse", 140, 32.5, "Each", "200 wipes", [[6, 30.0], [24, 28.4]]],
-  ["Hospital Grade Disinfectant Concentrate 5L", "Puracleanse", 147, 112.0, "Each", "5 L", [[4, 105.0]]],
-  ["Clinical Waste Bags Yellow 240L", "Puracleanse", 141, 145.0, "Carton", "100 pack", [[5, 138.0]]],
-  ["Sterile Gauze Swabs 7.5cm x 7.5cm", "Woundline", 60, 8.9, "Pack", "100 pack", [[25, 8.25], [100, 7.6]]],
-  ["Adhesive Wound Dressing 6cm x 7cm", "Woundline", 60, 24.5, "Box", "50 pack", [[10, 22.9]]],
-  ["Conforming Bandage 7.5cm x 4m", "Woundline", 60, 4.25, "Each", "", [[50, 3.85]]],
-  ["Micropore Surgical Tape 2.5cm x 9m", "Woundline", 152, 3.6, "Each", "", [[24, 3.3], [96, 3.05]]],
-  ["Povidone-Iodine Antiseptic Solution 500mL", "Woundline", 61, 27.0, "Each", "500 mL", [[12, 25.5]]],
-  ["Alcohol Prep Pads Sterile", "Woundline", 140, 14.9, "Box", "200 pack", [[20, 13.75]]],
-  ["Instant Cold Pack Single Use", "Woundline", 59, 6.5, "Each", "", [[24, 5.95]]],
-  ["Digital Thermometer Oral and Axillary", "Medcore", 111, 42.0, "Each", "", [[10, 39.5]]],
-  ["Infrared Non-Contact Forehead Thermometer", "Medcore", 111, 165.0, "Each", "", [[5, 156.0], [20, 149.0]]],
-  ["Fingertip Pulse Oximeter", "Medcore", 114, 118.0, "Each", "", [[5, 112.0]]],
-  ["Dual Head Stethoscope Stainless Steel", "Medcore", 109, 138.0, "Each", "", [[5, 129.0]]],
-  ["Aneroid Sphygmomanometer with Adult Cuff", "Medcore", 111, 175.0, "Each", "", [[5, 165.0]]],
-  ["Diagnostic Penlight Reusable", "Medcore", 111, 22.5, "Each", "", [[20, 20.9]]],
-  ["Blood Glucose Test Strips", "Medcore", 114, 89.0, "Box", "50 pack", [[10, 84.0]]],
-  ["Disposable Scalpel Blade No.11 Sterile", "Medcore", 105, 46.0, "Box", "100 pack", [[10, 43.5]]],
-  ["Iris Scissors Straight 11.5cm", "Medcore", 104, 58.0, "Each", "", [[10, 54.0]]],
-  ["Dressing Forceps Serrated 14cm", "Medcore", 115, 39.0, "Each", "", [[10, 36.5]]],
-  ["Luer Lock Syringe 10mL Sterile", "Medcore", 49, 38.5, "Box", "100 pack", [[10, 36.0], [50, 34.2]]],
-  ["Hypodermic Needle 21G x 38mm", "Medcore", 46, 31.0, "Box", "100 pack", [[10, 29.0]]],
-  ["Safety Lancets 28G Single Use", "Medcore", 106, 54.0, "Box", "200 pack", [[10, 50.5]]],
-  ["IV Administration Set 20 Drops per mL", "Medcore", 117, 12.9, "Each", "", [[25, 11.9]]],
-  ["Nasal Oxygen Cannula Adult", "Medcore", 57, 9.4, "Each", "", [[25, 8.6]]],
-  ["Nebuliser Mask Kit Adult", "Medcore", 112, 16.8, "Each", "", [[20, 15.5]]],
-  ["Examination Couch Roll 50cm x 50m", "Medisafe", 47, 26.0, "Each", "", [[12, 24.0], [48, 22.5]]],
-  ["Kidney Dish Stainless Steel 250mm", "Medcore", 113, 44.0, "Each", "", [[10, 41.0]]],
-  ["Sharps Container 5L Yellow", "Medisafe", 141, 33.5, "Each", "5 L", [[12, 31.0]]],
-  ["Instrument Sterilisation Pouches 90mm x 230mm", "Medisafe", 37, 42.0, "Box", "200 pack", [[10, 39.5]]],
-  ["Autoclave Indicator Tape 19mm", "Medisafe", 37, 11.5, "Each", "", [[24, 10.6]]],
-  ["Dental Bibs 2-Ply Blue", "Dentiva", 119, 29.0, "Box", "500 pack", [[10, 27.0]]],
-  ["Saliva Ejectors Disposable", "Dentiva", 122, 17.5, "Bag", "100 pack", [[20, 16.2]]],
-  ["Prophy Paste Cups Medium Grit", "Dentiva", 120, 68.0, "Box", "200 pack", [[5, 64.0]]],
-  ["Alginate Impression Material 500g", "Dentiva", 129, 54.0, "Each", "500 g", [[10, 50.5]]],
-  ["Fluoride Varnish Unit Dose 0.4mL", "Dentiva", 134, 185.0, "Box", "50 pack", [[5, 175.0]]],
-  ["Specimen Container 70mL Sterile", "Labworks", 72, 48.0, "Box", "100 pack", [[10, 45.0]]],
-  ["Microscope Slides Frosted End", "Labworks", 71, 22.0, "Box", "50 pack", [[20, 20.5]]],
-  ["Borosilicate Beaker 250mL", "Labworks", 74, 18.9, "Each", "250 mL", [[12, 17.4]]],
-  ["Nitrile Lab Gloves Chemical Resistant", "Labworks", 73, 39.5, "Box", "100 pack", [[10, 37.0]]],
-  ["Adjustable Volume Micropipette 100-1000uL", "Labworks", 75, 420.0, "Each", "", [[3, 399.0]]],
+// Products come from scripts/seed-catalogue.mjs — real items seeded from two
+// public supplier catalogues for testing. See DA-01 in the issue register.
+
+// Merchandising and packaging rules are matched on what a product IS, not on
+// an exact name, so they keep working when the catalogue is replaced.
+
+/** Lines that also sell by the outer. [units per outer, outer name]. */
+const OUTER_RULES = [
+  [/\bglove/i, [10, "Carton"]],
+  [/mask|respirator/i, [20, "Carton"]],
+  [/gauze|swab|dressing|bandage/i, [25, "Carton"]],
+  [/tape\b/i, [24, "Carton"]],
+  [/sanitiser|sanitizer|hand rub|hand wash/i, [12, "Carton"]],
+  [/wipe|tissue/i, [6, "Carton"]],
+  [/syringe|needle|lancet/i, [10, "Carton"]],
+  [/bib|specimen/i, [10, "Carton"]],
 ];
+const outerFor = (name) => OUTER_RULES.find(([re]) => re.test(name))?.[1];
 
-// Suppliers 20 and 21 are the only ones the extraction evidences. The
-// placeholder brands get their own ids so that multi-supplier checkout — one
-// invoice per supplier — is actually exercisable in the UI.
-const SUPPLIER_BY_BRAND = {
-  Medisafe: 21,
-  Puracleanse: 22,
-  Woundline: 23,
-  Medcore: 24,
-  Dentiva: 25,
-  Labworks: 26,
-};
-
-// Supplier ids 20 and 21 are real; the names are not — the extraction never
-// exposed them. Everything from 22 up is invented alongside the placeholder
-// brands. Replace wholesale when the real supplier list arrives.
-const SUPPLIERS = [
-  { id: 20, name: "Northline Uniforms", isPlaceholder: true },
-  { id: 21, name: "AussieMed Distribution", isPlaceholder: true },
-  { id: 22, name: "Puracleanse Hygiene", isPlaceholder: true },
-  { id: 23, name: "Woundline Medical", isPlaceholder: true },
-  { id: 24, name: "Medcore Instruments", isPlaceholder: true },
-  { id: 25, name: "Dentiva Dental Supply", isPlaceholder: true },
-  { id: 26, name: "Labworks Scientific", isPlaceholder: true },
-];
-
-// A handful are deliberately out of stock so the Notify Me path is exercisable.
-const OUT_OF_STOCK_NAMES = new Set([
-  "P2/N95 Respirator Flat Fold",
-  "Infrared Non-Contact Forehead Thermometer",
-  "Fluoride Varnish Unit Dose 0.4mL",
-]);
-
-// Lines that also sell by the outer. [units per outer, outer name].
-const OUTER_PACKS = {
-  "Nitrile Examination Gloves Powder Free Medium": [10, "Carton"],
-  "Nitrile Examination Gloves Powder Free Large": [10, "Carton"],
-  "Latex Examination Gloves Powder Free Small": [10, "Carton"],
-  "Type IIR Surgical Face Mask Level 2": [20, "Carton"],
-  "P2/N95 Respirator Flat Fold": [8, "Carton"],
-  "Alcohol Hand Rub Gel 70% 500mL Pump": [12, "Carton"],
-  "Surface Disinfectant Wipes Canister": [6, "Carton"],
-  "Sterile Gauze Swabs 7.5cm x 7.5cm": [25, "Carton"],
-  "Micropore Surgical Tape 2.5cm x 9m": [24, "Carton"],
-  "Alcohol Prep Pads Sterile": [20, "Carton"],
-  "Luer Lock Syringe 10mL Sterile": [10, "Carton"],
-  "Hypodermic Needle 21G x 38mm": [10, "Carton"],
-  "Examination Couch Roll 50cm x 50m": [12, "Carton"],
-  "Dental Bibs 2-Ply Blue": [10, "Carton"],
-  "Specimen Container 70mL Sterile": [10, "Carton"],
-};
-
-// Variant axes. Options a buyer can see but not currently buy stay listed and
-// disabled — hiding them makes the range look narrower than it is.
+/** Sizes a buyer can see even when only one is stocked. */
 const SIZE_AXIS = (current) => ({
   name: "Size",
   selected: current,
   options: ["Extra Small", "Small", "Medium", "Large", "Extra Large"].map(
-    (value) => ({ value, available: value !== "Extra Small" || current === "Extra Small" })
+    (value) => ({ value, available: value !== "Extra Small" })
   ),
 });
 
-const VARIANT_AXES = {
-  "Nitrile Examination Gloves Powder Free Medium": [
-    SIZE_AXIS("Medium"),
-    { name: "Colour", selected: "Blue", options: [{ value: "Blue", available: true }, { value: "Black", available: true }] },
-  ],
-  "Nitrile Examination Gloves Powder Free Large": [SIZE_AXIS("Large")],
-  "Latex Examination Gloves Powder Free Small": [SIZE_AXIS("Small")],
-  "Disposable Isolation Gown AAMI Level 2": [
-    { name: "Size", selected: "Universal", options: [{ value: "Universal", available: true }, { value: "Large", available: false }] },
-  ],
-  "Mens Scrub Top": [
-    SIZE_AXIS("Medium"),
-    {
+/** Reads the size out of the product name so the axis reflects reality. */
+function variantsFor(name) {
+  if (!/\bglove|gown|scrub|apron/i.test(name)) return [];
+  const m = /\b(extra small|x-?small|small|medium|large|extra large|x-?large)\b/i.exec(name);
+  const found = m
+    ? m[1]
+        .toLowerCase()
+        .replace(/^x-?/, "extra ")
+        // Title-case each word so the value matches an option chip exactly.
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Medium";
+  const axes = [SIZE_AXIS(found)];
+  if (/\bglove/i.test(name)) {
+    axes.push({
       name: "Colour",
-      selected: "Teal",
+      selected: /black/i.test(name) ? "Black" : /green/i.test(name) ? "Green" : "Blue",
       options: [
-        { value: "Teal", available: true },
-        { value: "Navy", available: true },
-        { value: "Ceil Blue", available: true },
+        { value: "Blue", available: true },
+        { value: "Black", available: true },
+        { value: "Green", available: false },
       ],
-    },
-  ],
-};
+    });
+  }
+  return axes;
+}
 
-// Merchandising flags. Real ones come from sales data; these are seeded so the
-// badge treatments are reviewable.
-const BADGES = {
-  "Nitrile Examination Gloves Powder Free Medium": ["top-seller"],
-  "Alcohol Hand Rub Gel 70% 500mL Pump": ["top-seller"],
-  "Sterile Gauze Swabs 7.5cm x 7.5cm": ["top-seller"],
-  "Infrared Non-Contact Forehead Thermometer": ["back-soon"],
-  "Fingertip Pulse Oximeter": ["new"],
-  "Adjustable Volume Micropipette 100-1000uL": ["new"],
-  "Fluoride Varnish Unit Dose 0.4mL": ["back-soon"],
-  "P2/N95 Respirator Flat Fold": ["back-soon"],
-};
+/**
+ * Merchandising flags. Real ones come from sales data; these are derived so
+ * the badge treatments stay reviewable against any catalogue.
+ */
+function badgesFor(name, index) {
+  const badges = [];
+  if (/\bglove|sanitiser|gauze|mask/i.test(name) && index % 7 === 0) badges.push("top-seller");
+  if (index % 11 === 3) badges.push("new");
+  if (index % 13 === 5) badges.push("back-soon");
+  return badges;
+}
+
+const isOutOfStock = (name, index) => index % 13 === 5 || /discontinued/i.test(name);
+
+/**
+ * Supplier ids 20 and 21 come from the extraction; their names are ours, since
+ * the extraction never exposed them. 30 and 31 are the two test suppliers whose
+ * public catalogues seeded the products.
+ */
+const SUPPLIERS = [
+  { id: 20, name: "Northline Uniforms", isPlaceholder: true },
+  { id: 21, name: "AussieMed Distribution", isPlaceholder: true },
+  ...TEST_SUPPLIERS,
+];
 
 /** Structured specs. Filterable later; for now they render as a details table. */
 function buildAttributes({ brand, unit, packSize, categoryPath, taxClass, supplierName }) {
@@ -515,12 +445,12 @@ const supplierName = (id) => SUPPLIERS.find((s) => s.id === id)?.name ?? null;
 function buildProduct({
   id, skuId, sku, name, brand, description, categoryId, basePrice, unit,
   packSize, supplierId, outOfStock, images, tiers, isPlaceholder,
-  detailKey = null, sourceNote = null,
+  detailKey = null, sourceNote = null, index = 0,
 }) {
   const path = categoryId ? categoryPath(categoryId) : [];
   const taxClass = taxClassFor(name);
   const packs = buildPacks(
-    sku, unit, packSize, basePrice, tiers, outOfStock, OUTER_PACKS[name]
+    sku, unit, packSize, basePrice, tiers, outOfStock, outerFor(name)
   );
 
   return {
@@ -545,7 +475,7 @@ function buildProduct({
     taxClass,
     packs,
     defaultPackId: packs[0].id,
-    variants: VARIANT_AXES[name] ?? [],
+    variants: variantsFor(name),
     attributes: buildAttributes({
       brand,
       unit,
@@ -557,7 +487,7 @@ function buildProduct({
     // No real SDS or spec sheets were supplied. The field exists because
     // medical and laboratory buyers expect them, and often need them.
     documents: [],
-    badges: BADGES[name] ?? [],
+    badges: badgesFor(name, index),
     isPlaceholder,
     detailKey,
     sourceNote,
@@ -595,38 +525,46 @@ for (const row of rawProducts) {
   );
 }
 
-// --- placeholders --------------------------------------------------
+// --- test catalogue ------------------------------------------------
+// Sixty real products seeded from two public supplier catalogues, so the
+// storefront can be judged against things that actually exist. Flagged
+// isPlaceholder because they are not AussieMed's own range.
 let nextId = 1000;
-for (const [name, brand, categoryId, price, unit, packSize, tiers] of PLACEHOLDERS) {
-  const basePrice = round2(price);
+TEST_PRODUCTS.forEach((seed, index) => {
+  const basePrice = round2(seed.priceAED);
   products.push(
     buildProduct({
       id: nextId,
       skuId: nextId,
-      sku: `PL-${nextId}`,
-      name,
-      brand,
-      description: `${name}. Placeholder catalogue entry used for layout and filtering during the rebuild — replace with the real product description before launch.`,
-      categoryId,
+      // Keep the supplier's own item code where they publish one — it makes
+      // the seed traceable back to source.
+      sku: seed.sourceSku || `TS-${nextId}`,
+      name: seed.name,
+      brand: seed.brand,
+      // Written here rather than copied from the supplier's own listing.
+      description: `${seed.name}. Seeded from ${seed.supplier}'s public catalogue for testing — description and specification to be replaced with approved copy before launch.`,
+      categoryId: seed.categoryId,
       basePrice,
-      unit,
-      packSize,
-      supplierId: SUPPLIER_BY_BRAND[brand] ?? 21,
-      outOfStock: OUT_OF_STOCK_NAMES.has(name),
+      unit: seed.unit,
+      packSize: seed.packSize,
+      supplierId: SUPPLIER_IDS[seed.supplier] ?? 21,
+      outOfStock: isOutOfStock(seed.name, index),
+      // No supplier imagery is copied.
       images: [],
-      // Run placeholder tiers through the same normaliser as the real ones, so
-      // a typo in the seed table cannot produce a tier shape the storefront
-      // never has to handle for real data.
+      // Run seeded tiers through the same normaliser as the real ones, so a
+      // typo cannot produce a tier shape the storefront never has to handle.
       tiers: normaliseTiers(
-        tiers.map(([minQty]) => minQty),
-        tiers.map(([, priceAED]) => priceAED),
+        seed.tiers.map(([minQty]) => minQty),
+        seed.tiers.map(([, priceAED]) => priceAED),
         basePrice
       ),
       isPlaceholder: true,
+      index,
+      sourceNote: `Seeded from ${seed.supplier} at AUD ${seed.sourcePriceAUD}, converted for testing.`,
     })
   );
   nextId += 1;
-}
+});
 
 /* ------------------------------------------------------------------ *
  * 6. Emit

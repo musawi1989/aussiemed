@@ -80,6 +80,21 @@ check(
   badTierOrder && `${badTierOrder.name}: ${JSON.stringify(badTierOrder.tiers)}`
 );
 
+/* --- variant integrity --------------------------------------------- */
+
+// A selected value that matches no option leaves every chip unhighlighted, so
+// the page silently shows the wrong thing. This also catches the generator
+// emitting a raw, uncapitalised value.
+const badVariant = catalog.products
+  .flatMap((p) => p.variants.map((axis) => ({ p, axis })))
+  .find(({ axis }) => !axis.options.some((o) => o.value === axis.selected));
+check(
+  "every variant's selected value matches one of its options",
+  badVariant === undefined,
+  badVariant &&
+    `${badVariant.p.name}: ${badVariant.axis.name} selected "${badVariant.axis.selected}"`
+);
+
 /* --- packs and VAT ------------------------------------------------ */
 
 const badTax = catalog.products.find(
