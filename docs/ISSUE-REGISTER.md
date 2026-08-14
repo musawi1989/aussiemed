@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**86 items** · 62 outstanding · **22 outstanding P1**
+**96 items** · 69 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -20,6 +20,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | AC-08 | Confirm the rounding policy | Accountant | P3 | Open | Half-up to 2 decimals. Per-line VAT is accumulated then rounded once, so the invoice split and the order total agree to the cent. |
 | AC-09 | Decide payment terms and credit accounts | Client | P2 | Open | Trade buyers usually expect credit limits and 30-day terms. Not modelled at all. v1 ships offline / purchase order only. |
 | AC-10 | Confirm the default price display | Client | P3 | Open | Prices default to Ex. VAT with a toggle to Inc. VAT. |
+| AC-11 | Approve the VAT rounding method on invoices | Accountant | P2 | Open | VAT is rounded per line rather than once per invoice, so the printed lines always add up to the printed total. The alternative rounds once and can leave lines that do not sum. |
+| AC-12 | Confirm the reference number sequence resets each year | Accountant | P2 | Open | OUR DECISION: the sequence restarts at 000001 each calendar year, so AM-2026-000001 and AM-2027-000001 can both exist. If accounting needs a single unbroken sequence this must change before real orders. |
+| AC-13 | Decide whether an order should reserve stock | Client | P2 | Open | OUR DECISION: checkout does not decrement or reserve anything, because there are no stock levels — only an in/out flag. Two customers can order the last unit. |
 
 ## Data
 
@@ -43,6 +46,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-16 | Confirm the missing department | Client | P3 | Open | Livingstone has 12 departments; AussieMed has 11 of them. 'Tattoo & Piercing' is absent. |
 | DA-17 | Replace the test supplier attribution | Client | P1 | Open | Livingstone and Chemist Warehouse are listed as suppliers for testing only. They are unaffiliated third parties and must not appear on a live storefront. |
 | DA-18 | Product ids are derived from slugs | Dev | P2 | Open | Carts and wishlists are stored in the browser against a product id. Ids are now hashed from the slug so they survive a re-seed, which means CHANGING A PRODUCT SLUG ORPHANS ANY SAVED CART LINE referencing it. |
+| DA-19 | Supplier email addresses are invented | Client | P2 | Open | The seed writes orders@<supplier>.example and accounts@<supplier>.example because secondaryEmail is mandatory. No supplier will receive anything at these addresses. |
 
 ## Legal
 
@@ -59,7 +63,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| FN-01 | Checkout does not submit an order | Dev | P1 | Open | The form is complete and the flow is reviewable, but nothing is created and no payment is taken. A preview reference number is generated in the browser. |
+| FN-01 | Checkout does not submit an order | Dev | P1 | Done | Done. Checkout writes a real order in one transaction, with one invoice per supplier and a server-allocated reference number. |
 | FN-02 | Quote requests are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-04 | Notify Me does not register a subscription | Dev | P1 | Open | Captured locally. The restock email flow does not exist. |
@@ -84,6 +88,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
 | BE-09 | Point the storefront at the database | Dev | P1 | Done | Done. Every page and API route reads Prisma. Client components read a snapshot over HTTP because a browser cannot query the database. |
 | BE-10 | Retire the catalogue snapshot endpoint | Dev | P2 | Open | Client components fetch the whole catalogue from /api/v1/catalog/snapshot. Fine for 71 products; not for thousands. Goes away when the cart moves server-side. |
+| BE-11 | Restrict order pages to the account that placed the order | Dev | P1 | Open | An order at /orders/REFERENCE is readable by anyone who knows the reference. There is no sign-in yet, so there is nothing to check against. |
+| BE-12 | Merge a guest cart into the user cart on sign-in | Dev | P2 | Open | Carts are keyed by a cookie so a visitor can shop before signing in. The merge on sign-in is specified but cannot be built until auth exists. |
+| BE-13 | Expire abandoned guest carts | Dev | P3 | Open | Cart rows are never cleaned up. Every visitor who adds an item creates one that lives forever. |
+| BE-14 | Confirm the default order and invoice status | Client | P2 | Open | OUR DECISION: new orders are Pending and each supplier invoice is Pending. The real workflow — who moves an order to Processing, and when an invoice becomes Issued — is not defined. |
 
 ## Infrastructure
 
@@ -131,3 +139,5 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DN-15 | Product images added for testing | Dev | P2 | Done | Fifty-two of 71 products now carry real photography so the layout can be judged with images rather than placeholder tiles. |
 | DN-16 | Database schema designed and migrated | Dev | P1 | Done | Thirty tables covering catalogue, packs as SKUs, variants, attributes, documents, batches, orders, per-supplier invoices, quotes, bulk upload and audit. |
 | DN-17 | Typecheck was silently passing on a stale cache | Dev | P1 | Done | tsc ran with incremental caching and reported no errors while real type errors existed in the tree. Every earlier typecheck-clean claim was suspect. |
+| DN-18 | Cart moved to the server | Dev | P1 | Done | The cart was localStorage, so the browser held prices. It is now database rows priced entirely on the server; the client cannot tell the server what anything costs. |
+| DN-19 | Checkout writes real orders | Dev | P1 | Done | One transaction creates the order, one invoice per supplier and every line, or nothing at all. Reference numbers are allocated server-side inside that transaction. |

@@ -16,12 +16,13 @@ import {
   savingPercent,
   unitPriceFor,
 } from "@/lib/money";
+import { useCart } from "@/lib/cart-client";
 import { useStore } from "@/lib/store";
 import type { Product } from "@/lib/types";
 
 export function BuyBox({ product }: { product: Product }) {
-  const { addToCart, qtyInCart, ready, addToQuote, inQuote, includeVat } =
-    useStore();
+  const { ready, addToQuote, inQuote, includeVat } = useStore();
+  const { addBySku, qtyOfSku, busy, error } = useCart();
   const [packId, setPackId] = useState(product.defaultPackId);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -33,7 +34,7 @@ export function BuyBox({ product }: { product: Product }) {
   const shownUnit = displayPrice(netUnit, product.taxClass, includeVat);
   const shownTotal = displayPrice(netTotal, product.taxClass, includeVat);
   const nextTier = nextTierFor(pack.tiers, qty);
-  const inCart = ready ? qtyInCart(product.id, pack.id) : 0;
+  const inCart = qtyOfSku(pack.sku);
   const discounted = netUnit < pack.priceAED;
   const unavailable = product.outOfStock || pack.outOfStock;
 
@@ -180,12 +181,13 @@ export function BuyBox({ product }: { product: Product }) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => {
-                addToCart(product.id, pack.id, qty);
+              onClick={async () => {
+                if (!(await addBySku(pack.sku, qty))) return;
                 setAdded(true);
                 window.setTimeout(() => setAdded(false), 1800);
               }}
-              className="h-11 flex-1 rounded-card bg-red px-4 font-bold text-on-red transition-colors hover:bg-red-hover"
+              disabled={busy}
+              className="h-11 flex-1 rounded-card bg-red px-4 font-bold text-on-red transition-colors hover:bg-red-hover disabled:opacity-60"
             >
               {added ? "Added to cart" : "Add to cart"}
             </button>

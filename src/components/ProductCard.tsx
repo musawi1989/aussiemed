@@ -8,11 +8,13 @@ import { ProductThumb } from "./ProductThumb";
 import { QtyInput } from "./QtyInput";
 import { WishlistButton } from "./WishlistButton";
 import { displayPrice, formatAED, packFor } from "@/lib/money";
+import { useCart } from "@/lib/cart-client";
 import { useStore } from "@/lib/store";
 import type { Product } from "@/lib/types";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { addToCart, includeVat } = useStore();
+  const { includeVat } = useStore();
+  const { addBySku, busy } = useCart();
   const [packId, setPackId] = useState(product.defaultPackId);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -21,8 +23,9 @@ export function ProductCard({ product }: { product: Product }) {
   const href = `/products/${product.slug}`;
   const unitShown = displayPrice(pack.priceAED, product.taxClass, includeVat);
 
-  const handleAdd = () => {
-    addToCart(product.id, pack.id, qty);
+  const handleAdd = async () => {
+    const ok = await addBySku(pack.sku, qty);
+    if (!ok) return;
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1600);
   };
@@ -109,7 +112,8 @@ export function ProductCard({ product }: { product: Product }) {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="h-9 w-full whitespace-nowrap rounded-card bg-red px-3 text-sm font-bold text-on-red transition-colors hover:bg-red-hover"
+                disabled={busy}
+                className="h-9 w-full whitespace-nowrap rounded-card bg-red px-3 text-sm font-bold text-on-red transition-colors hover:bg-red-hover disabled:opacity-60"
               >
                 {added ? "Added" : "Add to cart"}
               </button>

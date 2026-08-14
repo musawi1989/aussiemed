@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getAllProducts, getDepartments, getSuppliers } from "@/lib/catalog";
 import { CatalogProvider } from "@/lib/catalog-client";
+import { CartProvider } from "@/lib/cart-client";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -52,6 +53,7 @@ export default async function RootLayout({
     <html lang="en" className={bodyFont.variable}>
       <body className="flex min-h-screen flex-col">
         <CatalogProvider initialProducts={products} initialSuppliers={suppliers}>
+        <CartProvider>
         <StoreProvider>
           <a
             href="#main"
@@ -65,6 +67,7 @@ export default async function RootLayout({
           </main>
           <Footer />
         </StoreProvider>
+        </CartProvider>
         </CatalogProvider>
       </body>
     </html>

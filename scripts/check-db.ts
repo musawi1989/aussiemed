@@ -181,6 +181,98 @@ check(
   `got ${vat?.value}`
 );
 
+/* ---------- orders ---------- */
+
+// Orders are the point of no return: once written they are a document the
+// customer keeps, so the invariants matter more here than anywhere.
+const orders = await prisma.order.findMany({
+  include: { invoices: { include: { items: true } } },
+});
+
+if (orders.length === 0) {
+  console.log("  SKIP  no orders placed yet");
+} else {
+  const badSplit = orders.find((o) => {
+    const suppliers = new Set(o.invoices.map((i) => i.supplierId));
+    return suppliers.size !== o.invoices.length;
+  });
+  check(
+    "each order has exactly one invoice per supplier",
+    badSplit === undefined,
+    badSplit?.reference
+  );
+
+  const badSubtotal = orders.find(
+    (o) => o.invoices.reduce((n, i) => n + i.subtotalFils, 0) !== o.subtotalFils
+  );
+  check(
+    "invoice subtotals sum to the order subtotal",
+    badSubtotal === undefined,
+    badSubtotal?.reference
+  );
+
+  const badVat = orders.find(
+    (o) => o.invoices.reduce((n, i) => n + i.vatFils, 0) !== o.vatFils
+  );
+  check(
+    "invoice VAT sums to the order VAT, with no rounding drift",
+    badVat === undefined,
+    badVat?.reference
+  );
+
+  const badTotal = orders.find(
+    (o) => o.subtotalFils + o.vatFils !== o.totalFils
+  );
+  check("order total equals subtotal plus VAT", badTotal === undefined, badTotal?.reference);
+
+  const badLines = orders.find((o) =>
+    o.invoices.some((i) =>
+      i.items.some(
+        (it) =>
+          it.qty < 1 ||
+          it.lineTotalFils !== it.unitPriceFils * it.qty ||
+          !Number.isInteger(it.vatFils)
+      )
+    )
+  );
+  check(
+    "every order line is a whole quantity priced in whole fils",
+    badLines === undefined,
+    badLines?.reference
+  );
+
+  // A zero-rated line must carry no VAT, however the rate later changes.
+  const badZeroRated = orders.find((o) =>
+    o.invoices.some((i) =>
+      i.items.some((it) => it.taxClassSnapshot === "ZeroRated" && it.vatFils !== 0)
+    )
+  );
+  check(
+    "zero-rated lines carry no VAT",
+    badZeroRated === undefined,
+    badZeroRated?.reference
+  );
+
+  const missingSnapshot = orders.find((o) =>
+    o.invoices.some((i) =>
+      i.items.some((it) => !it.nameSnapshot || !it.skuCodeSnapshot || !it.taxClassSnapshot)
+    )
+  );
+  check(
+    "every order line snapshots its name, SKU and tax class",
+    missingSnapshot === undefined,
+    missingSnapshot?.reference
+  );
+
+  const noRate = orders.find((o) => !o.vatRateBasisPoints);
+  check("every order records the VAT rate in force when placed", noRate === undefined);
+
+  const refs = orders.map((o) => o.reference);
+  check("order references are unique", new Set(refs).size === refs.length);
+
+  console.log(`\n  ${orders.length} order(s) checked`);
+}
+
 /* ---------- summary ---------- */
 
 await prisma.$disconnect();

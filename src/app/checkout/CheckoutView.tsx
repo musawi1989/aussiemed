@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatAED, lineTotal, VAT_RATE } from "@/lib/money";
-import { useStore } from "@/lib/store";
+import { aed, useCart } from "@/lib/cart-client";
+import { formatAED } from "@/lib/money";
 
 /**
- * Front-end only. Nothing is submitted anywhere yet — order creation, invoice
- * splitting per supplier and reference-number allocation are all backend work.
- * The form is real so the flow can be reviewed; the notice below is deliberate
- * and must stay until the API exists.
+ * Places a real order.
+ *
+ * The reference number comes back from the server, which allocates it inside
+ * the same transaction that writes the order — the browser never invents one.
  */
 export function CheckoutView() {
-  const { lines, totals, ready, clearCart } = useStore();
-  const [placed, setPlaced] = useState<string | null>(null);
+  const { cart, ready, refresh } = useCart();
+  const [placed, setPlaced] = useState<{
+    reference: string;
+    invoiceCount: number;
+    totalAED: number;
+  } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!ready) {
     return (
-      <div className="rounded-panel border border-border-base bg-surface p-10 text-center text-text-muted">
+      <div className="rounded-card border border-border-base bg-surface p-10 text-center text-text-muted">
         Loading&hellip;
       </div>
     );
@@ -25,41 +31,54 @@ export function CheckoutView() {
 
   if (placed) {
     return (
-      <div className="mx-auto max-w-lg rounded-panel border border-border-base bg-surface p-8 text-center shadow-card">
+      <div className="mx-auto max-w-lg rounded-card border border-border-base bg-surface p-8 text-center shadow-card">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="m5 12.5 4.5 4.5L19 7.5" />
           </svg>
         </div>
-        <h2 className="mt-4 text-lg font-semibold text-text">Order preview complete</h2>
+
+        <h2 className="mt-4 text-lg font-bold text-text">Order placed</h2>
         <p className="mt-2 text-sm text-text-muted">Your reference number is</p>
-        <p className="mt-1 text-xl font-semibold tracking-wide tnum text-text">
-          {placed}
+        <p className="mt-1 text-2xl font-bold tracking-wide tnum text-navy">
+          {placed.reference}
+        </p>
+
+        <p className="mt-4 text-sm text-text-muted tnum">
+          {formatAED(placed.totalAED)} &middot; {placed.invoiceCount}{" "}
+          {placed.invoiceCount === 1 ? "supplier invoice" : "supplier invoices"}
         </p>
 
         <p className="mt-5 rounded-card border border-accent-border bg-accent-soft px-3 py-2 text-left text-sm leading-relaxed text-accent">
-          Nothing was submitted. This reference was generated in the browser so
-          the flow can be reviewed &mdash; real orders, per-supplier invoices and
-          confirmation emails arrive with the backend.
+          The order is saved. Confirmation emails and payment are not built yet,
+          so nobody has been notified and nothing has been charged.
         </p>
 
-        <Link
-          href="/products"
-          className="mt-6 inline-block rounded-card bg-brand px-5 py-2.5 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
-        >
-          Back to catalogue
-        </Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link
+            href={`/orders/${placed.reference}`}
+            className="rounded-card bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
+          >
+            View order
+          </Link>
+          <Link
+            href="/products"
+            className="rounded-card border border-border-strong px-5 py-2.5 text-sm font-bold text-text transition-colors hover:bg-surface-hover"
+          >
+            Back to catalogue
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (lines.length === 0) {
+  if (cart.lines.length === 0) {
     return (
-      <div className="rounded-panel border border-border-base bg-surface p-12 text-center">
-        <h2 className="text-lg font-medium text-text">Your cart is empty</h2>
+      <div className="rounded-card border border-border-base bg-surface p-12 text-center">
+        <h2 className="text-lg font-bold text-text">Your cart is empty</h2>
         <Link
           href="/products"
-          className="mt-5 inline-block rounded-card bg-brand px-5 py-2.5 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
+          className="mt-5 inline-block rounded-card bg-red px-5 py-2.5 text-sm font-bold text-on-red transition-colors hover:bg-red-hover"
         >
           Browse products
         </Link>
@@ -67,29 +86,45 @@ export function CheckoutView() {
     );
   }
 
-  const suppliers = new Set(lines.map((l) => l.product.supplierId));
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    const form = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/api/v1/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(form)),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error?.message ?? "Could not place the order");
+        // A line may have gone out of stock while the form was open.
+        await refresh();
+        return;
+      }
+      setPlaced(data);
+      await refresh();
+    } catch {
+      setError("Could not reach the server");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        // Placeholder reference. The real one is allocated server-side so it is
-        // unique and sequential — never generated in the browser.
-        const seq = String(Math.floor(Math.random() * 900000) + 100000);
-        setPlaced(`AM-PREVIEW-${seq}`);
-        clearCart();
-      }}
-      className="grid gap-8 lg:grid-cols-[1fr_22rem]"
-    >
+    <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-6">
-        <p className="rounded-card border border-accent-border bg-accent-soft px-4 py-3 text-sm leading-relaxed text-accent">
-          <strong>Front-end preview.</strong> This checkout does not submit an
-          order or take payment. It exists so the flow and wording can be
-          reviewed before the backend is built.
-        </p>
+        {error && (
+          <p className="rounded-card border border-danger bg-danger-soft px-4 py-3 text-sm text-danger">
+            {error}
+          </p>
+        )}
 
-        <fieldset className="rounded-panel border border-border-base bg-surface p-5 shadow-card">
-          <legend className="px-1 text-sm font-semibold text-text">
+        <fieldset className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+          <legend className="px-1 text-sm font-bold text-text">
             Delivery details
           </legend>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -97,29 +132,18 @@ export function CheckoutView() {
             <Field label="Contact name" name="contact" required />
             <Field label="Email" name="email" type="email" required />
             <Field label="Phone" name="phone" type="tel" required />
-            <Field
-              label="Delivery address"
-              name="address"
-              required
-              className="sm:col-span-2"
-            />
+            <Field label="Delivery address" name="line1" required className="sm:col-span-2" />
             <Field label="Emirate" name="emirate" required />
-            <Field label="Purchase order reference" name="po" />
+            <Field label="Purchase order reference" name="poReference" />
           </div>
         </fieldset>
 
-        <fieldset className="rounded-panel border border-border-base bg-surface p-5 shadow-card">
-          <legend className="px-1 text-sm font-semibold text-text">Payment</legend>
-          <label className="mt-3 flex items-start gap-3 rounded-card border border-brand-border bg-brand-soft p-3">
-            <input
-              type="radio"
-              name="payment"
-              value="offline"
-              defaultChecked
-              className="mt-0.5"
-            />
+        <fieldset className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+          <legend className="px-1 text-sm font-bold text-text">Payment</legend>
+          <label className="mt-3 flex items-start gap-3 rounded-card border border-navy-border bg-navy-soft p-3">
+            <input type="radio" name="paymentMethod" value="OfflinePurchaseOrder" defaultChecked className="mt-0.5" />
             <span>
-              <span className="block text-sm font-medium text-text">
+              <span className="block text-sm font-bold text-text">
                 Offline / Purchase order
               </span>
               <span className="mt-0.5 block text-sm text-text-muted">
@@ -132,20 +156,18 @@ export function CheckoutView() {
       </div>
 
       <aside className="lg:sticky lg:top-40 lg:self-start">
-        <div className="rounded-panel border border-border-base bg-surface p-5 shadow-card">
-          <h2 className="text-base font-semibold text-text">Order summary</h2>
+        <div className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+          <h2 className="text-base font-bold text-text">Order summary</h2>
 
           <ul className="mt-3 space-y-2 border-b border-border-base pb-3">
-            {lines.map((line) => (
-              <li key={line.productId} className="flex justify-between gap-3 text-sm">
+            {cart.lines.map((line) => (
+              <li key={line.id} className="flex justify-between gap-3 text-sm">
                 <span className="min-w-0 text-text-muted">
                   <span className="tnum">{line.qty}</span> &times;{" "}
-                  {line.product.name}
+                  {line.productName}
                 </span>
-                <span className="shrink-0 font-medium tnum text-text">
-                  {formatAED(
-                    lineTotal(line.product.priceAED, line.product.tiers, line.qty)
-                  )}
+                <span className="shrink-0 font-bold tnum text-text">
+                  {formatAED(aed(line.lineTotalFils))}
                 </span>
               </li>
             ))}
@@ -154,38 +176,37 @@ export function CheckoutView() {
           <dl className="mt-3 space-y-2.5 text-sm">
             <div className="flex justify-between">
               <dt className="text-text-muted">Subtotal</dt>
-              <dd className="font-medium tnum text-text">
-                {formatAED(totals.subtotalAED)}
+              <dd className="font-bold tnum text-text">
+                {formatAED(aed(cart.subtotalFils))}
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-text-muted tnum">
-                VAT ({Math.round(VAT_RATE * 100)}%)
-              </dt>
-              <dd className="font-medium tnum text-text">
-                {formatAED(totals.vatAED)}
+              <dt className="text-text-muted">VAT</dt>
+              <dd className="font-bold tnum text-text">
+                {formatAED(aed(cart.vatFils))}
               </dd>
             </div>
             <div className="flex justify-between border-t border-border-base pt-3">
-              <dt className="font-semibold text-text">Total</dt>
-              <dd className="text-lg font-semibold tnum text-text">
-                {formatAED(totals.totalAED)}
+              <dt className="font-bold text-text">Total</dt>
+              <dd className="text-lg font-bold tnum text-text">
+                {formatAED(aed(cart.totalFils))}
               </dd>
             </div>
           </dl>
 
-          {suppliers.size > 1 && (
+          {cart.supplierCount > 1 && (
             <p className="mt-3 rounded-card bg-surface-sunken px-3 py-2 text-xs leading-relaxed text-text-muted tnum">
-              This order spans {suppliers.size} suppliers and will produce{" "}
-              {suppliers.size} separate invoices under one reference number.
+              This order spans {cart.supplierCount} suppliers and will produce{" "}
+              {cart.supplierCount} invoices under one reference number.
             </p>
           )}
 
           <button
             type="submit"
-            className="mt-5 h-11 w-full rounded-card bg-red font-bold text-on-red transition-colors hover:bg-red-hover"
+            disabled={submitting}
+            className="mt-5 h-11 w-full rounded-card bg-red font-bold text-on-red transition-colors hover:bg-red-hover disabled:opacity-60"
           >
-            Place order
+            {submitting ? "Placing order…" : "Place order"}
           </button>
         </div>
       </aside>
@@ -208,7 +229,7 @@ function Field({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1 block text-sm font-medium text-text">
+      <span className="mb-1 block text-sm font-bold text-text">
         {label}
         {required && <span className="ml-0.5 text-danger">*</span>}
       </span>
@@ -216,7 +237,7 @@ function Field({
         type={type}
         name={name}
         required={required}
-        className="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text placeholder:text-text-subtle"
+        className="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text"
       />
     </label>
   );
