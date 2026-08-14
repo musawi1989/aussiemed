@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { suggest } from "@/lib/catalog";
+
 import { formatAED } from "@/lib/money";
+import { useCatalog } from "@/lib/catalog-client";
 import { useStore } from "@/lib/store";
 import type { Department } from "@/lib/types";
 
@@ -291,6 +292,7 @@ function IconLink({
 function SearchBox({ departments }: { departments: Department[] }) {
   const router = useRouter();
   const params = useSearchParams();
+  const { suggest } = useCatalog();
   const [term, setTerm] = useState(params.get("q") ?? "");
   const [scope, setScope] = useState(params.get("category") ?? "");
   const [open, setOpen] = useState(false);

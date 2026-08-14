@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getProductById } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-client";
 import { useStore } from "@/lib/store";
 
 /**
@@ -15,6 +15,7 @@ export function ReorderOrderButton({
   lines: { productId: number; qty: number }[];
 }) {
   const { addToCart } = useStore();
+  const { getProductById } = useCatalog();
   const router = useRouter();
   const [skipped, setSkipped] = useState<number | null>(null);
 

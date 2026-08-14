@@ -13,7 +13,7 @@ function hrefWith(params: Params, patch: Params) {
   return qs ? `/products?${qs}` : "/products";
 }
 
-export function FilterPanel({
+export async function FilterPanel({
   params,
   facetCounts,
   brands,
@@ -22,7 +22,7 @@ export function FilterPanel({
   facetCounts: Record<number, number>;
   brands: { name: string; count: number }[];
 }) {
-  const departments = getDepartments();
+  const departments = await getDepartments();
   const activeCategory = params.category;
 
   return (

@@ -17,9 +17,11 @@ export const metadata: Metadata = {
     "Reorder what you bought last time in a couple of taps, and review your recent AussieMed orders, reference numbers and invoices.",
 };
 
-export default function AccountPage() {
-  const reorder = getReorderList();
-  const orders = getDemoOrders();
+export default async function AccountPage() {
+  const [reorder, orders] = await Promise.all([
+    getReorderList(),
+    getDemoOrders(),
+  ]);
   const recent = orders.slice(0, 3);
 
   return (

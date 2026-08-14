@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { getAllProducts } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-client";
 import { useStore } from "@/lib/store";
 
 export function WishlistView() {
   const { wishlist, ready } = useStore();
+  const { products } = useCatalog();
 
   if (!ready) {
     return (
@@ -16,7 +17,7 @@ export function WishlistView() {
     );
   }
 
-  const saved = getAllProducts().filter((p) => wishlist.includes(p.id));
+  const saved = products.filter((p) => wishlist.includes(p.id));
 
   if (saved.length === 0) {
     return (

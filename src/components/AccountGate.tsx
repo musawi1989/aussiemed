@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useStore } from "@/lib/store";
-import { DEMO_CUSTOMER } from "@/lib/demo-account";
+import { DEMO_CUSTOMER } from "@/lib/orders-shared";
 
 /**
  * Stands in for an authenticated session. There is no real auth yet — this

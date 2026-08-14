@@ -6,7 +6,7 @@ import { ProductThumb } from "./ProductThumb";
 import { QtyInput } from "./QtyInput";
 import { formatAED, lineTotal } from "@/lib/money";
 import { useStore } from "@/lib/store";
-import { formatOrderDate, type ReorderEntry } from "@/lib/demo-account";
+import { formatOrderDate, type ReorderEntry } from "@/lib/orders-shared";
 
 /**
  * Reorder-first: the catalogue is secondary for a returning trade buyer, so the

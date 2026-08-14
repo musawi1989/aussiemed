@@ -43,9 +43,11 @@ const PROMISES = [
   },
 ];
 
-export default function HomePage() {
-  const departments = getDepartments();
-  const featured = queryProducts({ inStockOnly: true, sort: "relevance" });
+export default async function HomePage() {
+  const [departments, featured] = await Promise.all([
+    getDepartments(),
+    queryProducts({ inStockOnly: true, sort: "relevance" }),
+  ]);
   const withTiers = featured.items.filter((p) => p.tiers.length > 0).slice(0, 8);
 
   return (

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { suggest } from "@/lib/catalog";
+import { getSuppliers, suggest } from "@/lib/catalog";
 import { toProductSummary } from "@/lib/api";
 
 /**
@@ -8,7 +8,7 @@ import { toProductSummary } from "@/lib/api";
  * Typeahead. Returns an empty list rather than an error for short terms, so
  * the caller can fire on every keystroke without special-casing.
  */
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q") ?? "";
   const limit = Math.min(
@@ -16,9 +16,13 @@ export function GET(request: Request) {
     20
   );
 
+  const suppliers = new Map((await getSuppliers()).map((s) => [s.id, s.name]));
+
   return NextResponse.json({
     currency: "AED",
     query: q,
-    items: suggest(q, limit).map(toProductSummary),
+    items: (await suggest(q, limit)).map((p) =>
+      toProductSummary(p, suppliers.get(p.supplierId) ?? `Supplier ${p.supplierId}`)
+    ),
   });
 }

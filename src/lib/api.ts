@@ -1,4 +1,4 @@
-import { getSupplierName } from "./catalog";
+
 import type { Product } from "./types";
 
 /**
@@ -13,7 +13,7 @@ import type { Product } from "./types";
 
 export type ProductSummary = ReturnType<typeof toProductSummary>;
 
-export function toProductSummary(product: Product) {
+export function toProductSummary(product: Product, supplierName: string) {
   return {
     id: product.id,
     slug: product.slug,
@@ -30,16 +30,16 @@ export function toProductSummary(product: Product) {
     images: product.images,
     supplier: {
       id: product.supplierId,
-      name: getSupplierName(product.supplierId),
+      name: supplierName,
     },
     /** Seed data invented during the rebuild — never ship these live. */
     isPlaceholder: product.isPlaceholder,
   };
 }
 
-export function toProductDetail(product: Product) {
+export function toProductDetail(product: Product, supplierName: string) {
   return {
-    ...toProductSummary(product),
+    ...toProductSummary(product, supplierName),
     description: product.description,
     /** Original ASP.NET identifier, retained for reconciliation. */
     legacyDetailKey: product.detailKey,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PAGE_SIZE, queryProducts, type SortKey } from "@/lib/catalog";
+import { PAGE_SIZE, getSuppliers, queryProducts, type SortKey } from "@/lib/catalog";
 import { toProductSummary } from "@/lib/api";
 
 /**
@@ -11,11 +11,11 @@ import { toProductSummary } from "@/lib/api";
  *
  * Query: category, brand, q, inStock=1, sort, page
  */
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   const page = Number.parseInt(searchParams.get("page") ?? "1", 10) || 1;
-  const result = queryProducts({
+  const result = await queryProducts({
     categorySlug: searchParams.get("category") ?? undefined,
     brand: searchParams.get("brand") ?? undefined,
     q: searchParams.get("q") ?? undefined,
@@ -24,9 +24,13 @@ export function GET(request: Request) {
     page,
   });
 
+  const suppliers = new Map((await getSuppliers()).map((s) => [s.id, s.name]));
+
   return NextResponse.json({
     currency: "AED",
-    items: result.items.map(toProductSummary),
+    items: result.items.map((p) =>
+      toProductSummary(p, suppliers.get(p.supplierId) ?? `Supplier ${p.supplierId}`)
+    ),
     pagination: {
       page: result.page,
       pageSize: PAGE_SIZE,

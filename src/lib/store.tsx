@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getAllProducts } from "./catalog";
+
+import { useCatalog } from "./catalog-client";
 import { normaliseQty, packFor, totalsFor, type CartTotals } from "./money";
 import type { Pack, Product } from "./types";
 
@@ -119,11 +120,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (ready) writeJSON(VAT_PREF_KEY, includeVat);
   }, [includeVat, ready]);
 
+  // Products come from the catalogue snapshot, not the database — a browser
+  // cannot query Prisma.
+  const { products } = useCatalog();
   const productsById = useMemo(() => {
     const map = new Map<number, Product>();
-    for (const product of getAllProducts()) map.set(product.id, product);
+    for (const product of products) map.set(product.id, product);
     return map;
-  }, []);
+  }, [products]);
 
   const resolve = useCallback(
     (list: CartEntry[]): CartLine[] =>

@@ -1,6 +1,23 @@
 import { getProductById, getSupplierName } from "./catalog";
 import { lineTotal, round2, unitPriceFor, vatRateFor } from "./money";
-import type { Product } from "./types";
+import {
+  DEMO_CUSTOMER,
+  formatOrderDate,
+  type ReorderEntry,
+  type ResolvedLine,
+  type ResolvedOrder,
+  type SupplierInvoice,
+} from "./orders-shared";
+
+// Re-exported so existing server imports keep working.
+export {
+  DEMO_CUSTOMER,
+  formatOrderDate,
+  type ReorderEntry,
+  type ResolvedLine,
+  type ResolvedOrder,
+  type SupplierInvoice,
+};
 
 /**
  * A stand-in order history so the reorder-first landing, order list and
@@ -24,12 +41,6 @@ export type DemoOrder = {
   lines: DemoOrderLine[];
 };
 
-export const DEMO_CUSTOMER = {
-  name: "Layla Haddad",
-  company: "Al Barsha Family Clinic",
-  email: "procurement@albarshaclinic.example",
-  emirate: "Dubai",
-};
 
 /** Newest first. */
 export const DEMO_ORDERS: DemoOrder[] = [
@@ -71,39 +82,11 @@ export const DEMO_ORDERS: DemoOrder[] = [
   },
 ];
 
-export type ResolvedLine = {
-  product: Product;
-  qty: number;
-  unitPriceAED: number;
-  lineTotalAED: number;
-};
 
-/** One invoice per supplier — the structure the backend must reproduce. */
-export type SupplierInvoice = {
-  supplierId: number;
-  supplierName: string;
-  invoiceNumber: string;
-  lines: ResolvedLine[];
-  subtotalAED: number;
-  vatAED: number;
-  totalAED: number;
-};
 
-export type ResolvedOrder = {
-  reference: string;
-  placedOn: string;
-  status: DemoOrder["status"];
-  poReference: string | null;
-  invoices: SupplierInvoice[];
-  lines: ResolvedLine[];
-  subtotalAED: number;
-  vatAED: number;
-  totalAED: number;
-  itemCount: number;
-};
 
-function resolveLine(line: DemoOrderLine): ResolvedLine | null {
-  const product = getProductById(line.productId);
+async function resolveLine(line: DemoOrderLine): Promise<ResolvedLine | null> {
+  const product = await getProductById(line.productId);
   if (!product) return null;
   return {
     product,
@@ -113,10 +96,10 @@ function resolveLine(line: DemoOrderLine): ResolvedLine | null {
   };
 }
 
-export function resolveOrder(order: DemoOrder): ResolvedOrder {
-  const lines = order.lines
-    .map(resolveLine)
-    .filter((l): l is ResolvedLine => l !== null);
+export async function resolveOrder(order: DemoOrder): Promise<ResolvedOrder> {
+  const lines = (await Promise.all(order.lines.map(resolveLine))).filter(
+    (l): l is ResolvedLine => l !== null
+  );
 
   // Group by supplier — exactly one invoice per distinct supplier, which is
   // the constraint that fixes the old platform's duplicate-invoice bug.
@@ -127,9 +110,10 @@ export function resolveOrder(order: DemoOrder): ResolvedOrder {
     bySupplier.set(line.product.supplierId, list);
   }
 
-  const invoices: SupplierInvoice[] = [...bySupplier.entries()]
+  const invoices: SupplierInvoice[] = await Promise.all(
+    [...bySupplier.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([supplierId, supplierLines], index) => {
+    .map(async ([supplierId, supplierLines], index) => {
       const subtotal = round2(
         supplierLines.reduce((sum, l) => sum + l.lineTotalAED, 0)
       );
@@ -142,14 +126,15 @@ export function resolveOrder(order: DemoOrder): ResolvedOrder {
       );
       return {
         supplierId,
-        supplierName: getSupplierName(supplierId),
+        supplierName: await getSupplierName(supplierId),
         invoiceNumber: `${order.reference}-${String(index + 1).padStart(2, "0")}`,
         lines: supplierLines,
         subtotalAED: subtotal,
         vatAED: vat,
         totalAED: round2(subtotal + vat),
       };
-    });
+    })
+  );
 
   const subtotal = round2(lines.reduce((sum, l) => sum + l.lineTotalAED, 0));
   const vat = round2(
@@ -170,32 +155,28 @@ export function resolveOrder(order: DemoOrder): ResolvedOrder {
   };
 }
 
-export function getDemoOrders(): ResolvedOrder[] {
-  return DEMO_ORDERS.map(resolveOrder);
+export async function getDemoOrders(): Promise<ResolvedOrder[]> {
+  return Promise.all(DEMO_ORDERS.map(resolveOrder));
 }
 
-export function getDemoOrder(reference: string): ResolvedOrder | undefined {
+export async function getDemoOrder(
+  reference: string
+): Promise<ResolvedOrder | undefined> {
   const match = DEMO_ORDERS.find((o) => o.reference === reference);
   return match ? resolveOrder(match) : undefined;
 }
 
-export type ReorderEntry = {
-  product: Product;
-  lastQty: number;
-  lastOrderedOn: string;
-  timesOrdered: number;
-};
 
 /**
  * The reorder-first list: everything previously bought, most recently ordered
  * first, with the quantity last used so one tap repeats the last order line.
  */
-export function getReorderList(): ReorderEntry[] {
+export async function getReorderList(): Promise<ReorderEntry[]> {
   const seen = new Map<number, ReorderEntry>();
 
   for (const order of DEMO_ORDERS) {
     for (const line of order.lines) {
-      const product = getProductById(line.productId);
+      const product = await getProductById(line.productId);
       if (!product) continue;
 
       const existing = seen.get(line.productId);
@@ -216,12 +197,3 @@ export function getReorderList(): ReorderEntry[] {
   return [...seen.values()];
 }
 
-/** "28 July 2026" — explicit month name, no ambiguous numeric ordering. */
-export function formatOrderDate(iso: string): string {
-  const [year, month, day] = iso.split("-").map(Number);
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-  return `${day} ${months[month - 1]} ${year}`;
-}

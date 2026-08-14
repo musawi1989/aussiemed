@@ -9,10 +9,10 @@ import { getAllProducts, getSuppliers } from "@/lib/catalog";
  * email and no cost prices — those are admin-only and must never reach a
  * public endpoint.
  */
-export function GET() {
-  const products = getAllProducts();
+export async function GET() {
+  const products = await getAllProducts();
 
-  const suppliers = getSuppliers().map((supplier) => ({
+  const suppliers = (await getSuppliers()).map((supplier) => ({
     id: supplier.id,
     name: supplier.name,
     productCount: products.filter((p) => p.supplierId === supplier.id).length,

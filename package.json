@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "data:build": "node scripts/build-catalog.mjs",
     "check": "node scripts/check-catalog.mjs",
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
@@ -22,7 +22,8 @@
     "@prisma/client": "^7.9.1",
     "next": "^16.3.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

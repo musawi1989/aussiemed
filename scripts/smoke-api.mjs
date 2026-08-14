@@ -141,8 +141,12 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
 /* --- product detail ------------------------------------------------ */
 
 {
+  // Data-driven: hardcoding a slug or id breaks whenever the catalogue is
+  // re-seeded, which fails the contract check for the wrong reason.
+  const { body: list } = await get("/api/v1/products");
+  const sample = list.items.find((p) => p.tiers.length > 0) ?? list.items[0];
   const { res, body } = await get(
-    "/api/v1/products/omron-hem7156t-blood-pressure-monitor"
+    `/api/v1/products/${encodeURIComponent(sample.slug)}`
   );
   check("GET /products/:slug responds 200", res.status === 200);
   check("detail includes a description", typeof body.product.description === "string");
@@ -154,8 +158,12 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
   );
   check("related products are returned", Array.isArray(body.related));
 
-  const { body: byId } = await get("/api/v1/products/171");
-  check("the same product resolves by numeric id", byId.product?.slug === body.product.slug);
+  const { body: byId } = await get(`/api/v1/products/${sample.id}`);
+  check(
+    "the same product resolves by numeric id",
+    byId.product?.slug === body.product.slug,
+    `id ${sample.id} -> ${byId.product?.slug}, slug -> ${body.product.slug}`
+  );
 
   const { res: missing } = await get("/api/v1/products/no-such-product");
   check("a missing product returns 404", missing.status === 404, `got ${missing.status}`);

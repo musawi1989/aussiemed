@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { getDepartments } from "@/lib/catalog";
+import { getAllProducts, getDepartments, getSuppliers } from "@/lib/catalog";
+import { CatalogProvider } from "@/lib/catalog-client";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -38,14 +39,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const departments = getDepartments();
+  const [departments, products, suppliers] = await Promise.all([
+    getDepartments(),
+    getAllProducts(),
+    getSuppliers(),
+  ]);
 
   return (
     <html lang="en" className={bodyFont.variable}>
       <body className="flex min-h-screen flex-col">
+        <CatalogProvider initialProducts={products} initialSuppliers={suppliers}>
         <StoreProvider>
           <a
             href="#main"
@@ -59,6 +65,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </StoreProvider>
+        </CatalogProvider>
       </body>
     </html>
   );

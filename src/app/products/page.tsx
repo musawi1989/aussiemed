@@ -20,7 +20,7 @@ export async function generateMetadata({
   const params = await searchParams;
   const categorySlug = one(params.category);
   const q = one(params.q);
-  const category = categorySlug ? getCategoryBySlug(categorySlug) : undefined;
+  const category = categorySlug ? await getCategoryBySlug(categorySlug) : undefined;
 
   // Unique title and description per filter state — the old site shipped the
   // same title and an empty description on every page.
@@ -61,7 +61,7 @@ export default async function ProductsPage({
 
   const page = Number.parseInt(one(raw.page) ?? "1", 10) || 1;
 
-  const result = queryProducts({
+  const result = await queryProducts({
     categorySlug: params.category,
     brand: params.brand,
     q: params.q,
@@ -70,7 +70,9 @@ export default async function ProductsPage({
     page,
   });
 
-  const category = params.category ? getCategoryBySlug(params.category) : undefined;
+  const category = params.category
+    ? await getCategoryBySlug(params.category)
+    : undefined;
   const heading = category?.name ?? (params.q ? `Results for “${params.q}”` : "All products");
 
   const from = (result.page - 1) * 12 + 1;

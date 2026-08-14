@@ -13,8 +13,8 @@ import type { Product } from "@/lib/types";
 
 type Params = Promise<{ slug: string }>;
 
-export function generateStaticParams() {
-  return getAllProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return (await getAllProducts()).map((product) => ({ slug: product.slug }));
 }
 
 /** Truncates on a word boundary so a title or description never ends mid-word. */
@@ -61,7 +61,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
 
   const { title, description } = metaFor(product);
@@ -79,10 +79,10 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = relatedProducts(product);
+  const related = await relatedProducts(product);
   const category = product.categoryPath.at(-1);
 
   return (

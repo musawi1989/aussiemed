@@ -19,7 +19,7 @@
     // stripping can run them directly, with no build step and no test deps.
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "incremental": true,
+    "incremental": false,
     "plugins": [
       {
         "name": "next"

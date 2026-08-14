@@ -11,13 +11,13 @@ import { getDepartments, queryProducts } from "@/lib/catalog";
  *
  * Query: inStock=1 to count only available lines.
  */
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const inStockOnly = searchParams.get("inStock") === "1";
 
-  const { facetCounts } = queryProducts({ inStockOnly });
+  const { facetCounts } = await queryProducts({ inStockOnly });
 
-  const departments = getDepartments().map((dept) => ({
+  const departments = (await getDepartments()).map((dept) => ({
     id: dept.id,
     name: dept.name,
     slug: dept.slug,

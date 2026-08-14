@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProductThumb } from "@/components/ProductThumb";
 import { QtyInput } from "@/components/QtyInput";
-import { getSupplierName } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-client";
 import { formatAED, lineTotal, round2 } from "@/lib/money";
 import { useStore } from "@/lib/store";
 
@@ -16,6 +16,7 @@ import { useStore } from "@/lib/store";
 export function QuoteView() {
   const { quoteLines, setQuoteQty, removeFromQuote, clearQuote, ready } =
     useStore();
+  const { getSupplierName } = useCatalog();
   const [sent, setSent] = useState(false);
 
   if (!ready) {
