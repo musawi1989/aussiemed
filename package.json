@@ -13,9 +13,12 @@
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "verify": "npm run data:build && npm run check && npm run register && npm run test && npm run typecheck",
     "smoke": "node scripts/smoke-api.mjs",
-    "register": "node scripts/register.mjs --md && node scripts/build-spreadsheet.mjs"
+    "register": "node scripts/register.mjs --md && node scripts/build-spreadsheet.mjs",
+    "db:seed": "node --experimental-strip-types prisma/seed.ts",
+    "db:check": "node --experimental-strip-types scripts/check-db.ts"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "next": "^16.3.0",
     "react": "^19.2.8",

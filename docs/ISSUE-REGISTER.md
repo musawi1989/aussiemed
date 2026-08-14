@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**82 items** · 61 outstanding · **23 outstanding P1**
+**83 items** · 61 outstanding · **23 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -79,8 +79,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Open | Parsed natively with exceljs, never by splitting on commas — that is what broke comma-containing category names. |
 | BE-05 | Build the email flows | Dev | P2 | Open | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
 | BE-06 | Add an audit log | Dev | P2 | Open | Every status transition and every admin or supplier write should be recorded. |
-| BE-07 | Seed the database from the catalogue | Dev | P1 | Open | The schema exists but is empty. Categories, products, SKUs and suppliers need loading from src/data/catalog.json so the app can run against the database. |
+| BE-07 | Seed the database from the catalogue | Dev | P1 | Done | Done. 146 categories, 71 products, 94 SKUs, 173 price tiers and 4 suppliers loaded from src/data/catalog.json. |
 | BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
+| BE-09 | Point the storefront at the database | Dev | P1 | Open | The site still reads catalog.json. The API layer needs to read Prisma instead, which is the swap the data-access seam was built for. |
 
 ## Infrastructure
 
