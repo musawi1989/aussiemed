@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**121 items** · 79 outstanding · **22 outstanding P1**
+**127 items** · 82 outstanding · **23 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -47,6 +47,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-17 | Replace the test supplier attribution | Client | P1 | Open | Livingstone and Chemist Warehouse are listed as suppliers for testing only. They are unaffiliated third parties and must not appear on a live storefront. |
 | DA-18 | Product ids are derived from slugs | Dev | P2 | Open | Carts and wishlists are stored in the browser against a product id. Ids are now hashed from the slug so they survive a re-seed, which means CHANGING A PRODUCT SLUG ORPHANS ANY SAVED CART LINE referencing it. |
 | DA-19 | Supplier email addresses are invented | Client | P2 | Open | The seed writes orders@<supplier>.example and accounts@<supplier>.example because secondaryEmail is mandatory. No supplier will receive anything at these addresses. |
+| DA-20 | Supply the real packaging quantities | Client | P1 | Open | OUR INVENTED VALUES: how many units make a carton, and how many cartons make a box, are guessed per product family (12 and 4 by default, 10 and 5 for gloves, 20 and 5 for masks). The break discounts of 4% and 8% are also invented. |
+| DA-21 | Verify the automatic variant grouping | Client | P2 | Open | Products are grouped into families by stripping sizes and volumes from their names. It found 2 families in the seeded catalogue. A real catalogue will group differently and some groupings will be wrong. |
 
 ## Legal
 
@@ -128,6 +130,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-22 | Confirm one supplier account per company | Client | P2 | Open | OUR DECISION: each supplier company links to a single user. Real suppliers usually need several people with their own logins. |
 | BE-23 | Admin figures are counted live, never cached | Dev | P3 | Open | OUR DECISION: every number on the admin dashboard is counted from the database on each request. Caching them is how the old platform let admin counts and storefront counts disagree. |
 | BE-24 | Supplier data is scoped by query, not by filtering | Dev | P3 | Open | OUR DECISION: a supplier's products and invoice lines are fetched through their supplier id, so another supplier's rows are never loaded rather than loaded and hidden. |
+| BE-25 | Invalidate the catalogue cache after a seed or an edit | Dev | P2 | Open | The data layer caches the catalogue for the life of the process. Re-seeding the database left the running server serving stale products until it was restarted. |
+| BE-26 | Seed now upserts instead of wiping | Dev | P3 | Done | Once orders existed, re-seeding failed on a foreign key: order lines reference SKU rows. The database was correctly refusing to let a re-seed destroy order history. |
 
 ## Infrastructure
 
@@ -176,3 +180,5 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-08 | Four test accounts with a shared placeholder password | Client | P3 | Done | Stated 15 Aug 2026: admin, musawi1989@gmail.com, supplier1 and supplier2, all with 123456. Explicitly described as local testing only, chosen to be memorable, and to be changed before anything real. |
 | DEC-09 | One sign-in door per role | Client | P3 | Done | Stated 15 Aug 2026: the business portal is the supplier login, the account login is for buyers, and admin is reached at /admin. |
 | DEC-10 | Record every generated value and decision in this register | Client | P3 | Done | Stated 14 Aug 2026 and repeated 15 Aug: everything invented on the client's behalf must be written down rather than left in the code. |
+| DEC-11 | Price breaks are packaging levels, not arbitrary quantities | Client | P3 | Done | Stated 15 Aug 2026: a break at 12 exists because a carton holds 12, and a break at 48 because a box holds 4 cartons. The quantity and the packaging level are the same fact. |
+| DEC-12 | Variants are a dropdown across sibling products | Client | P3 | Done | Stated 15 Aug 2026: the 375ml and the 60ml stay as separate products, and each carries a dropdown listing the whole family so a buyer can find their part quickly. |

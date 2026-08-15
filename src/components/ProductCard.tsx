@@ -6,6 +6,7 @@ import { PriceBreaks } from "./PriceBreaks";
 import { ProductBadges } from "./ProductBadges";
 import { ProductThumb } from "./ProductThumb";
 import { QtyInput } from "./QtyInput";
+import { VariantPicker } from "./VariantPicker";
 import { WishlistButton } from "./WishlistButton";
 import { displayPrice, formatAED, packFor } from "@/lib/money";
 import { useCart } from "@/lib/cart-client";
@@ -59,26 +60,9 @@ export function ProductCard({ product }: { product: Product }) {
           </Link>
         </h3>
 
-        {/* Unit-of-measure switch. A box and a carton are different buys. */}
-        {product.packs.length > 1 && (
-          <div className="flex flex-wrap gap-1">
-            {product.packs.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setPackId(option.id)}
-                aria-pressed={option.id === pack.id}
-                className={`rounded border px-2 py-0.5 text-xs font-semibold transition-colors ${
-                  option.id === pack.id
-                    ? "border-navy bg-navy text-on-navy"
-                    : "border-border-strong bg-surface text-text-muted hover:border-navy"
-                }`}
-              >
-                {option.shortLabel}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* The family dropdown. A buyer who lands on the wrong volume can
+            reach the right one without searching again. */}
+        <VariantPicker product={product} size="sm" />
 
         <div className="mt-auto space-y-2 pt-1">
           {/* The break table, not just a badge — this is what buyers compare. */}

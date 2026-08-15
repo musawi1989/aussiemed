@@ -19,6 +19,11 @@ import {
   TEST_PRODUCTS,
   TEST_SUPPLIERS,
 } from "./seed-catalogue.mjs";
+import {
+  packagingTiers,
+  variantKeyFor,
+  variantLabelFor,
+} from "./variants.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => JSON.parse(readFileSync(resolve(root, p), "utf8"));
@@ -302,6 +307,7 @@ const REAL_PRODUCT_META = {
   },
 };
 
+
 /* ------------------------------------------------------------------ *
  * 4. Placeholder catalogue
  * ------------------------------------------------------------------ */
@@ -449,9 +455,9 @@ function buildProduct({
 }) {
   const path = categoryId ? categoryPath(categoryId) : [];
   const taxClass = taxClassFor(name);
-  const packs = buildPacks(
-    sku, unit, packSize, basePrice, tiers, outOfStock, outerFor(name)
-  );
+  // One purchasable unit. Packaging is expressed in the price breaks, which
+  // name the level — Carton, Box — rather than showing a bare quantity.
+  const packs = buildPacks(sku, unit, packSize, basePrice, tiers, outOfStock, null);
 
   return {
     id,
@@ -475,6 +481,8 @@ function buildProduct({
     taxClass,
     packs,
     defaultPackId: packs[0].id,
+    variantGroup: variantKeyFor(name, brand),
+    variantLabel: variantLabelFor(name),
     variants: variantsFor(name),
     attributes: buildAttributes({
       brand,
@@ -555,10 +563,11 @@ TEST_PRODUCTS.forEach((seed, index) => {
       images: seed.image ? [seed.image] : [],
       // Run seeded tiers through the same normaliser as the real ones, so a
       // typo cannot produce a tier shape the storefront never has to handle.
-      tiers: normaliseTiers(
-        seed.tiers.map(([minQty]) => minQty),
-        seed.tiers.map(([, priceAED]) => priceAED),
-        basePrice
+      // Breaks follow the packaging hierarchy: a carton, then a box of
+      // cartons. The seed file's own break quantities are discarded because
+      // they were arbitrary percentages, not packaging.
+      tiers: packagingTiers(basePrice, seed.name).filter(
+        (t) => t.priceAED < basePrice
       ),
       isPlaceholder: true,
       index,

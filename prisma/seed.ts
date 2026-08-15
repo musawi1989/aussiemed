@@ -1,10 +1,14 @@
 /**
- * Seeds the database from src/data/catalog.json — the same generated catalogue
- * the storefront renders, so the database and the JSON cannot disagree.
+ * Seeds the database from src/data/catalog.json.
  *
- * Idempotent: it clears the catalogue tables first, so it can be re-run after
- * regenerating the catalogue. It does NOT clear orders, because losing order
- * history to a re-seed is exactly the kind of accident that should be hard.
+ * UPSERTS rather than wipes. Once an order exists, its lines reference SKU
+ * rows, so deleting the catalogue violates a foreign key — which is the
+ * database correctly refusing to let a re-seed destroy order history. Products,
+ * SKUs, categories and brands are therefore matched on their natural keys and
+ * updated in place.
+ *
+ * Purely derived rows — price tiers, attributes, images, variant options — are
+ * replaced wholesale, because nothing outside the catalogue references them.
  *
  * Run with: npm run db:seed
  */
@@ -16,7 +20,6 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-
 const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
 const prisma = new PrismaClient({ adapter });
 
@@ -30,6 +33,13 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+type Tier = {
+  minQty: number;
+  priceAED: number;
+  unitName?: string | null;
+  unitsPerLevel?: number | null;
+};
+
 type Catalog = {
   vatRate: number;
   departments: {
@@ -42,19 +52,17 @@ type Catalog = {
   products: {
     id: number;
     slug: string;
-    sku: string;
     name: string;
     brand: string | null;
     description: string | null;
-    categoryId: number | null;
     categoryPath: { id: number }[];
-    priceAED: number;
     unit: string;
-    packSize: string | null;
     supplierId: number;
     outOfStock: boolean;
     images: string[];
     taxClass: "standard" | "zero-rated";
+    variantGroup?: string | null;
+    variantLabel?: string | null;
     packs: {
       id: string;
       sku: string;
@@ -62,7 +70,7 @@ type Catalog = {
       shortLabel: string;
       eachesPerPack: number;
       priceAED: number;
-      tiers: { minQty: number; priceAED: number }[];
+      tiers: Tier[];
       outOfStock: boolean;
     }[];
     variants: {
@@ -71,7 +79,6 @@ type Catalog = {
       options: { value: string; available: boolean }[];
     }[];
     attributes: { label: string; value: string }[];
-    isPlaceholder: boolean;
   }[];
 };
 
@@ -82,38 +89,26 @@ const catalog = JSON.parse(
 console.log("\nSeeding from src/data/catalog.json\n");
 
 /* ------------------------------------------------------------------ *
- * Clear catalogue tables only
+ * Derived rows only — safe to replace
  * ------------------------------------------------------------------ */
 
-// Order matters: children before parents. Orders and users are left alone.
 await prisma.skuOptionValue.deleteMany();
 await prisma.productOptionValue.deleteMany();
 await prisma.productOption.deleteMany();
 await prisma.priceTier.deleteMany();
 await prisma.productAttribute.deleteMany();
-await prisma.productDocument.deleteMany();
 await prisma.productImage.deleteMany();
-await prisma.skuBatch.deleteMany();
-await prisma.cartItem.deleteMany();
-await prisma.productSku.deleteMany();
 await prisma.productCategory.deleteMany();
-await prisma.wishlistItem.deleteMany();
-await prisma.productMaster.deleteMany();
-await prisma.category.deleteMany();
-await prisma.brand.deleteMany();
 
 /* ------------------------------------------------------------------ *
  * Settings
  * ------------------------------------------------------------------ */
 
-// Basis points, so 5% is 500 and there is no float in the config either.
+const vatBp = String(Math.round(catalog.vatRate * 10000));
 await prisma.setting.upsert({
   where: { key: "vatRateBasisPoints" },
-  update: { value: String(Math.round(catalog.vatRate * 10000)) },
-  create: {
-    key: "vatRateBasisPoints",
-    value: String(Math.round(catalog.vatRate * 10000)),
-  },
+  update: { value: vatBp },
+  create: { key: "vatRateBasisPoints", value: vatBp },
 });
 await prisma.setting.upsert({
   where: { key: "currency" },
@@ -122,20 +117,24 @@ await prisma.setting.upsert({
 });
 
 /* ------------------------------------------------------------------ *
- * Categories — the two-level tree
+ * Categories
  * ------------------------------------------------------------------ */
 
 const categoryIdByNumeric = new Map<number, string>();
 
 for (const [i, dept] of catalog.departments.entries()) {
-  const created = await prisma.category.create({
-    data: { name: dept.name, slug: dept.slug, sortOrder: i },
+  const created = await prisma.category.upsert({
+    where: { slug: dept.slug },
+    update: { name: dept.name, sortOrder: i, parentId: null },
+    create: { name: dept.name, slug: dept.slug, sortOrder: i },
   });
   categoryIdByNumeric.set(dept.id, created.id);
 
   for (const [j, child] of dept.children.entries()) {
-    const kid = await prisma.category.create({
-      data: {
+    const kid = await prisma.category.upsert({
+      where: { slug: child.slug },
+      update: { name: child.name, parentId: created.id, sortOrder: j },
+      create: {
         name: child.name,
         slug: child.slug,
         parentId: created.id,
@@ -155,19 +154,12 @@ const supplierIdByNumeric = new Map<number, string>();
 
 for (const supplier of catalog.suppliers) {
   const handle = slugify(supplier.name);
-
-  // Matched by company name rather than created outright. Suppliers cannot be
-  // cleared like the catalogue tables — orders and invoices reference them —
-  // so creating blindly duplicated every supplier on a second run.
   const existing = await prisma.supplier.findFirst({
     where: { companyName: supplier.name },
   });
 
   const row = existing
-    ? await prisma.supplier.update({
-        where: { id: existing.id },
-        data: { status: "Active" },
-      })
+    ? existing
     : await prisma.supplier.create({
         data: {
           companyName: supplier.name,
@@ -191,86 +183,110 @@ const brandIdByName = new Map<string, string>();
 for (const name of [
   ...new Set(catalog.products.map((p) => p.brand).filter(Boolean) as string[]),
 ]) {
-  const created = await prisma.brand.create({
-    data: { name, slug: slugify(name) },
+  const row = await prisma.brand.upsert({
+    where: { name },
+    update: {},
+    create: { name, slug: slugify(name) },
   });
-  brandIdByName.set(name, created.id);
+  brandIdByName.set(name, row.id);
 }
 console.log(`  brands            ${brandIdByName.size}`);
 
 /* ------------------------------------------------------------------ *
- * Products, SKUs, tiers, variants, attributes
+ * Products and SKUs
  * ------------------------------------------------------------------ */
 
 let skuCount = 0;
 let tierCount = 0;
 let optionValueCount = 0;
+const seenSlugs = new Set<string>();
+const seenSkuCodes = new Set<string>();
 
 for (const product of catalog.products) {
   const supplierId = supplierIdByNumeric.get(product.supplierId);
   if (!supplierId) {
-    console.log(`  SKIP ${product.name} — unknown supplier ${product.supplierId}`);
+    console.log(`  SKIP ${product.name} — unknown supplier`);
     continue;
   }
+  seenSlugs.add(product.slug);
 
-  const master = await prisma.productMaster.create({
-    data: {
-      name: product.name,
+  const data = {
+    name: product.name,
+    description: product.description,
+    brandId: product.brand ? brandIdByName.get(product.brand) : null,
+    supplierId,
+    status: "Active",
+    taxClass: (product.taxClass === "zero-rated" ? "ZeroRated" : "Standard") as string,
+    variantGroup: product.variantGroup ?? null,
+    variantLabel: product.variantLabel ?? null,
+  };
+
+  const master = await prisma.productMaster.upsert({
+    where: { slug: product.slug },
+    update: data,
+    create: {
+      ...data,
       slug: product.slug,
-      description: product.description,
-      brandId: product.brand ? brandIdByName.get(product.brand) : undefined,
-      supplierId,
-      // Seeded products are live so the storefront has something to show.
-      status: "Active",
       approvedAt: new Date("2026-08-14T00:00:00Z"),
-      taxClass: product.taxClass === "zero-rated" ? "ZeroRated" : "Standard",
-      categories: {
-        create: product.categoryPath
-          .map((node) => categoryIdByNumeric.get(node.id))
-          .filter((id): id is string => Boolean(id))
-          .map((categoryId) => ({ categoryId })),
-      },
-      images: {
-        create: product.images.map((path, sortOrder) => ({
-          path,
-          altText: product.name,
-          sortOrder,
-        })),
-      },
-      attributes: {
-        create: product.attributes.map((a, sortOrder) => ({
-          label: a.label,
-          value: a.value,
-          sortOrder,
-        })),
-      },
     },
   });
 
-  // Each pack is a SKU — this is the shape that matters most.
+  await prisma.productCategory.createMany({
+    data: product.categoryPath
+      .map((n) => categoryIdByNumeric.get(n.id))
+      .filter((id): id is string => Boolean(id))
+      .map((categoryId) => ({ productMasterId: master.id, categoryId })),
+  });
+
+  await prisma.productImage.createMany({
+    data: product.images.map((path, sortOrder) => ({
+      productMasterId: master.id,
+      path,
+      altText: product.name,
+      sortOrder,
+    })),
+  });
+
+  await prisma.productAttribute.createMany({
+    data: product.attributes.map((a, sortOrder) => ({
+      productMasterId: master.id,
+      label: a.label,
+      value: a.value,
+      sortOrder,
+    })),
+  });
+
   for (const pack of product.packs) {
-    const sku = await prisma.productSku.create({
-      data: {
-        productMasterId: master.id,
-        skuCode: pack.sku,
-        unitLabel: pack.label,
-        unitShortLabel: pack.shortLabel,
-        eachesPerPack: pack.eachesPerPack,
-        priceFils: fils(pack.priceAED),
-        manualOutOfStock: pack.outOfStock || product.outOfStock,
-        tiers: {
-          create: pack.tiers.map((t) => ({
-            minQty: t.minQty,
-            priceFils: fils(t.priceAED),
-          })),
-        },
-      },
+    const skuData = {
+      productMasterId: master.id,
+      baseUnitName: pack.shortLabel || product.unit || "Each",
+      unitLabel: pack.label,
+      unitShortLabel: pack.shortLabel,
+      isActive: true,
+      eachesPerPack: pack.eachesPerPack,
+      priceFils: fils(pack.priceAED),
+      manualOutOfStock: pack.outOfStock || product.outOfStock,
+    };
+
+    const sku = await prisma.productSku.upsert({
+      where: { skuCode: pack.sku },
+      update: skuData,
+      create: { ...skuData, skuCode: pack.sku, isActive: true },
     });
+    seenSkuCodes.add(pack.sku);
     skuCount += 1;
+
+    await prisma.priceTier.createMany({
+      data: pack.tiers.map((t) => ({
+        skuId: sku.id,
+        minQty: t.minQty,
+        priceFils: fils(t.priceAED),
+        unitName: t.unitName ?? null,
+        unitsPerLevel: t.unitsPerLevel ?? null,
+      })),
+    });
     tierCount += pack.tiers.length;
 
-    // The variant axes describe the product; attach them to the base SKU so
-    // Size=Large is recorded against something purchasable.
     if (pack.id === product.packs[0].id) {
       for (const [sortOrder, axis] of product.variants.entries()) {
         const option = await prisma.productOption.create({
@@ -292,71 +308,43 @@ for (const product of catalog.products) {
   }
 }
 
-console.log(`  products          ${catalog.products.length}`);
+/**
+ * Anything that has left the catalogue is deactivated, never deleted — an
+ * order line still points at its SKU, and that history must survive.
+ *
+ * This matters more than it looks: when packaging moved from separate carton
+ * SKUs into named price breaks, 23 carton SKUs stopped being part of the
+ * catalogue while still being referenced by existing orders.
+ */
+const retired = await prisma.productMaster.updateMany({
+  where: { slug: { notIn: [...seenSlugs] }, status: "Active" },
+  data: { status: "Inactive" },
+});
+
+const retiredSkus = await prisma.productSku.updateMany({
+  where: { skuCode: { notIn: [...seenSkuCodes] }, isActive: true },
+  data: { isActive: false },
+});
+if (retiredSkus.count > 0) {
+  console.log(`  retired skus      ${retiredSkus.count} (deactivated, not deleted)`);
+}
+
+console.log(`  products          ${seenSlugs.size}`);
 console.log(`  skus              ${skuCount}`);
 console.log(`  price tiers       ${tierCount}`);
 console.log(`  option values     ${optionValueCount}`);
+if (retired.count > 0) {
+  console.log(`  retired           ${retired.count} (deactivated, not deleted)`);
+}
 
-/* ------------------------------------------------------------------ *
- * Demo accounts — spec section 8
- * ------------------------------------------------------------------ */
-
-const org = await prisma.organisation.upsert({
-  where: { id: "demo-org" },
-  update: {},
-  create: {
-    id: "demo-org",
-    name: "Al Barsha Family Clinic",
-    emirate: "Dubai",
-    paymentTerms: "Net30",
-    creditLimitFils: fils(25000),
-  },
+const families = await prisma.productMaster.groupBy({
+  by: ["variantGroup"],
+  where: { variantGroup: { not: null } },
+  _count: true,
 });
-
-await prisma.user.upsert({
-  where: { email: "admin@aussiemed.local" },
-  update: {},
-  create: {
-    email: "admin@aussiemed.local",
-    name: "AussieMed Admin",
-    role: "Admin",
-    isVerified: true,
-  },
-});
-
-await prisma.user.upsert({
-  where: { email: "procurement@albarshaclinic.example" },
-  update: {},
-  create: {
-    email: "procurement@albarshaclinic.example",
-    name: "Layla Haddad",
-    role: "Customer",
-    isVerified: true,
-    organisationId: org.id,
-  },
-});
-
-await prisma.address.upsert({
-  where: { id: "demo-address" },
-  update: {},
-  create: {
-    id: "demo-address",
-    organisationId: org.id,
-    label: "Clinic",
-    contact: "Layla Haddad",
-    phone: "+971 4 000 0000",
-    line1: "Al Barsha 1",
-    city: "Dubai",
-    emirate: "Dubai",
-    isDefault: true,
-  },
-});
-
-console.log(`  demo users        2 (1 admin, 1 customer) + 1 organisation`);
-
-/* ------------------------------------------------------------------ *
- * Summary
- * ------------------------------------------------------------------ */
+console.log(
+  `  variant families  ${families.filter((f) => f._count > 1).length}`
+);
 
 const outOfStock = await prisma.productSku.count({
   where: { manualOutOfStock: true },

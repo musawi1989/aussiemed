@@ -199,6 +199,18 @@ model ProductMaster {
 
   status String @default("Draft")
 
+  /// Variants are separate products that belong to one family — the same line
+  /// in 375ml and 60ml, or in three glove sizes. Products sharing a
+  /// variantGroup show each other in a dropdown, so a buyer landing on the
+  /// wrong size can reach the right one without searching again.
+  ///
+  /// Deliberately NOT the ProductOption model: these are independently
+  /// stocked, separately priced products with their own SKUs, not options on
+  /// one product.
+  variantGroup String?
+  /// What distinguishes this member of the family, e.g. "375ml".
+  variantLabel String?
+
   /// taxClass: Standard | ZeroRated
   /// Not every medical line is standard-rated. Charging 5% on a zero-rated
   /// product overstates a document the customer keeps — see AC-02.
@@ -225,6 +237,7 @@ model ProductMaster {
   @@index([supplierId])
   @@index([status])
   @@index([brandId])
+  @@index([variantGroup])
 }
 
 model ProductCategory {
@@ -249,6 +262,9 @@ model ProductSku {
   /// The supplier's own item code. Unique across the catalogue.
   skuCode String @unique
 
+  /// The name of one base unit, e.g. "Each" or "Bottle". Price breaks are
+  /// expressed as multiples of this.
+  baseUnitName   String @default("Each")
   /// "100 Pieces/Box" — what the buyer sees on the unit selector.
   unitLabel      String
   /// "Box" — the short form shown beside Add to cart.
@@ -294,6 +310,14 @@ model PriceTier {
 
   minQty    Int
   priceFils Int
+
+  /// The packaging level this break represents — "Carton", "Box", "Pallet".
+  /// A trade buyer does not order 12 because 12 is cheaper; they order a
+  /// carton. Naming the level is the difference between a price list and a
+  /// number that has to be explained.
+  unitName      String?
+  /// How many of the level below make this one, e.g. a box of 4 cartons.
+  unitsPerLevel Int?
 
   @@unique([skuId, minQty])
   @@index([skuId])

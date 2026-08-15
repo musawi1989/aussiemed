@@ -100,6 +100,7 @@ async function load() {
           },
         },
         skus: {
+          where: { isActive: true },
           orderBy: { eachesPerPack: "asc" },
           include: { tiers: { orderBy: { minQty: "asc" } } },
         },
@@ -183,6 +184,8 @@ async function load() {
       tiers: s.tiers.map((t) => ({
         minQty: t.minQty,
         priceAED: fromFils(t.priceFils),
+        unitName: t.unitName,
+        unitsPerLevel: t.unitsPerLevel,
       })),
       outOfStock: s.manualOutOfStock,
     }));
@@ -220,6 +223,8 @@ async function load() {
       images: p.images.map((i) => i.path),
       tiers: base?.tiers ?? [],
       taxClass: p.taxClass === "ZeroRated" ? "zero-rated" : "standard",
+      variantGroup: p.variantGroup,
+      variantLabel: p.variantLabel,
       packs,
       defaultPackId: base?.id ?? "base",
       variants,
@@ -232,6 +237,42 @@ async function load() {
       sourceNote: null,
     };
   });
+
+  /**
+   * Resolve each product's siblings once, so a product page can offer the
+   * whole family in a dropdown without a second query. A family of one gets
+   * an empty list, which the UI reads as "no dropdown".
+   */
+  const byFamily = new Map<string, Product[]>();
+  for (const product of products) {
+    if (!product.variantGroup) continue;
+    const list = byFamily.get(product.variantGroup) ?? [];
+    list.push(product);
+    byFamily.set(product.variantGroup, list);
+  }
+
+  for (const product of products) {
+    const family = product.variantGroup
+      ? (byFamily.get(product.variantGroup) ?? [])
+      : [];
+    if (family.length < 2) {
+      product.familyMembers = [];
+      continue;
+    }
+    product.familyMembers = family
+      .map((member) => ({
+        slug: member.slug,
+        // Fall back to the full name when a member has no distinguishing
+        // size, so the dropdown never shows a blank row.
+        label: member.variantLabel ?? member.name,
+        name: member.name,
+        outOfStock: member.outOfStock,
+      }))
+      // Numeric-aware, so 60ml sorts before 375ml rather than after it.
+      .sort((a, b) =>
+        a.label.localeCompare(b.label, undefined, { numeric: true })
+      );
+  }
 
   cache = {
     products,

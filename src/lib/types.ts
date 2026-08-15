@@ -16,6 +16,10 @@ export type PriceTier = {
   /** Buying this many or more gets `priceAED` per unit. */
   minQty: number;
   priceAED: number;
+  /** The packaging level this break represents — "Carton", "Box". */
+  unitName?: string | null;
+  /** How many of the level below make this one, e.g. a box of 4 cartons. */
+  unitsPerLevel?: number | null;
 };
 
 /**
@@ -86,6 +90,12 @@ export type Product = {
   images: string[];
   tiers: PriceTier[];
   taxClass: TaxClass;
+  /** Products sharing a family are the same line in different sizes. */
+  variantGroup?: string | null;
+  /** What distinguishes this member, e.g. "375ml". */
+  variantLabel?: string | null;
+  /** Siblings in the same family, resolved for the dropdown. */
+  familyMembers?: { slug: string; label: string; name: string; outOfStock: boolean }[];
   packs: Pack[];
   defaultPackId: string;
   variants: VariantAxis[];

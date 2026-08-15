@@ -5,6 +5,7 @@ import { useState } from "react";
 import { NotifyMe } from "./NotifyMe";
 import { PriceBreaks, VatNote } from "./PriceBreaks";
 import { QtyInput } from "./QtyInput";
+import { VariantPicker } from "./VariantPicker";
 import { WishlistButton } from "./WishlistButton";
 import {
   displayPrice,
@@ -76,7 +77,13 @@ export function BuyBox({ product }: { product: Product }) {
         </div>
       ))}
 
-      {/* ---------- unit of measure ---------- */}
+      {/* ---------- the product family ---------- */}
+      <div className="mb-4">
+        <VariantPicker product={product} />
+      </div>
+
+      {/* Retained for products genuinely sold in more than one unit. Packaging
+          levels are normally expressed in the price breaks instead. */}
       {product.packs.length > 1 && (
         <div className="mb-4">
           <p className="mb-1.5 text-sm">

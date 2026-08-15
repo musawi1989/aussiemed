@@ -61,6 +61,15 @@ export function PriceBreaks({
           const net = unitPriceFor(pack.priceAED, pack.tiers, row.minQty);
           const shown = displayPrice(net, taxClass, includeVat);
           const active = i === activeIndex;
+          // A trade buyer orders a carton, not "twelve". Naming the packaging
+          // level is the difference between a price list and a number that
+          // has to be explained.
+          const level =
+            "unitName" in row && row.unitName
+              ? row.unitName
+              : i === 0
+                ? pack.shortLabel
+                : null;
           return (
             <tr
               key={row.minQty}
@@ -70,6 +79,11 @@ export function PriceBreaks({
             >
               <td className={`${pad} pr-2 text-sm tnum text-text-muted`}>
                 +{row.minQty}
+                {level && (
+                  <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-subtle">
+                    {level}
+                  </span>
+                )}
               </td>
               <td
                 className={`${pad} text-right text-sm font-bold tnum ${

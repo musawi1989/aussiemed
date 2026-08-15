@@ -966,6 +966,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "omron|omron hem7156t blood pressure monitor",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -1047,6 +1049,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "tena|tena pads extra standard length",
+      "variantLabel": "24pack",
       "variants": [],
       "attributes": [
         {
@@ -1119,28 +1123,11 @@
           "priceAED": 2.99,
           "tiers": [],
           "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "KLX-AV95-6",
-          "label": "6 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 6,
-          "priceAED": 17.4,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 16.88
-            },
-            {
-              "minQty": 10,
-              "priceAED": 16.36
-            }
-          ],
-          "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "kleenex|kleenex aloe vera & vitamin e facial tissues",
+      "variantLabel": "95pack",
       "variants": [],
       "attributes": [
         {
@@ -1226,6 +1213,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "swisspers|swisspers paper stems cotton tips",
+      "variantLabel": "240pack",
       "variants": [],
       "attributes": [
         {
@@ -1301,6 +1290,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "fess|fess original saline nasal spray",
+      "variantLabel": "75ml",
       "variants": [],
       "attributes": [
         {
@@ -1386,6 +1377,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "cancer council|cancer council spf 50+ everyday value sunscreen",
+      "variantLabel": "110ml",
       "variants": [],
       "attributes": [
         {
@@ -1461,6 +1454,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "manicare|manicare nail clippers with nail file",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -1542,6 +1537,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "bodichek|bodichek first aid kit",
+      "variantLabel": "126piece",
       "variants": [],
       "attributes": [
         {
@@ -1617,6 +1614,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "vicks|vicks vaporub ointment chest rub",
+      "variantLabel": "100g",
       "variants": [],
       "attributes": [
         {
@@ -1692,6 +1691,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "vaseline|vaseline original petroleum jelly",
+      "variantLabel": "100g",
       "variants": [],
       "attributes": [
         {
@@ -1788,6 +1789,8 @@
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "aussiemed|mens scrub top",
+      "variantLabel": null,
       "variants": [
         {
           "name": "Size",
@@ -1875,12 +1878,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 27.34
+          "minQty": 10,
+          "priceAED": 27.34,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 26.49
+          "minQty": 50,
+          "priceAED": 26.2,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -1894,37 +1901,24 @@
           "priceAED": 28.48,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 27.34
-            },
-            {
-              "minQty": 24,
-              "priceAED": 26.49
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLVNRLPFL-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 256.95,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 249.24
-            },
-            {
               "minQty": 10,
-              "priceAED": 241.53
+              "priceAED": 27.34,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 26.2,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "universal choice|nitrile examination gloves as nz standard powder free en374 blue colour haccp grade ...",
+      "variantLabel": "Large",
       "variants": [
         {
           "name": "Size",
@@ -2036,12 +2030,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 3.58
+          "minQty": 25,
+          "priceAED": 3.58,
+          "unitName": "Carton",
+          "unitsPerLevel": 25
         },
         {
-          "minQty": 48,
-          "priceAED": 3.43
+          "minQty": 50,
+          "priceAED": 3.43,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -2055,37 +2053,24 @@
           "priceAED": 3.73,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 3.58
+              "minQty": 25,
+              "priceAED": 3.58,
+              "unitName": "Carton",
+              "unitsPerLevel": 25
             },
             {
-              "minQty": 48,
-              "priceAED": 3.43
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GS050H-25",
-          "label": "25 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 83.18,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 80.68
-            },
-            {
-              "minQty": 10,
-              "priceAED": 78.19
+              "minQty": 50,
+              "priceAED": 3.43,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone gauze swabs non sterile",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -2146,12 +2131,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 117.25
+          "minQty": 10,
+          "priceAED": 116.04,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 10,
-          "priceAED": 113.63
+          "minQty": 100,
+          "priceAED": 111.21,
+          "unitName": "Box",
+          "unitsPerLevel": 10
         }
       ],
       "taxClass": "zero-rated",
@@ -2165,37 +2154,24 @@
           "priceAED": 120.88,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 117.25
+              "minQty": 10,
+              "priceAED": 116.04,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
             },
             {
-              "minQty": 10,
-              "priceAED": 113.63
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "DN14GX1.5LV-10",
-          "label": "10 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 1102.21,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 1069.14
-            },
-            {
-              "minQty": 10,
-              "priceAED": 1036.08
+              "minQty": 100,
+              "priceAED": 111.21,
+              "unitName": "Box",
+              "unitsPerLevel": 10
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone hypodermic needles",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -2256,12 +2232,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 154.81
+          "minQty": 12,
+          "priceAED": 153.22,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 150.02
+          "minQty": 48,
+          "priceAED": 146.83,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -2275,18 +2255,24 @@
           "priceAED": 159.6,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 154.81
+              "minQty": 12,
+              "priceAED": 153.22,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 150.02
+              "minQty": 48,
+              "priceAED": 146.83,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone plastic transfer pipette",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -2349,12 +2335,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 11.5
+          "minQty": 10,
+          "priceAED": 11.5,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 48,
-          "priceAED": 11.02
+          "minQty": 50,
+          "priceAED": 11.02,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -2368,37 +2358,24 @@
           "priceAED": 11.98,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 11.5
-            },
-            {
-              "minQty": 48,
-              "priceAED": 11.02
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLVN100LB-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 106.89,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 103.68
-            },
-            {
               "minQty": 10,
-              "priceAED": 100.48
+              "priceAED": 11.5,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 11.02,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "sofeel|sofeel vinyl gloves recyclable low powder blue haccp grade 100/box",
+      "variantLabel": "5.0g",
       "variants": [
         {
           "name": "Size",
@@ -2508,12 +2485,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 3.83
+          "minQty": 6,
+          "priceAED": 3.83,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 48,
-          "priceAED": 3.67
+          "minQty": 24,
+          "priceAED": 3.67,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -2527,37 +2508,24 @@
           "priceAED": 3.99,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 3.83
+              "minQty": 6,
+              "priceAED": 3.83,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 48,
-              "priceAED": 3.67
-            }
-          ],
-          "outOfStock": true
-        },
-        {
-          "id": "outer",
-          "sku": "LWMS-1-25",
-          "label": "25 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 89,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 86.33
-            },
-            {
-              "minQty": 10,
-              "priceAED": 83.66
+              "minQty": 24,
+              "priceAED": 3.67,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": true
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "liv-wipe|liv wipe mini alcohol swabs prep pad 70 percent isopropyl alcohol sanitiser 62 x gamma sterilised ...",
+      "variantLabel": "30mm",
       "variants": [],
       "attributes": [
         {
@@ -2624,12 +2592,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 42.16
+          "minQty": 12,
+          "priceAED": 42.16,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 40.85
+          "minQty": 48,
+          "priceAED": 40.41,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -2643,18 +2615,24 @@
           "priceAED": 43.92,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 42.16
+              "minQty": 12,
+              "priceAED": 42.16,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 40.85
+              "minQty": 48,
+              "priceAED": 40.41,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone scalpel with handle",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -2715,12 +2693,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 31.43
+          "minQty": 10,
+          "priceAED": 31.43,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 30.45
+          "minQty": 50,
+          "priceAED": 30.12,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -2734,37 +2716,24 @@
           "priceAED": 32.74,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 31.43
-            },
-            {
-              "minQty": 24,
-              "priceAED": 30.45
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLVNTRPF100L-M-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 295.37,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 286.51
-            },
-            {
               "minQty": 10,
-              "priceAED": 277.65
+              "priceAED": 31.43,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 30.12,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "ni-tek|ni tek nitrile premium gloves as nz standard powder free en374 blue colour haccp grade 100/box",
+      "variantLabel": "Large",
       "variants": [
         {
           "name": "Size",
@@ -2876,12 +2845,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 20.33
+          "minQty": 12,
+          "priceAED": 20.33,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 19.7
+          "minQty": 48,
+          "priceAED": 19.49,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -2895,18 +2868,24 @@
           "priceAED": 21.18,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 20.33
+              "minQty": 12,
+              "priceAED": 20.33,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 19.7
+              "minQty": 48,
+              "priceAED": 19.49,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone hot and cold pack",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -2967,12 +2946,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 74.23
+          "minQty": 10,
+          "priceAED": 74.23,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 71.91
+          "minQty": 100,
+          "priceAED": 71.13,
+          "unitName": "Box",
+          "unitsPerLevel": 10
         }
       ],
       "taxClass": "zero-rated",
@@ -2986,37 +2969,24 @@
           "priceAED": 77.32,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 74.23
-            },
-            {
-              "minQty": 24,
-              "priceAED": 71.91
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "DSL0003ML29G-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 697.53,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 676.6
-            },
-            {
               "minQty": 10,
-              "priceAED": 655.68
+              "priceAED": 74.23,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 100,
+              "priceAED": 71.13,
+              "unitName": "Box",
+              "unitsPerLevel": 10
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone insulin syringes with white plunger with needle 31 gauge x 0.32 inch sterile 10...",
+      "variantLabel": "8mm",
       "variants": [],
       "attributes": [
         {
@@ -3082,11 +3052,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 4.11
+          "priceAED": 4.11,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 3.94
+          "priceAED": 3.94,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -3101,17 +3075,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 4.11
+              "priceAED": 4.11,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 3.94
+              "priceAED": 3.94,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "sofeel|sofeel mini biodegradable wooden spatula 140 x 6.2 x 100/pack",
+      "variantLabel": "1.3mm",
       "variants": [],
       "attributes": [
         {
@@ -3172,12 +3152,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 281.46
+          "minQty": 25,
+          "priceAED": 278.55,
+          "unitName": "Carton",
+          "unitsPerLevel": 25
         },
         {
-          "minQty": 10,
-          "priceAED": 272.75
+          "minQty": 50,
+          "priceAED": 266.95,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -3191,37 +3175,24 @@
           "priceAED": 290.16,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 281.46
+              "minQty": 25,
+              "priceAED": 278.55,
+              "unitName": "Carton",
+              "unitsPerLevel": 25
             },
             {
-              "minQty": 10,
-              "priceAED": 272.75
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GSS075X1P-25",
-          "label": "25 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 6614.19,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 6415.76
-            },
-            {
-              "minQty": 10,
-              "priceAED": 6217.34
+              "minQty": 50,
+              "priceAED": 266.95,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone gauze swabs sterile",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -3282,12 +3253,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 6.79
+          "minQty": 6,
+          "priceAED": 6.79,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 48,
-          "priceAED": 6.5
+          "minQty": 24,
+          "priceAED": 6.5,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -3301,37 +3276,24 @@
           "priceAED": 7.07,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 6.79
+              "minQty": 6,
+              "priceAED": 6.79,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 48,
-              "priceAED": 6.5
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "LWMS6-25",
-          "label": "25 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 157.63,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 152.9
-            },
-            {
-              "minQty": 10,
-              "priceAED": 148.17
+              "minQty": 24,
+              "priceAED": 6.5,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "liv-wipe|liv wipe alcohol swabs prep pad",
+      "variantLabel": "Large",
       "variants": [],
       "attributes": [
         {
@@ -3392,12 +3354,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 112.56
+          "minQty": 12,
+          "priceAED": 111.4,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 109.08
+          "minQty": 48,
+          "priceAED": 106.76,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -3411,18 +3377,24 @@
           "priceAED": 116.04,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 112.56
+              "minQty": 12,
+              "priceAED": 111.4,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 109.08
+              "minQty": 48,
+              "priceAED": 106.76,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone urine reagent multi test strips for urinalysis 10 parameters plus specific gravity 100 tests/...",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -3483,12 +3455,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 23.9
+          "minQty": 10,
+          "priceAED": 23.9,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 23.16
+          "minQty": 50,
+          "priceAED": 22.91,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -3502,37 +3478,24 @@
           "priceAED": 24.9,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 23.9
-            },
-            {
-              "minQty": 24,
-              "priceAED": 23.16
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLPF100ZL-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 224.65,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 217.91
-            },
-            {
               "minQty": 10,
-              "priceAED": 211.17
+              "priceAED": 23.9,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 22.91,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "skin shield|skin shield biodegradable latex examination gloves astm powder free cream colour haccp...",
+      "variantLabel": "Large",
       "variants": [
         {
           "name": "Size",
@@ -3645,12 +3608,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 2.6
+          "minQty": 24,
+          "priceAED": 2.6,
+          "unitName": "Carton",
+          "unitsPerLevel": 24
         },
         {
           "minQty": 48,
-          "priceAED": 2.49
+          "priceAED": 2.49,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -3664,37 +3631,24 @@
           "priceAED": 2.71,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 2.6
+              "minQty": 24,
+              "priceAED": 2.6,
+              "unitName": "Carton",
+              "unitsPerLevel": 24
             },
             {
               "minQty": 48,
-              "priceAED": 2.49
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "DRSPKB-25",
-          "label": "25 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 60.38,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 58.57
-            },
-            {
-              "minQty": 10,
-              "priceAED": 56.76
+              "priceAED": 2.49,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone basic wound dressing packs",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -3755,12 +3709,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 0.33
+          "minQty": 10,
+          "priceAED": 0.33,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 48,
-          "priceAED": 0.31
+          "minQty": 100,
+          "priceAED": 0.31,
+          "unitName": "Box",
+          "unitsPerLevel": 10
         }
       ],
       "taxClass": "zero-rated",
@@ -3774,37 +3732,24 @@
           "priceAED": 0.34,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 0.33
-            },
-            {
-              "minQty": 48,
-              "priceAED": 0.31
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "DS003MLLTL-10",
-          "label": "10 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 3.01,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 2.92
-            },
-            {
               "minQty": 10,
-              "priceAED": 2.83
+              "priceAED": 0.33,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 100,
+              "priceAED": 0.31,
+              "unitName": "Box",
+              "unitsPerLevel": 10
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone syringe luer lock tip latex free hypoallergenic non sterile loose each",
+      "variantLabel": "3ml",
       "variants": [],
       "attributes": [
         {
@@ -3870,11 +3815,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 10.11
+          "priceAED": 10.11,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 9.69
+          "priceAED": 9.69,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -3889,17 +3838,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 10.11
+              "priceAED": 10.11,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 9.69
+              "priceAED": 9.69,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone premium pathology grade microscope glass slide",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -3960,12 +3915,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 31.82
+          "minQty": 12,
+          "priceAED": 31.82,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 30.83
+          "minQty": 48,
+          "priceAED": 30.5,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -3979,18 +3938,24 @@
           "priceAED": 33.15,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 31.82
+              "minQty": 12,
+              "priceAED": 31.82,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 30.83
+              "minQty": 48,
+              "priceAED": 30.5,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": true
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|myerson dura post #30sll/g (1x8 card) each card",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -4053,12 +4018,16 @@
       ],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 4.53
+          "minQty": 6,
+          "priceAED": 4.53,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 48,
-          "priceAED": 4.34
+          "minQty": 24,
+          "priceAED": 4.34,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4072,37 +4041,24 @@
           "priceAED": 4.72,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 4.53
+              "minQty": 6,
+              "priceAED": 4.53,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 48,
-              "priceAED": 4.34
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "LWMSS-25",
-          "label": "25 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 105.24,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 102.08
-            },
-            {
-              "minQty": 10,
-              "priceAED": 98.93
+              "minQty": 24,
+              "priceAED": 4.34,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "liv-wipe|liv wipe mini alcohol swabs prep pad 70 percent isopropyl alcohol sanitiser 62 x gamma sterilised ...",
+      "variantLabel": "30mm",
       "variants": [],
       "attributes": [
         {
@@ -4167,12 +4123,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 131.31
+          "minQty": 12,
+          "priceAED": 129.96,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 127.25
+          "minQty": 48,
+          "priceAED": 124.54,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4186,18 +4146,24 @@
           "priceAED": 135.37,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 131.31
+              "minQty": 12,
+              "priceAED": 129.96,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 127.25
+              "minQty": 48,
+              "priceAED": 124.54,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "universal choice|body razor double edge handle blue 100/box",
+      "variantLabel": "90mm",
       "variants": [],
       "attributes": [
         {
@@ -4262,12 +4228,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 33.23
+          "minQty": 10,
+          "priceAED": 33.23,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 32.19
+          "minQty": 50,
+          "priceAED": 31.84,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -4281,37 +4251,24 @@
           "priceAED": 34.61,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 33.23
-            },
-            {
-              "minQty": 24,
-              "priceAED": 32.19
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLVNRLB100L-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 312.24,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 302.87
-            },
-            {
               "minQty": 10,
-              "priceAED": 293.51
+              "priceAED": 33.23,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 31.84,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone xtreme|livingstone xtreme thick heavy duty nitrile gloves powder free en374 black 100/box",
+      "variantLabel": "Large",
       "variants": [
         {
           "name": "Size",
@@ -4423,12 +4380,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 63.77
+          "minQty": 12,
+          "priceAED": 63.77,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 61.78
+          "minQty": 48,
+          "priceAED": 61.12,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4442,18 +4403,24 @@
           "priceAED": 66.43,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 63.77
+              "minQty": 12,
+              "priceAED": 63.77,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 61.78
+              "minQty": 48,
+              "priceAED": 61.12,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone emesis vomit bag in patented dispenser /box",
+      "variantLabel": "50pieces",
       "variants": [],
       "attributes": [
         {
@@ -4518,12 +4485,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 138.5
+          "minQty": 12,
+          "priceAED": 137.07,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 134.21
+          "minQty": 48,
+          "priceAED": 131.36,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4537,18 +4508,24 @@
           "priceAED": 142.78,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 138.5
+              "minQty": 12,
+              "priceAED": 137.07,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 134.21
+              "minQty": 48,
+              "priceAED": 131.36,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone underpad barrier pads",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -4610,11 +4587,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 9.44
+          "priceAED": 9.44,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 9.04
+          "priceAED": 9.04,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4629,17 +4610,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 9.44
+              "priceAED": 9.44,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 9.04
+              "priceAED": 9.04,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "bomex|bomex beaker low form",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -4700,12 +4687,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 81.2
+          "minQty": 10,
+          "priceAED": 81.2,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 78.66
+          "minQty": 100,
+          "priceAED": 77.81,
+          "unitName": "Box",
+          "unitsPerLevel": 10
         }
       ],
       "taxClass": "zero-rated",
@@ -4719,37 +4710,24 @@
           "priceAED": 84.58,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 81.2
-            },
-            {
-              "minQty": 24,
-              "priceAED": 78.66
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "BD326103-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 763,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 740.11
-            },
-            {
               "minQty": 10,
-              "priceAED": 717.22
+              "priceAED": 81.2,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 100,
+              "priceAED": 77.81,
+              "unitName": "Box",
+              "unitsPerLevel": 10
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "embecta|bd ultra fine insulin syringes with needle 29 gauge x 0.5 inch sterile /box",
+      "variantLabel": "100pieces",
       "variants": [],
       "attributes": [
         {
@@ -4816,12 +4794,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 149.77
+          "minQty": 12,
+          "priceAED": 148.22,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 145.14
+          "minQty": 48,
+          "priceAED": 142.05,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4835,18 +4817,24 @@
           "priceAED": 154.4,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 149.77
+              "minQty": 12,
+              "priceAED": 148.22,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 145.14
+              "minQty": 48,
+              "priceAED": 142.05,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "sofeel|sofeel premium compact towel",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -4908,11 +4896,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 14.45
+          "priceAED": 14.45,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 13.85
+          "priceAED": 13.85,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -4927,17 +4919,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 14.45
+              "priceAED": 14.45,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 13.85
+              "priceAED": 13.85,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone surgical preparation razor blade with handle",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -4998,12 +4996,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 31.43
+          "minQty": 10,
+          "priceAED": 31.43,
+          "unitName": "Carton",
+          "unitsPerLevel": 10
         },
         {
-          "minQty": 24,
-          "priceAED": 30.45
+          "minQty": 50,
+          "priceAED": 30.12,
+          "unitName": "Box",
+          "unitsPerLevel": 5
         }
       ],
       "taxClass": "zero-rated",
@@ -5017,37 +5019,24 @@
           "priceAED": 32.74,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 31.43
-            },
-            {
-              "minQty": 24,
-              "priceAED": 30.45
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "GLVNTRPF100L-10",
-          "label": "10 Boxes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 10,
-          "priceAED": 295.37,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 286.51
-            },
-            {
               "minQty": 10,
-              "priceAED": 277.65
+              "priceAED": 31.43,
+              "unitName": "Carton",
+              "unitsPerLevel": 10
+            },
+            {
+              "minQty": 50,
+              "priceAED": 30.12,
+              "unitName": "Box",
+              "unitsPerLevel": 5
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "ni-tek|ni tek nitrile premium examination gloves as nz standard powder free en374 blue haccp grade 10...",
+      "variantLabel": "Large",
       "variants": [
         {
           "name": "Size",
@@ -5160,11 +5149,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 4.48
+          "priceAED": 4.48,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 4.3
+          "priceAED": 4.3,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5179,17 +5172,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 4.48
+              "priceAED": 4.48,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 4.3
+              "priceAED": 4.3,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "livingstone|livingstone adhesive fabric first aid strips with pad",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -5251,11 +5250,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 10.44
+          "priceAED": 10.44,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 10
+          "priceAED": 10,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5270,17 +5273,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 10.44
+              "priceAED": 10.44,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 10
+              "priceAED": 10,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "elastoplast|elastoplast flexible fabric strips assorted",
+      "variantLabel": "40pack",
       "variants": [],
       "attributes": [
         {
@@ -5346,11 +5355,15 @@
       "tiers": [
         {
           "minQty": 6,
-          "priceAED": 92.91
+          "priceAED": 92.91,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 24,
-          "priceAED": 90.01
+          "minQty": 12,
+          "priceAED": 89.04,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -5365,17 +5378,23 @@
           "tiers": [
             {
               "minQty": 6,
-              "priceAED": 92.91
+              "priceAED": 92.91,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 24,
-              "priceAED": 90.01
+              "minQty": 12,
+              "priceAED": 89.04,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": true
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "|roger armstrong mobi 2 in 1 digital baby thermometer and pulse reader",
+      "variantLabel": "1pc",
       "variants": [],
       "attributes": [
         {
@@ -5439,11 +5458,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 18.57
+          "priceAED": 18.57,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 17.79
+          "priceAED": 17.79,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5458,36 +5481,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 18.57
+              "priceAED": 18.57,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 17.79
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1032-12",
-          "label": "12 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 12,
-          "priceAED": 207.08,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 200.87
-            },
-            {
-              "minQty": 10,
-              "priceAED": 194.66
+              "priceAED": 17.79,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "aqium|aqium antibacterial hand sanitiser ultra",
+      "variantLabel": "375ml",
       "variants": [],
       "attributes": [
         {
@@ -5552,12 +5562,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 65.03
+          "minQty": 12,
+          "priceAED": 65.03,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 63
+          "minQty": 48,
+          "priceAED": 62.32,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5571,18 +5585,24 @@
           "priceAED": 67.74,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 65.03
+              "minQty": 12,
+              "priceAED": 65.03,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 63
+              "minQty": 48,
+              "priceAED": 62.32,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "|la roche posay anthelios invisible fluid spf 50+",
+      "variantLabel": "50ml",
       "variants": [],
       "attributes": [
         {
@@ -5641,12 +5661,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 20.89
+          "minQty": 12,
+          "priceAED": 20.89,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 20.24
+          "minQty": 48,
+          "priceAED": 20.02,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5660,18 +5684,24 @@
           "priceAED": 21.76,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 20.89
+              "minQty": 12,
+              "priceAED": 20.89,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 20.24
+              "minQty": 48,
+              "priceAED": 20.02,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "|health & wellness dental tongue cleaner stainless steel",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -5726,12 +5756,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 152.58
+          "minQty": 12,
+          "priceAED": 151.01,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 147.86
+          "minQty": 48,
+          "priceAED": 144.72,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "zero-rated",
@@ -5745,18 +5779,24 @@
           "priceAED": 157.3,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 152.58
+              "minQty": 12,
+              "priceAED": 151.01,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 147.86
+              "minQty": 48,
+              "priceAED": 144.72,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "|jumper upper arm auto blood pressure monitor backlit lcd 1unit",
+      "variantLabel": "Extra Large",
       "variants": [],
       "attributes": [
         {
@@ -5813,12 +5853,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 20.89
+          "minQty": 12,
+          "priceAED": 20.89,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 20.24
+          "minQty": 48,
+          "priceAED": 20.02,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -5832,18 +5876,24 @@
           "priceAED": 21.76,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 20.89
+              "minQty": 12,
+              "priceAED": 20.89,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 20.24
+              "minQty": 48,
+              "priceAED": 20.02,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "elastoplast|elastoplast wound spray",
+      "variantLabel": "100ml",
       "variants": [],
       "attributes": [
         {
@@ -5911,11 +5961,15 @@
       "tiers": [
         {
           "minQty": 6,
-          "priceAED": 19.73
+          "priceAED": 19.73,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 24,
-          "priceAED": 19.11
+          "minQty": 12,
+          "priceAED": 18.91,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -5930,17 +5984,23 @@
           "tiers": [
             {
               "minQty": 6,
-              "priceAED": 19.73
+              "priceAED": 19.73,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 24,
-              "priceAED": 19.11
+              "minQty": 12,
+              "priceAED": 18.91,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "welcare|welcare digital thermometer standard",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -6000,11 +6060,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 18.57
+          "priceAED": 18.57,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 17.79
+          "priceAED": 17.79,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6019,36 +6083,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 18.57
+              "priceAED": 18.57,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 17.79
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1038-12",
-          "label": "12 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 12,
-          "priceAED": 207.08,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 200.87
-            },
-            {
-              "minQty": 10,
-              "priceAED": 194.66
+              "priceAED": 17.79,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "goat soap|goat antibacterial hand sanitiser alcohol",
+      "variantLabel": "300ml",
       "variants": [],
       "attributes": [
         {
@@ -6113,12 +6164,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 25.54
+          "minQty": 12,
+          "priceAED": 25.54,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 24.74
+          "minQty": 48,
+          "priceAED": 24.47,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6132,18 +6187,24 @@
           "priceAED": 26.6,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 25.54
+              "minQty": 12,
+              "priceAED": 25.54,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 24.74
+              "minQty": 48,
+              "priceAED": 24.47,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "neutrogena|neutrogena ultra sheer face lotion sunscreen spf 50",
+      "variantLabel": "88ml",
       "variants": [],
       "attributes": [
         {
@@ -6208,12 +6269,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 29.02
+          "minQty": 12,
+          "priceAED": 29.02,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 28.11
+          "minQty": 48,
+          "priceAED": 27.81,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6227,18 +6292,24 @@
           "priceAED": 30.23,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 29.02
+              "minQty": 12,
+              "priceAED": 29.02,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 28.11
+              "minQty": 48,
+              "priceAED": 27.81,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "hismile|hismile stain id mouthwash",
+      "variantLabel": "237ml",
       "variants": [],
       "attributes": [
         {
@@ -6301,12 +6372,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 92.91
+          "minQty": 12,
+          "priceAED": 92.91,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 90.01
+          "minQty": 48,
+          "priceAED": 89.04,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "zero-rated",
@@ -6320,18 +6395,24 @@
           "priceAED": 96.78,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 92.91
+              "minQty": 12,
+              "priceAED": 92.91,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 90.01
+              "minQty": 48,
+              "priceAED": 89.04,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "salter|salter automatic arm blood pressure monitor",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -6392,12 +6473,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 22.05
+          "minQty": 12,
+          "priceAED": 22.05,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 21.36
+          "minQty": 48,
+          "priceAED": 21.13,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6411,18 +6496,24 @@
           "priceAED": 22.97,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 22.05
+              "minQty": 12,
+              "priceAED": 22.05,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 21.36
+              "minQty": 48,
+              "priceAED": 21.13,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "stingose|stingose spray pack",
+      "variantLabel": "25ml",
       "variants": [],
       "attributes": [
         {
@@ -6485,12 +6576,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 140.82
+          "minQty": 6,
+          "priceAED": 139.37,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 10,
-          "priceAED": 136.47
+          "minQty": 12,
+          "priceAED": 133.57,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -6504,18 +6599,24 @@
           "priceAED": 145.18,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 140.82
+              "minQty": 6,
+              "priceAED": 139.37,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 10,
-              "priceAED": 136.47
+              "minQty": 12,
+              "priceAED": 133.57,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "famidoc|famidoc touch less forehead infrared thermometer",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -6575,11 +6676,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 13.92
+          "priceAED": 13.92,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 13.34
+          "priceAED": 13.34,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6594,36 +6699,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 13.92
+              "priceAED": 13.92,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 13.34
-            }
-          ],
-          "outOfStock": true
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1044-12",
-          "label": "12 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 12,
-          "priceAED": 155.28,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 150.62
-            },
-            {
-              "minQty": 10,
-              "priceAED": 145.96
+              "priceAED": 13.34,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": true
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "goat soap|goat antibacterial hand sanitiser alcohol spray",
+      "variantLabel": "120ml",
       "variants": [],
       "attributes": [
         {
@@ -6690,12 +6782,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 44.12
+          "minQty": 12,
+          "priceAED": 44.12,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 42.74
+          "minQty": 48,
+          "priceAED": 42.28,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6709,18 +6805,24 @@
           "priceAED": 45.96,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 44.12
+              "minQty": 12,
+              "priceAED": 44.12,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 42.74
+              "minQty": 48,
+              "priceAED": 42.28,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "cancer council|cancer council spf 50+ ultra tube",
+      "variantLabel": "250ml",
       "variants": [],
       "attributes": [
         {
@@ -6785,12 +6887,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 39.48
+          "minQty": 12,
+          "priceAED": 39.48,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 38.24
+          "minQty": 48,
+          "priceAED": 37.83,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6804,18 +6910,24 @@
           "priceAED": 41.12,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 39.48
+              "minQty": 12,
+              "priceAED": 39.48,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 38.24
+              "minQty": 48,
+              "priceAED": 37.83,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "therabreath|therabreath icy mint oral rinse",
+      "variantLabel": "473ml",
       "variants": [],
       "attributes": [
         {
@@ -6880,12 +6992,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 204.2
+          "minQty": 12,
+          "priceAED": 202.1,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 197.89
+          "minQty": 48,
+          "priceAED": 193.68,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "zero-rated",
@@ -6899,18 +7015,24 @@
           "priceAED": 210.52,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 204.2
+              "minQty": 12,
+              "priceAED": 202.1,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 197.89
+              "minQty": 48,
+              "priceAED": 193.68,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "omron|omron hem7120 blood pressure monitor",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -6971,12 +7093,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 12,
-          "priceAED": 9.27
+          "minQty": 6,
+          "priceAED": 9.27,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 48,
-          "priceAED": 8.89
+          "minQty": 24,
+          "priceAED": 8.89,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -6990,37 +7116,24 @@
           "priceAED": 9.66,
           "tiers": [
             {
-              "minQty": 12,
-              "priceAED": 9.27
+              "minQty": 6,
+              "priceAED": 9.27,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 48,
-              "priceAED": 8.89
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1048-25",
-          "label": "25 Packes/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 25,
-          "priceAED": 215.58,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 209.11
-            },
-            {
-              "minQty": 10,
-              "priceAED": 202.65
+              "minQty": 24,
+              "priceAED": 8.89,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "liv-wipe|liv wipe 70% alcohol swabs prep pad mini",
+      "variantLabel": "100pcs",
       "variants": [],
       "attributes": [
         {
@@ -7086,11 +7199,15 @@
       "tiers": [
         {
           "minQty": 6,
-          "priceAED": 58.06
+          "priceAED": 58.06,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 24,
-          "priceAED": 56.25
+          "minQty": 12,
+          "priceAED": 55.64,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -7105,17 +7222,23 @@
           "tiers": [
             {
               "minQty": 6,
-              "priceAED": 58.06
+              "priceAED": 58.06,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 24,
-              "priceAED": 56.25
+              "minQty": 12,
+              "priceAED": 55.64,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "vicks|vicks insight thermometer",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -7175,11 +7298,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 10.44
+          "priceAED": 10.44,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 10
+          "priceAED": 10,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7194,36 +7321,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 10.44
+              "priceAED": 10.44,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 10
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1050-12",
-          "label": "12 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 12,
-          "priceAED": 116.4,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 112.91
-            },
-            {
-              "minQty": 10,
-              "priceAED": 109.42
+              "priceAED": 10,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "hello|hello kitty hand sanitiser",
+      "variantLabel": "35ml",
       "variants": [],
       "attributes": [
         {
@@ -7288,12 +7402,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 27.16
+          "minQty": 12,
+          "priceAED": 27.16,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 26.31
+          "minQty": 48,
+          "priceAED": 26.03,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7307,18 +7425,24 @@
           "priceAED": 28.29,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 27.16
+              "minQty": 12,
+              "priceAED": 27.16,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 26.31
+              "minQty": 48,
+              "priceAED": 26.03,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "hamilton|hamilton spf 50+ everyday face cream",
+      "variantLabel": "75g",
       "variants": [],
       "attributes": [
         {
@@ -7383,12 +7507,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 45.3
+          "minQty": 12,
+          "priceAED": 45.3,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 43.89
+          "minQty": 48,
+          "priceAED": 43.41,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7402,18 +7530,24 @@
           "priceAED": 47.19,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 45.3
+              "minQty": 12,
+              "priceAED": 45.3,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 43.89
+              "minQty": 48,
+              "priceAED": 43.41,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "hismile|hismile v34 teeth whitening strips",
+      "variantLabel": "14pack",
       "variants": [],
       "attributes": [
         {
@@ -7478,12 +7612,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 269.93
+          "minQty": 12,
+          "priceAED": 267.15,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 10,
-          "priceAED": 261.58
+          "minQty": 48,
+          "priceAED": 256.02,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "zero-rated",
@@ -7497,18 +7635,24 @@
           "priceAED": 278.28,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 269.93
+              "minQty": 12,
+              "priceAED": 267.15,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 10,
-              "priceAED": 261.58
+              "minQty": 48,
+              "priceAED": 256.02,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "omron|omron hem7121 standard blood pressure monitor",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -7569,12 +7713,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 19.73
+          "minQty": 12,
+          "priceAED": 19.73,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 19.11
+          "minQty": 48,
+          "priceAED": 18.91,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7588,18 +7736,24 @@
           "priceAED": 20.55,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 19.73
+              "minQty": 12,
+              "priceAED": 19.73,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 19.11
+              "minQty": 48,
+              "priceAED": 18.91,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "savlon|savlon antiseptic cream for cuts grazes bites",
+      "variantLabel": "50g",
       "variants": [],
       "attributes": [
         {
@@ -7664,12 +7818,16 @@
       ],
       "tiers": [
         {
-          "minQty": 3,
-          "priceAED": 124.39
+          "minQty": 6,
+          "priceAED": 123.11,
+          "unitName": "Carton",
+          "unitsPerLevel": 6
         },
         {
-          "minQty": 10,
-          "priceAED": 120.55
+          "minQty": 12,
+          "priceAED": 117.98,
+          "unitName": "Box",
+          "unitsPerLevel": 2
         }
       ],
       "taxClass": "zero-rated",
@@ -7683,18 +7841,24 @@
           "priceAED": 128.24,
           "tiers": [
             {
-              "minQty": 3,
-              "priceAED": 124.39
+              "minQty": 6,
+              "priceAED": 123.11,
+              "unitName": "Carton",
+              "unitsPerLevel": 6
             },
             {
-              "minQty": 10,
-              "priceAED": 120.55
+              "minQty": 12,
+              "priceAED": 117.98,
+              "unitName": "Box",
+              "unitsPerLevel": 2
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "welcare|welcare 2 in 1 ear thermometer",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {
@@ -7756,11 +7920,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 8.11
+          "priceAED": 8.11,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 7.77
+          "priceAED": 7.77,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7775,36 +7943,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 8.11
+              "priceAED": 8.11,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 7.77
-            }
-          ],
-          "outOfStock": false
-        },
-        {
-          "id": "outer",
-          "sku": "TS-1056-12",
-          "label": "12 Each/Carton",
-          "shortLabel": "Carton",
-          "eachesPerPack": 12,
-          "priceAED": 90.44,
-          "tiers": [
-            {
-              "minQty": 4,
-              "priceAED": 87.73
-            },
-            {
-              "minQty": 10,
-              "priceAED": 85.01
+              "priceAED": 7.77,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "aqium|aqium antibacterial hand sanitiser ultra",
+      "variantLabel": "60ml",
       "variants": [],
       "attributes": [
         {
@@ -7871,12 +8026,16 @@
       ],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 65.03
+          "minQty": 12,
+          "priceAED": 65.03,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 63
+          "minQty": 48,
+          "priceAED": 62.32,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7890,18 +8049,24 @@
           "priceAED": 67.74,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 65.03
+              "minQty": 12,
+              "priceAED": 65.03,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 63
+              "minQty": 48,
+              "priceAED": 62.32,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": true
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "|la roche posay anthelios ultra spf50+ face sunscreen for dry skin",
+      "variantLabel": "50ml",
       "variants": [],
       "attributes": [
         {
@@ -7965,11 +8130,15 @@
       "tiers": [
         {
           "minQty": 12,
-          "priceAED": 18.57
+          "priceAED": 18.57,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
           "minQty": 48,
-          "priceAED": 17.79
+          "priceAED": 17.79,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "standard",
@@ -7984,17 +8153,23 @@
           "tiers": [
             {
               "minQty": 12,
-              "priceAED": 18.57
+              "priceAED": 18.57,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
               "minQty": 48,
-              "priceAED": 17.79
+              "priceAED": 17.79,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "white glo|white glo flossers tight fit mint",
+      "variantLabel": "100pack",
       "variants": [],
       "attributes": [
         {
@@ -8059,12 +8234,16 @@
       "images": [],
       "tiers": [
         {
-          "minQty": 6,
-          "priceAED": 92.91
+          "minQty": 12,
+          "priceAED": 92.91,
+          "unitName": "Carton",
+          "unitsPerLevel": 12
         },
         {
-          "minQty": 24,
-          "priceAED": 90.01
+          "minQty": 48,
+          "priceAED": 89.04,
+          "unitName": "Box",
+          "unitsPerLevel": 4
         }
       ],
       "taxClass": "zero-rated",
@@ -8078,18 +8257,24 @@
           "priceAED": 96.78,
           "tiers": [
             {
-              "minQty": 6,
-              "priceAED": 92.91
+              "minQty": 12,
+              "priceAED": 92.91,
+              "unitName": "Carton",
+              "unitsPerLevel": 12
             },
             {
-              "minQty": 24,
-              "priceAED": 90.01
+              "minQty": 48,
+              "priceAED": 89.04,
+              "unitName": "Box",
+              "unitsPerLevel": 4
             }
           ],
           "outOfStock": false
         }
       ],
       "defaultPackId": "base",
+      "variantGroup": "salter|salter automatic wrist blood pressure monitor",
+      "variantLabel": null,
       "variants": [],
       "attributes": [
         {

@@ -56,10 +56,11 @@ const expectedSkus = catalog.products.reduce(
   (n: number, p: any) => n + p.packs.length,
   0
 );
+// Active only: retired SKUs stay in the table because orders reference them.
 check(
   "every pack became a SKU",
-  (await prisma.productSku.count()) === expectedSkus,
-  `db=${await prisma.productSku.count()} json=${expectedSkus}`
+  (await prisma.productSku.count({ where: { isActive: true } })) === expectedSkus,
+  `db=${await prisma.productSku.count({ where: { isActive: true } })} json=${expectedSkus}`
 );
 
 check(
