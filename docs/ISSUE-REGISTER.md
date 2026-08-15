@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**150 items** · 80 outstanding · **21 outstanding P1**
+**157 items** · 86 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -79,6 +79,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
 | FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Open | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
 | FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Done | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
+| FN-12 | Nothing shows which clients are overdue to reorder | Dev | P2 | Open | In a reorder-first business this is the single most useful signal there is: a clinic that buys gloves every three weeks and has not ordered in five needs a phone call. It is computable from order history alone once there are three orders per client — no new data capture required. |
+| FN-13 | The client account has no Buy Again | Dev | P2 | Open | A returning buyer has to search for products they have already bought. For a reorder-first marketplace this is the shortest path between the platform and revenue, and it needs no metrics work at all — just their own order history, sorted by how often they buy each line. |
 
 ## Done
 
@@ -141,6 +143,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-27 | No marketing screens: wishlists and abandoned carts | Dev | P3 | Open | Both are already recorded in the database and nobody can see either. An abandoned cart is the cheapest sale to recover, and a wishlist says what a buyer wants before they buy it. |
 | BE-28 | No reports: sales by supplier, category or period | Dev | P3 | Open | The dashboard totals every order ever placed and nothing else. There is no way to answer which supplier sells most, what a month looked like, or which categories are dead. |
 | BE-29 | Product images cannot be uploaded | Dev | P1 | Done | The admin product screen listed the image files a product references but could not add or replace one, so the only way to give a product a photograph was to put a file on disk and re-seed. That blocked DA-03 and DA-24 from ever being closed by the client rather than by us. |
+| BE-30 | Capture supplier sub-order lifecycle timestamps and an immutable status log | Dev | P1 | Open | Nothing records when a supplier acknowledged, dispatched or delivered a sub-order, so no fulfilment or lead-time question can be answered about any supplier. Unlike most gaps this one cannot be repaired later: a timestamp not captured at the moment it happened is gone, and the same reasoning already applied to SkuBatch under FN-09. |
+| BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Open | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
+| BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
+| BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
 
 ## Infrastructure
 
@@ -210,3 +216,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-34 | The delivery address printed as raw JSON | Dev | P2 | Done | The address is stored as a JSON snapshot so editing an address book entry cannot alter where a historical order was sent. Two screens printed that string verbatim, including the delivery note the customer receives. |
 | FE-35 | Withdrawn: the first admin page after signing in was reported as showing the sign-in door | Dev | P3 | Done | Recorded on 16 Aug 2026 as a defect. It was not one — the finding was an artefact of the test that produced it, and the record is kept so nobody investigates it a second time. |
 | FE-36 | The 404 page rendered its header and footer twice | Dev | P2 | Done | Introduced by the (shop) route group split in c75b2b5 and live for one commit. An unmatched URL was fine; a notFound() thrown inside the storefront — an unlisted product, an order reference that is not yours — came out with two headers and two footers. |
+
+## Note
+
+| ID | Item | Owner | Priority | Status | Why it matters |
+| --- | --- | --- | --- | --- | --- |
+| DN-22 | The dashboard metrics spec is an idea source, not a plan | Dev | P3 | Done | A specification document generated on 16 Aug 2026 proposes roughly sixty metrics across three dashboards. It was written without sight of this codebase, so it assumes work that is already done and priorities that are not ours. |

@@ -65,13 +65,23 @@ check(
   `db=${await prisma.productSku.count({ where: { isActive: true } })} json=${expectedSkus}`
 );
 
-// Active only, for the same reason as SKUs: a retired supplier stays in the
-// table because its invoices still name it.
+/**
+ * Suppliers that actually appear in the catalogue, not every active supplier.
+ *
+ * The catalogue is built from live products, so it only ever names a supplier
+ * that has one. Comparing it against every Active supplier made this fail the
+ * moment a supplier was onboarded before their products were approved — which
+ * is the normal order of events, not a fault. A retired supplier stays in the
+ * table regardless, because its invoices still name it.
+ */
+const suppliersInCatalogue = await prisma.supplier.count({
+  where: { status: "Active", products: { some: { status: "Active" } } },
+});
+
 check(
-  "supplier count matches",
-  (await prisma.supplier.count({ where: { status: "Active" } })) ===
-    catalog.suppliers.length,
-  `db=${await prisma.supplier.count({ where: { status: "Active" } })} json=${catalog.suppliers.length}`
+  "every catalogue supplier is in the database",
+  suppliersInCatalogue === catalog.suppliers.length,
+  `db=${suppliersInCatalogue} json=${catalog.suppliers.length}`
 );
 
 /* ---------- structural ---------- */
