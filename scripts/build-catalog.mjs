@@ -389,15 +389,22 @@ const isOutOfStock = (name, index) => index % 13 === 5 || /discontinued/i.test(n
  */
 const SUPPLIERS = [...TEST_SUPPLIERS];
 
-/** Structured specs. Filterable later; for now they render as a details table. */
-function buildAttributes({ brand, unit, packSize, categoryPath, taxClass, supplierName }) {
+/**
+ * Structured specs. Filterable later; for now they render as a details table.
+ *
+ * There is deliberately no Supplier row. It used to be here, which printed the
+ * supplying company's name on the product page as though it were a
+ * specification of the goods — the plainest breach of DEC-24 in the whole
+ * build, and one that no amount of removing supplier ids from the API would
+ * have fixed, because it lived in the data rather than the code. See BE-38.
+ */
+function buildAttributes({ brand, unit, packSize, categoryPath, taxClass }) {
   const rows = [];
   if (brand) rows.push({ label: "Brand", value: brand });
   rows.push({ label: "Unit", value: unit });
   if (packSize) rows.push({ label: "Pack size", value: packSize });
   const category = categoryPath.at(-1)?.name;
   if (category) rows.push({ label: "Category", value: category });
-  if (supplierName) rows.push({ label: "Supplier", value: supplierName });
   rows.push({
     label: "VAT treatment",
     value: taxClass === "zero-rated" ? "Zero-rated" : "Standard rated (5%)",

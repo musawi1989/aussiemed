@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PAGE_SIZE, getSuppliers, queryProducts, type SortKey } from "@/lib/catalog";
+import { PAGE_SIZE, queryProducts, type SortKey } from "@/lib/catalog";
 import { toProductSummary } from "@/lib/api";
 
 /**
@@ -24,13 +24,9 @@ export async function GET(request: Request) {
     page,
   });
 
-  const suppliers = new Map((await getSuppliers()).map((s) => [s.id, s.name]));
-
   return NextResponse.json({
     currency: "AED",
-    items: result.items.map((p) =>
-      toProductSummary(p, suppliers.get(p.supplierId) ?? `Supplier ${p.supplierId}`)
-    ),
+    items: result.items.map((p) => toProductSummary(p)),
     pagination: {
       page: result.page,
       pageSize: PAGE_SIZE,

@@ -31,8 +31,6 @@ export type CartLineView = {
   unitLabel: string;
   unitShortLabel: string;
   eachesPerPack: number;
-  supplierId: string;
-  supplierName: string;
   taxClass: string;
   qty: number;
   unitPriceFils: number;
@@ -51,7 +49,6 @@ export type CartView = {
   totalFils: number;
   zeroRatedFils: number;
   itemCount: number;
-  supplierCount: number;
 };
 
 async function vatBasisPoints(): Promise<number> {
@@ -115,8 +112,6 @@ export async function getCart(cartKey: string): Promise<CartView> {
       unitLabel: sku.unitLabel,
       unitShortLabel: sku.unitShortLabel,
       eachesPerPack: sku.eachesPerPack,
-      supplierId: sku.product.supplierId,
-      supplierName: sku.product.supplier.companyName,
       taxClass: sku.product.taxClass,
       basePriceFils: sku.priceFils,
       outOfStock: sku.manualOutOfStock,
@@ -137,7 +132,6 @@ export async function getCart(cartKey: string): Promise<CartView> {
       .filter((l) => l.vatFils === 0)
       .reduce((n, l) => n + l.lineTotalFils, 0),
     itemCount: lines.reduce((n, l) => n + l.qty, 0),
-    supplierCount: new Set(lines.map((l) => l.supplierId)).size,
   };
 }
 
@@ -284,13 +278,40 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
 
     const reference = formatReference(year, sequence);
 
-    /* --- group by supplier --- */
+    /* --- group by supplier ---
+     *
+     * Resolved here from the database rather than carried on the cart. The
+     * cart is handed to the browser, and under DEC-24 a customer never learns
+     * who supplied their goods, so the supplier cannot travel with it — see
+     * BE-38.
+     *
+     * This grouping is itself on borrowed time. Under the cross-dock model an
+     * order is not split between suppliers at checkout at all: it becomes one
+     * AussieMed invoice (DEC-22), and buying happens later through the daily
+     * consolidated purchase orders (BE-36). Kept working for now so the split
+     * is removed deliberately with that work rather than half-dismantled here.
+     */
+    const supplyBySku = new Map(
+      (
+        await tx.productSku.findMany({
+          where: { id: { in: cart.lines.map((l) => l.skuId) } },
+          select: { id: true, product: { select: { supplierId: true } } },
+        })
+      ).map((s) => [s.id, s.product.supplierId])
+    );
 
     const bySupplier = new Map<string, typeof cart.lines>();
     for (const line of cart.lines) {
-      const list = bySupplier.get(line.supplierId) ?? [];
+      const supplierId = supplyBySku.get(line.skuId);
+      if (!supplierId) {
+        throw new CartError(
+          `No supplier is recorded for ${line.skuCode}.`,
+          "bad_request"
+        );
+      }
+      const list = bySupplier.get(supplierId) ?? [];
       list.push(line);
-      bySupplier.set(line.supplierId, list);
+      bySupplier.set(supplierId, list);
     }
 
     const priced = cart.lines.map((l) => ({

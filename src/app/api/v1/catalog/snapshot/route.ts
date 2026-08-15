@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllProducts, getSuppliers } from "@/lib/catalog";
+import { getAllProducts } from "@/lib/catalog";
 
 /**
  * GET /api/v1/catalog/snapshot
@@ -14,13 +14,13 @@ import { getAllProducts, getSuppliers } from "@/lib/catalog";
  * /api/v1/search/suggest instead, and this endpoint goes away.
  */
 export async function GET() {
-  const [products, suppliers] = await Promise.all([
-    getAllProducts(),
-    getSuppliers(),
-  ]);
+  // Products only. The supplier list used to travel with this payload, which
+  // meant every visitor's browser held the name of every company AussieMed
+  // buys from — see BE-38 and DEC-24.
+  const products = await getAllProducts();
 
   return NextResponse.json(
-    { currency: "AED", products, suppliers },
+    { currency: "AED", products },
     {
       headers: {
         // Safe to cache briefly: the catalogue only changes on re-seed.

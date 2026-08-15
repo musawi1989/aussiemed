@@ -81,99 +81,83 @@ export default async function OrderPage({ params }: { params: Params }) {
         </section>
       )}
 
+      {/*
+        One order, one list of items, one invoice from AussieMed.
+
+        This used to be grouped into a card per supplier, with each supplier
+        named and its own invoice number — which told the customer both who
+        AussieMed buys from and how the order was split between them. Under
+        DEC-24 they learn neither, and under DEC-22 AussieMed is the seller of
+        record, so there is one invoice to show. The split still exists in the
+        data; it is simply not the customer's business. See BE-38.
+      */}
       <section className="mt-8">
-        <h2 className="text-lg font-bold tracking-tight text-text">Invoices</h2>
-        <p className="mt-1 text-sm text-text-muted tnum">
-          This order spans {order.invoices.length}{" "}
-          {order.invoices.length === 1 ? "supplier" : "suppliers"}, so it carries{" "}
-          {order.invoices.length}{" "}
-          {order.invoices.length === 1 ? "invoice" : "invoices"} under the one
-          reference number.
-        </p>
+        <h2 className="text-lg font-bold tracking-tight text-text">Items</h2>
 
-        <div className="mt-4 space-y-4">
-          {order.invoices.map((invoice) => (
-            <div
-              key={invoice.id}
-              className="overflow-hidden rounded-card border border-border-base bg-surface shadow-card"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-base bg-surface-sunken px-4 py-2.5">
-                <div>
-                  <p className="text-sm font-bold text-text">
-                    {invoice.supplier.companyName}
-                  </p>
-                  <p className="text-xs text-text-subtle tnum">
-                    Invoice {invoice.invoiceNumber}
-                  </p>
-                </div>
-                <p className="font-bold tnum text-text">
-                  {aed(invoice.totalFils)}
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[34rem] border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-border-base text-left text-xs uppercase tracking-wide text-text-subtle">
-                      <th scope="col" className="px-4 py-2 font-bold">Item</th>
-                      <th scope="col" className="px-4 py-2 text-right font-bold">Qty</th>
-                      <th scope="col" className="px-4 py-2 text-right font-bold">Unit</th>
-                      <th scope="col" className="px-4 py-2 text-right font-bold">VAT</th>
-                      <th scope="col" className="px-4 py-2 text-right font-bold">Total</th>
+        <div className="mt-4 overflow-hidden rounded-card border border-border-base bg-surface shadow-card">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[34rem] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border-base text-left text-xs uppercase tracking-wide text-text-subtle">
+                  <th scope="col" className="px-4 py-2 font-bold">Item</th>
+                  <th scope="col" className="px-4 py-2 text-right font-bold">Qty</th>
+                  <th scope="col" className="px-4 py-2 text-right font-bold">Unit</th>
+                  <th scope="col" className="px-4 py-2 text-right font-bold">VAT</th>
+                  <th scope="col" className="px-4 py-2 text-right font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.invoices
+                  .flatMap((invoice) => invoice.items)
+                  .map((item) => (
+                    <tr key={item.id} className="border-b border-border-base last:border-0">
+                      <td className="px-4 py-2.5">
+                        <Link
+                          href={`/products/${item.sku.product.slug}`}
+                          className="text-text hover:text-navy"
+                        >
+                          {/* The snapshot, not the current name — a later
+                              rename must not rewrite this order. */}
+                          {item.nameSnapshot}
+                        </Link>
+                        <span className="block text-xs text-text-subtle tnum">
+                          {item.skuCodeSnapshot} &middot; {item.unitLabelSnapshot}
+                          {item.taxClassSnapshot === "ZeroRated" && (
+                            <span className="ml-1.5 font-bold text-success">
+                              VAT free
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right tnum text-text">{item.qty}</td>
+                      <td className="px-4 py-2.5 text-right tnum text-text-muted">
+                        {aed(item.unitPriceFils)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right tnum text-text-muted">
+                        {aed(item.vatFils)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-bold tnum text-text">
+                        {aed(item.lineTotalFils)}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b border-border-base last:border-0">
-                        <td className="px-4 py-2.5">
-                          <Link
-                            href={`/products/${item.sku.product.slug}`}
-                            className="text-text hover:text-navy"
-                          >
-                            {/* The snapshot, not the current name — a later
-                                rename must not rewrite this order. */}
-                            {item.nameSnapshot}
-                          </Link>
-                          <span className="block text-xs text-text-subtle tnum">
-                            {item.skuCodeSnapshot} &middot; {item.unitLabelSnapshot}
-                            {item.taxClassSnapshot === "ZeroRated" && (
-                              <span className="ml-1.5 font-bold text-success">
-                                VAT free
-                              </span>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-right tnum text-text">{item.qty}</td>
-                        <td className="px-4 py-2.5 text-right tnum text-text-muted">
-                          {aed(item.unitPriceFils)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right tnum text-text-muted">
-                          {aed(item.vatFils)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-bold tnum text-text">
-                          {aed(item.lineTotalFils)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="bg-surface-sunken">
-                    <tr>
-                      <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">Subtotal</td>
-                      <td className="px-4 py-1.5 text-right tnum text-text">{aed(invoice.subtotalFils)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">VAT</td>
-                      <td className="px-4 py-1.5 text-right tnum text-text">{aed(invoice.vatFils)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="px-4 pb-2.5 pt-1.5 text-right font-bold text-text">Invoice total</td>
-                      <td className="px-4 pb-2.5 pt-1.5 text-right font-bold tnum text-text">{aed(invoice.totalFils)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          ))}
+                  ))}
+              </tbody>
+              <tfoot className="bg-surface-sunken">
+                <tr>
+                  <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">Subtotal</td>
+                  <td className="px-4 py-1.5 text-right tnum text-text">{aed(order.subtotalFils)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">VAT</td>
+                  <td className="px-4 py-1.5 text-right tnum text-text">{aed(order.vatFils)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={4} className="px-4 pb-2.5 pt-1.5 text-right font-bold text-text">Total</td>
+                  <td className="px-4 pb-2.5 pt-1.5 text-right font-bold tnum text-text">{aed(order.totalFils)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       </section>
 

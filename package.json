@@ -13,6 +13,7 @@
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "verify": "npm run data:build && npm run check && npm run register && npm run test && npm run typecheck",
     "smoke": "node scripts/smoke-api.mjs",
+    "check:privacy": "node scripts/check-supplier-privacy.mjs",
     "register": "node scripts/register.mjs --md && node scripts/build-spreadsheet.mjs",
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
     "db:check": "node --experimental-strip-types scripts/check-db.ts",

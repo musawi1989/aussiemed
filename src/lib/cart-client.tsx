@@ -29,8 +29,6 @@ export type ServerCartLine = {
   unitLabel: string;
   unitShortLabel: string;
   eachesPerPack: number;
-  supplierId: string;
-  supplierName: string;
   taxClass: string;
   qty: number;
   unitPriceFils: number;
@@ -49,7 +47,6 @@ export type ServerCart = {
   totalFils: number;
   zeroRatedFils: number;
   itemCount: number;
-  supplierCount: number;
 };
 
 const EMPTY: ServerCart = {
@@ -60,7 +57,6 @@ const EMPTY: ServerCart = {
   totalFils: 0,
   zeroRatedFils: 0,
   itemCount: 0,
-  supplierCount: 0,
 };
 
 type CartValue = {

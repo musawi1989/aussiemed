@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { suggestFrom } from "./query";
-import type { Product, Supplier } from "./types";
+import type { Product } from "./types";
 
 /**
  * Client-side view of the catalogue.
@@ -28,7 +28,6 @@ type CatalogValue = {
   products: Product[];
   getProductById: (id: number) => Product | undefined;
   getProductBySlug: (slug: string) => Product | undefined;
-  getSupplierName: (id: number) => string;
   suggest: (term: string, limit?: number) => Product[];
 };
 
@@ -36,15 +35,12 @@ const CatalogContext = createContext<CatalogValue | null>(null);
 
 export function CatalogProvider({
   initialProducts,
-  initialSuppliers,
   children,
 }: {
   initialProducts: Product[];
-  initialSuppliers: Supplier[];
   children: ReactNode;
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [ready, setReady] = useState(initialProducts.length > 0);
 
   // Refresh in the background. Harmless when the snapshot is already current;
@@ -57,7 +53,6 @@ export function CatalogProvider({
       .then((data) => {
         if (cancelled || !data?.products) return;
         setProducts(data.products);
-        setSuppliers(data.suppliers ?? []);
         setReady(true);
       })
       .catch(() => {
@@ -71,17 +66,15 @@ export function CatalogProvider({
   const value = useMemo<CatalogValue>(() => {
     const byId = new Map(products.map((p) => [p.id, p]));
     const bySlug = new Map(products.map((p) => [p.slug, p]));
-    const supplierNames = new Map(suppliers.map((s) => [s.id, s.name]));
 
     return {
       ready,
       products,
       getProductById: (id) => byId.get(id),
       getProductBySlug: (slug) => bySlug.get(slug),
-      getSupplierName: (id) => supplierNames.get(id) ?? `Supplier ${id}`,
       suggest: (term, limit = 6) => suggestFrom(products, term, limit),
     };
-  }, [products, suppliers, ready]);
+  }, [products, ready]);
 
   return (
     <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>

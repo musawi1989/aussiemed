@@ -1,0 +1,12 @@
+-- Remove the "Supplier" product specification — BE-38, DEC-24.
+--
+-- Sixty products carried an attribute row labelled Supplier, naming Livingstone
+-- or Chemist Warehouse, which rendered on the product page as though it were a
+-- specification of the goods. It was the plainest breach of the rule that a
+-- customer never learns who supplied their goods, and the one that removing
+-- supplier ids from the API would not have caught, because it lived in the data
+-- rather than in the code.
+--
+-- scripts/build-catalog.mjs no longer emits it, so a rebuild and re-seed will
+-- not bring it back. This clears the rows already in the database.
+DELETE FROM "ProductAttribute" WHERE "label" = 'Supplier';

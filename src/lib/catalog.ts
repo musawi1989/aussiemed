@@ -8,12 +8,7 @@ import {
   type ProductQuery,
   type ProductQueryResult,
 } from "./query";
-import type {
-  CategoryRef,
-  Department,
-  Product,
-  Supplier,
-} from "./types";
+import type { CategoryRef, Department, Product } from "./types";
 
 /**
  * The seam. Everything the storefront knows about the catalogue comes from
@@ -49,7 +44,6 @@ let cache: {
   version: string;
   products: Product[];
   departments: Department[];
-  suppliers: Supplier[];
   bySlug: Map<string, Product>;
   byId: Map<number, Product>;
   categoryBySlug: Map<string, CategoryRef & { parentId: number | null }>;
@@ -111,17 +105,12 @@ async function load() {
 
   const version = await storedVersion();
 
-  const [dbCategories, dbSuppliers, dbProducts] = await Promise.all([
+  const [dbCategories, dbProducts] = await Promise.all([
     db.category.findMany({ orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }] }),
-    db.supplier.findMany({
-      where: { status: "Active" },
-      orderBy: { companyName: "asc" },
-    }),
     db.productMaster.findMany({
       where: { status: "Active" },
       include: {
         brand: true,
-        supplier: true,
         images: { orderBy: { sortOrder: "asc" } },
         attributes: { orderBy: { sortOrder: "asc" } },
         documents: { orderBy: { sortOrder: "asc" } },
@@ -204,22 +193,12 @@ async function load() {
       };
     });
 
-  /* ---- suppliers ---- */
-
-  const supIds = assignIds(dbSuppliers.map((s) => `sup:${s.companyName}`));
-  const supNumeric = new Map<string, number>(
-    dbSuppliers.map((s) => [s.id, supIds.get(`sup:${s.companyName}`)!])
-  );
-
-  const suppliers: Supplier[] = dbSuppliers.map((s) => ({
-    id: supNumeric.get(s.id)!,
-    name: s.companyName,
-    // Every supplier in the database today is seeded, not a real trading
-    // partner. DA-06 tracks replacing them.
-    isPlaceholder: true,
-  }));
-
   /* ---- products ---- */
+
+  /* Suppliers are deliberately absent. This catalogue is handed to the
+     browser, and under DEC-24 a customer never learns who supplied their
+     goods — not by name, and not by an id that would let them group products
+     by supplier and work it out. See BE-38. */
 
   const prodIds = assignIds(dbProducts.map((p) => `prod:${p.slug}`));
 
@@ -275,7 +254,6 @@ async function load() {
       priceAED: base?.priceAED ?? 0,
       unit: base?.shortLabel ?? "Each",
       packSize: null,
-      supplierId: supNumeric.get(p.supplierId) ?? 0,
       outOfStock: p.skus.every((s) => s.manualOutOfStock),
       images: p.images.map((i) => i.path),
       tiers: base?.tiers ?? [],
@@ -335,7 +313,6 @@ async function load() {
     version,
     products,
     departments,
-    suppliers,
     bySlug: new Map(products.map((p) => [p.slug, p])),
     byId: new Map(products.map((p) => [p.id, p])),
     categoryBySlug,
@@ -414,17 +391,10 @@ export async function relatedProducts(
   return relatedFrom((await load()).products, product, limit);
 }
 
-export async function getSuppliers(): Promise<Supplier[]> {
-  return (await load()).suppliers;
-}
-
-export async function getSupplier(id: number) {
-  return (await load()).suppliers.find((s) => s.id === id);
-}
-
-export async function getSupplierName(id: number): Promise<string> {
-  return (await getSupplier(id))?.name ?? `Supplier ${id}`;
-}
+/* getSuppliers, getSupplier and getSupplierName were removed under BE-38.
+   Nothing customer-facing may resolve a supplier, so the catalogue no longer
+   offers a way to. Admin screens read db.supplier directly, which is the
+   correct side of the wall. */
 
 export async function getVatRate(): Promise<number> {
   const row = await db.setting.findUnique({ where: { key: "vatRateBasisPoints" } });

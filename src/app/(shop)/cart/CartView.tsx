@@ -94,8 +94,7 @@ export function CartView() {
                           </Link>
                         </h2>
                         <p className="mt-0.5 text-xs text-text-subtle tnum">
-                          {line.skuCode} &middot; {line.unitLabel} &middot;{" "}
-                          {line.supplierName}
+                          {line.skuCode} &middot; {line.unitLabel}
                         </p>
                       </div>
 
@@ -214,13 +213,6 @@ export function CartView() {
               </dd>
             </div>
           </dl>
-
-          {cart.supplierCount > 1 && (
-            <p className="mt-3 rounded-card bg-surface-sunken px-3 py-2 text-xs leading-relaxed text-text-muted tnum">
-              This order spans {cart.supplierCount} suppliers and will produce{" "}
-              {cart.supplierCount} invoices under one reference number.
-            </p>
-          )}
 
           <Link
             href="/checkout"

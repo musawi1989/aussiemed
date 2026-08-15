@@ -49,7 +49,6 @@ export async function GET() {
         totalFils: 0,
         zeroRatedFils: 0,
         itemCount: 0,
-        supplierCount: 0,
       },
     });
   }

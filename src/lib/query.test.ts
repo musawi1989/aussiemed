@@ -37,7 +37,6 @@ function product(overrides: Partial<Product> & { name: string }): Product {
     priceAED: 10,
     unit: "Box",
     packSize: null,
-    supplierId: 21,
     outOfStock: false,
     images: [],
     tiers: [],

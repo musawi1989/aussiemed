@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSuppliers, suggest } from "@/lib/catalog";
+import { suggest } from "@/lib/catalog";
 import { toProductSummary } from "@/lib/api";
 
 /**
@@ -16,13 +16,9 @@ export async function GET(request: Request) {
     20
   );
 
-  const suppliers = new Map((await getSuppliers()).map((s) => [s.id, s.name]));
-
   return NextResponse.json({
     currency: "AED",
     query: q,
-    items: (await suggest(q, limit)).map((p) =>
-      toProductSummary(p, suppliers.get(p.supplierId) ?? `Supplier ${p.supplierId}`)
-    ),
+    items: (await suggest(q, limit)).map((p) => toProductSummary(p)),
   });
 }

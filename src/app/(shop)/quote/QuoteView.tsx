@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProductThumb } from "@/components/ProductThumb";
 import { QtyInput } from "@/components/QtyInput";
-import { useCatalog } from "@/lib/catalog-client";
 import { formatAED, lineTotal, round2 } from "@/lib/money";
 import { useStore } from "@/lib/store";
 
@@ -16,7 +15,6 @@ import { useStore } from "@/lib/store";
 export function QuoteView() {
   const { quoteLines, setQuoteQty, removeFromQuote, clearQuote, ready } =
     useStore();
-  const { getSupplierName } = useCatalog();
   const [sent, setSent] = useState(false);
 
   if (!ready) {
@@ -75,7 +73,6 @@ export function QuoteView() {
       0
     )
   );
-  const suppliers = new Set(quoteLines.map((l) => l.product.supplierId));
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
@@ -110,8 +107,7 @@ export function QuoteView() {
                         </Link>
                       </h2>
                       <p className="mt-0.5 text-xs text-text-subtle tnum">
-                        {line.product.sku} &middot;{" "}
-                        {getSupplierName(line.product.supplierId)}
+                        {line.product.sku}
                       </p>
                     </div>
                     <button
@@ -171,7 +167,6 @@ export function QuoteView() {
           <h2 className="text-base font-semibold text-text">Request pricing</h2>
           <p className="mt-1 text-sm text-text-muted tnum">
             {quoteLines.length} {quoteLines.length === 1 ? "line" : "lines"}
-            {suppliers.size > 1 ? ` across ${suppliers.size} suppliers` : ""}
           </p>
 
           <dl className="mt-4 border-y border-border-base py-3 text-sm">

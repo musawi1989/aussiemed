@@ -56,9 +56,12 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
     "no product carries a localised currency symbol",
     !JSON.stringify(body).includes("د.إ")
   );
+  // Inverted deliberately. This used to assert that every item named its
+  // supplier; under DEC-24 a customer never learns who supplied their goods,
+  // so the contract is now that no item names one — see BE-38.
   check(
-    "every item names its supplier",
-    body.items.every((p) => p.supplier && typeof p.supplier.name === "string")
+    "no item names a supplier",
+    body.items.every((p) => p.supplier === undefined)
   );
 }
 
@@ -182,19 +185,19 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
   check("an absurd limit is clamped rather than accepted", Array.isArray(capped.items));
 }
 
-/* --- suppliers ----------------------------------------------------- */
-
+/* --- suppliers ------------------------------------------------------ *
+ *
+ * There is no public suppliers endpoint any more. It listed every company
+ * AussieMed buys from, with a product count each, which under DEC-24 is
+ * exactly what a customer must not be able to see. The checks that used to
+ * live here — that the list was complete and carried no contact details — have
+ * been replaced by a single check that the list does not exist.
+ *
+ * npm run check:privacy covers the wider rule across every public payload.
+ */
 {
-  const { body } = await get("/api/v1/suppliers");
-  check("suppliers are listed", body.suppliers.length > 0);
-  check(
-    "product counts across suppliers sum to the catalogue",
-    body.suppliers.reduce((sum, s) => sum + s.productCount, 0) === CATALOGUE_TOTAL
-  );
-  check(
-    "no supplier contact details leak from a public endpoint",
-    !JSON.stringify(body).match(/email|phone|address|secondary/i)
-  );
+  const res = await fetch(`${BASE}/api/v1/suppliers`);
+  check("the public suppliers endpoint is gone", res.status === 404);
 }
 
 /* --- summary ------------------------------------------------------- */

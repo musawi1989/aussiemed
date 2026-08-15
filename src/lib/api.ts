@@ -13,7 +13,13 @@ import type { Product } from "./types";
 
 export type ProductSummary = ReturnType<typeof toProductSummary>;
 
-export function toProductSummary(product: Product, supplierName: string) {
+/**
+ * No supplier block. This is a public contract, and under DEC-24 a customer
+ * never learns who supplied their goods — see BE-38. AussieMed is the seller
+ * of record (DEC-22), so as far as this API is concerned AussieMed is the only
+ * party selling anything.
+ */
+export function toProductSummary(product: Product) {
   return {
     id: product.id,
     slug: product.slug,
@@ -28,18 +34,14 @@ export function toProductSummary(product: Product, supplierName: string) {
     categoryId: product.categoryId,
     categoryPath: product.categoryPath,
     images: product.images,
-    supplier: {
-      id: product.supplierId,
-      name: supplierName,
-    },
     /** Seed data invented during the rebuild — never ship these live. */
     isPlaceholder: product.isPlaceholder,
   };
 }
 
-export function toProductDetail(product: Product, supplierName: string) {
+export function toProductDetail(product: Product) {
   return {
-    ...toProductSummary(product, supplierName),
+    ...toProductSummary(product),
     description: product.description,
     /** Original ASP.NET identifier, retained for reconciliation. */
     legacyDetailKey: product.detailKey,

@@ -44,9 +44,11 @@ export function CheckoutView() {
           {placed.reference}
         </p>
 
+        {/* One invoice, from AussieMed — DEC-22. The customer used to be told
+            how many supplier invoices their order would produce, which both
+            revealed that suppliers exist and is no longer true. */}
         <p className="mt-4 text-sm text-text-muted tnum">
-          {formatAED(placed.totalAED)} &middot; {placed.invoiceCount}{" "}
-          {placed.invoiceCount === 1 ? "supplier invoice" : "supplier invoices"}
+          {formatAED(placed.totalAED)}
         </p>
 
         <p className="mt-5 rounded-card border border-accent-border bg-accent-soft px-3 py-2 text-left text-sm leading-relaxed text-accent">
@@ -193,13 +195,6 @@ export function CheckoutView() {
               </dd>
             </div>
           </dl>
-
-          {cart.supplierCount > 1 && (
-            <p className="mt-3 rounded-card bg-surface-sunken px-3 py-2 text-xs leading-relaxed text-text-muted tnum">
-              This order spans {cart.supplierCount} suppliers and will produce{" "}
-              {cart.supplierCount} invoices under one reference number.
-            </p>
-          )}
 
           <button
             type="submit"

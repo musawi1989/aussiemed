@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  getProductById,
-  getProductBySlug,
-  getSuppliers,
-  relatedProducts,
-} from "@/lib/catalog";
+import { getProductById, getProductBySlug, relatedProducts } from "@/lib/catalog";
 import { notFound, toProductDetail, toProductSummary } from "@/lib/api";
 
 /**
@@ -25,14 +20,9 @@ export async function GET(
 
   if (!product) return notFound(`No product matching "${idOrSlug}"`);
 
-  const suppliers = new Map((await getSuppliers()).map((s) => [s.id, s.name]));
-  const nameFor = (id: number) => suppliers.get(id) ?? `Supplier ${id}`;
-
   return NextResponse.json({
     currency: "AED",
-    product: toProductDetail(product, nameFor(product.supplierId)),
-    related: (await relatedProducts(product)).map((p) =>
-      toProductSummary(p, nameFor(p.supplierId))
-    ),
+    product: toProductDetail(product),
+    related: (await relatedProducts(product)).map((p) => toProductSummary(p)),
   });
 }

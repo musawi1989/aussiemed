@@ -89,7 +89,6 @@ export type Product = {
   priceAED: number;
   unit: string;
   packSize: string | null;
-  supplierId: number;
   outOfStock: boolean;
   images: string[];
   tiers: PriceTier[];
@@ -112,19 +111,24 @@ export type Product = {
   sourceNote: string | null;
 };
 
-export type Supplier = {
-  id: number;
-  name: string;
-  /** True while the name is invented — the extraction never exposed them. */
-  isPlaceholder: boolean;
-};
-
+/**
+ * There is deliberately no Supplier type here, and no supplierId on a Product.
+ *
+ * This file describes the catalogue as customers receive it, and under DEC-24
+ * a customer never learns who supplied their goods. AussieMed buys and resells;
+ * which company the stock came from is a commercial relationship on our side of
+ * the wall, not an attribute of the product.
+ *
+ * Supply lives in the database as ProductSupply — a SKU, a primary supplier, a
+ * backup, and the cost of each — and is read only by admin code. If you find
+ * yourself wanting a supplier name in this file, the requirement is BE-38 and
+ * the answer is no.
+ */
 export type Catalog = {
   generatedFrom: string;
   currency: "AED";
   vatRate: number;
   departments: Department[];
-  suppliers: Supplier[];
   products: Product[];
   productCountByCategory: Record<string, number>;
 };
