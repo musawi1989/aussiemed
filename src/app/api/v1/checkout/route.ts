@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ensureCartKey } from "@/lib/cart-cookie";
 import { CartError, checkout } from "@/lib/orders";
+import { getSessionUser } from "@/lib/auth";
 
 /**
  * POST /api/v1/checkout
@@ -36,9 +37,13 @@ export async function POST(request: Request) {
     }
 
     const cartKey = await ensureCartKey();
+    // Guest checkout stays allowed; signing in simply attaches the order.
+    const user = await getSessionUser();
 
     const result = await checkout({
       cartKey,
+      userId: user?.id ?? null,
+      organisationId: user?.organisationId ?? null,
       company: String(body.company).trim(),
       contact: String(body.contact).trim(),
       email: String(body.email).trim(),

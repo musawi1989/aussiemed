@@ -37,6 +37,9 @@ datasource db {
 model User {
   id           String  @id @default(cuid())
   email        String  @unique
+  /// Optional sign-in handle. Staff accounts sign in as "admin" or
+  /// "supplier1" rather than by email, so login accepts either.
+  username     String? @unique
   passwordHash String?
   role         String  @default("Customer")
   name         String
@@ -52,6 +55,7 @@ model User {
   organisationId String?
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
 
+  sessions     Session[]
   orders       Order[]
   quotes       QuoteRequest[]
   wishlist     WishlistItem[]
@@ -499,6 +503,10 @@ model Order {
   organisationId String?
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
 
+  /// The cart that placed a guest order, so a guest can read their own order
+  /// back without an account. Never exposed to the client.
+  guestCartKey String?
+
   addressId        String?
   address          Address? @relation(fields: [addressId], references: [id])
   /// The delivery address as it was at the time, so later edits to the
@@ -668,4 +676,21 @@ model Setting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+/// A signed-in session.
+///
+/// The cookie holds only this row's random token; nothing about the user is
+/// trusted from the browser. Deleting the row signs the session out
+/// everywhere, which a stateless JWT could not do.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

@@ -219,6 +219,9 @@ export async function clearCart(cartKey: string) {
 
 export type CheckoutInput = {
   cartKey: string;
+  /** Set when the buyer is signed in, so the order joins their history. */
+  userId?: string | null;
+  organisationId?: string | null;
   company: string;
   contact: string;
   email: string;
@@ -297,6 +300,10 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     const order = await tx.order.create({
       data: {
         reference,
+        userId: input.userId ?? null,
+        organisationId: input.organisationId ?? null,
+        // Lets a guest read their own order back without an account.
+        guestCartKey: input.userId ? null : input.cartKey,
         status: "Pending",
         paymentMethod: input.paymentMethod ?? "OfflinePurchaseOrder",
         poReference: input.poReference || null,

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**96 items** · 69 outstanding · **22 outstanding P1**
+**105 items** · 74 outstanding · **20 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -67,12 +67,38 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-02 | Quote requests are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-04 | Notify Me does not register a subscription | Dev | P1 | Open | Captured locally. The restock email flow does not exist. |
-| FN-05 | Sign-in is a demo flag | Dev | P1 | Open | A localStorage boolean opens a fabricated session. Real auth is email OTP per the backend spec. |
-| FN-06 | Account history is fabricated | Dev | P1 | Open | The customer, three orders and their invoices are invented so the account screens could be built and reviewed. |
 | FN-07 | Variant switching is not wired | Dev | P2 | Open | Size and colour chips display the current value; other options are disabled because sibling SKUs do not exist yet. |
 | FN-08 | Stock is a boolean | Dev | P2 | Open | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
+
+## Done
+
+| ID | Item | Owner | Priority | Status | Why it matters |
+| --- | --- | --- | --- | --- | --- |
+| FN-05 | Real sign-in replaced the demo flag | Dev | P1 | Done | Sign-in was a localStorage boolean anyone could set. It is now a database-backed session with a scrypt-hashed password. |
+| FN-06 | Account history is real | Dev | P1 | Done | The account area showed three fabricated orders. It now reads the signed-in user's actual orders, and reorder-first is built from what they have really bought. |
+| DN-01 | Currency rendering | Dev | P1 | Done | Was rendering the Arabic symbol and 4 decimals. Now always the English string AED with exactly 2 decimals, enforced by test and by a grep check. |
+| DN-02 | Integer quantities | Dev | P1 | Done | Quantities were rendering as decimals such as 3.00. |
+| DN-03 | Category filtering | Dev | P1 | Done | Every category link redirected to the full product list. Filtering now works, including rolling a department up to everything beneath it. |
+| DN-04 | Category counts matching results | Dev | P1 | Done | Admin and storefront counts could diverge. Counts are now derived from the same query that lists the products. |
+| DN-05 | Category slug collisions | Dev | P1 | Done | Six categories shared a slug with another category, so one was unreachable and the other answered to the wrong name. |
+| DN-06 | Per-supplier invoicing | Dev | P1 | Done | An order spanning N suppliers now produces exactly N invoices under one reference number, with per-invoice VAT summing to the order VAT without drift. |
+| DN-07 | Unique page titles and meta descriptions | Dev | P2 | Done | Every page carried the identical title 'Aussie Med \|\| Home' with an empty description. |
+| DN-08 | Broken cart images and unresolved asset paths | Dev | P2 | Done | Cart images had a bare domain with no path; templates contained literal '~/' paths. |
+| DN-09 | Volume breaks visible while scanning | Dev | P2 | Done | Only a savings badge was shown. The full break table now appears on every product card using +1/+10/+50 notation. |
+| DN-10 | Ex VAT / Inc VAT toggle | Dev | P2 | Done | Procurement compares ex-tax and the approver reads inc-tax, so the same buyer needs both during one order. |
+| DN-11 | Pack and unit of measure model | Dev | P1 | Done | The same line sells by the box and by the carton at different prices. Cart lines are keyed by product and pack so they never merge. |
+| DN-12 | Adopt the existing brand theme | Dev | P2 | Done | Navy #29387d, red #ea2227 and Gilroy, read from the live site's computed styles rather than eyeballed. |
+| DN-13 | Catalogue seeded with real products | Dev | P2 | Done | Sixty real items replaced invented placeholders so the storefront can be judged against products that actually exist. |
+| DN-14 | Control characters in generated code | Dev | P1 | Done | Shell escaping wrote literal backspace bytes into regex rules, so every packaging and variant rule silently matched nothing while looking correct in every editor. |
+| DN-15 | Product images added for testing | Dev | P2 | Done | Fifty-two of 71 products now carry real photography so the layout can be judged with images rather than placeholder tiles. |
+| DN-16 | Database schema designed and migrated | Dev | P1 | Done | Thirty tables covering catalogue, packs as SKUs, variants, attributes, documents, batches, orders, per-supplier invoices, quotes, bulk upload and audit. |
+| DN-17 | Typecheck was silently passing on a stale cache | Dev | P1 | Done | tsc ran with incremental caching and reported no errors while real type errors existed in the tree. Every earlier typecheck-clean claim was suspect. |
+| BE-11 | Order pages restricted to their owner | Dev | P1 | Done | An order was readable by anyone who guessed a sequential reference. Now an admin sees any order, the account that placed it sees it, and a guest sees only an order placed from their own cart. |
+| DN-18 | Cart moved to the server | Dev | P1 | Done | The cart was localStorage, so the browser held prices. It is now database rows priced entirely on the server; the client cannot tell the server what anything costs. |
+| DN-19 | Checkout writes real orders | Dev | P1 | Done | One transaction creates the order, one invoice per supplier and every line, or nothing at all. Reference numbers are allocated server-side inside that transaction. |
+| DN-20 | Four sign-in accounts seeded | Dev | P1 | Done | admin, musawi1989@gmail.com, supplier1 and supplier2, each able to sign in by username or email. Suppliers are attached to their seeded companies. |
 
 ## Backend
 
@@ -88,10 +114,14 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
 | BE-09 | Point the storefront at the database | Dev | P1 | Done | Done. Every page and API route reads Prisma. Client components read a snapshot over HTTP because a browser cannot query the database. |
 | BE-10 | Retire the catalogue snapshot endpoint | Dev | P2 | Open | Client components fetch the whole catalogue from /api/v1/catalog/snapshot. Fine for 71 products; not for thousands. Goes away when the cart moves server-side. |
-| BE-11 | Restrict order pages to the account that placed the order | Dev | P1 | Open | An order at /orders/REFERENCE is readable by anyone who knows the reference. There is no sign-in yet, so there is nothing to check against. |
 | BE-12 | Merge a guest cart into the user cart on sign-in | Dev | P2 | Open | Carts are keyed by a cookie so a visitor can shop before signing in. The merge on sign-in is specified but cannot be built until auth exists. |
 | BE-13 | Expire abandoned guest carts | Dev | P3 | Open | Cart rows are never cleaned up. Every visitor who adds an item creates one that lives forever. |
 | BE-14 | Confirm the default order and invoice status | Client | P2 | Open | OUR DECISION: new orders are Pending and each supplier invoice is Pending. The real workflow — who moves an order to Processing, and when an invoice becomes Issued — is not defined. |
+| BE-15 | Passwords were built instead of the specified email OTP | Client | P2 | Open | BACKEND_SPEC.md specifies passwordless sign-in by emailed code. Passwords were requested instead and built. Livingstone advertises password-free login as a feature, so the spec was not arbitrary. |
+| BE-16 | Confirm the session lifetime | Client | P3 | Open | OUR INVENTED VALUE: sessions last 7 days, then require signing in again. No idle timeout and no re-authentication for sensitive actions. |
+| BE-17 | Purge expired sessions on a schedule | Dev | P3 | Open | Expired session rows are never deleted. purgeExpiredSessions() exists but nothing calls it. |
+| BE-18 | Password hashing uses scrypt, not bcrypt | Dev | P3 | Open | OUR DECISION: scrypt from Node's own crypto module, so there is no dependency to keep patched. The spec names bcrypt. Both are appropriate; only src/lib/auth.ts knows the format. |
+| BE-19 | Guest checkout is allowed | Client | P2 | Open | OUR DECISION: an order can be placed without signing in, and is then tied to the cart cookie. Signing in simply attaches the order to the account. |
 
 ## Infrastructure
 
@@ -118,26 +148,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DF-04 | Quick view | Dev | P3 | Deferred | View a product from the listing without a page load. |
 | DF-05 | Downloadable PDF catalogues | Client | P3 | Deferred | Still how a lot of trade buying happens. |
 
-## Done
+## Security
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| DN-01 | Currency rendering | Dev | P1 | Done | Was rendering the Arabic symbol and 4 decimals. Now always the English string AED with exactly 2 decimals, enforced by test and by a grep check. |
-| DN-02 | Integer quantities | Dev | P1 | Done | Quantities were rendering as decimals such as 3.00. |
-| DN-03 | Category filtering | Dev | P1 | Done | Every category link redirected to the full product list. Filtering now works, including rolling a department up to everything beneath it. |
-| DN-04 | Category counts matching results | Dev | P1 | Done | Admin and storefront counts could diverge. Counts are now derived from the same query that lists the products. |
-| DN-05 | Category slug collisions | Dev | P1 | Done | Six categories shared a slug with another category, so one was unreachable and the other answered to the wrong name. |
-| DN-06 | Per-supplier invoicing | Dev | P1 | Done | An order spanning N suppliers now produces exactly N invoices under one reference number, with per-invoice VAT summing to the order VAT without drift. |
-| DN-07 | Unique page titles and meta descriptions | Dev | P2 | Done | Every page carried the identical title 'Aussie Med \|\| Home' with an empty description. |
-| DN-08 | Broken cart images and unresolved asset paths | Dev | P2 | Done | Cart images had a bare domain with no path; templates contained literal '~/' paths. |
-| DN-09 | Volume breaks visible while scanning | Dev | P2 | Done | Only a savings badge was shown. The full break table now appears on every product card using +1/+10/+50 notation. |
-| DN-10 | Ex VAT / Inc VAT toggle | Dev | P2 | Done | Procurement compares ex-tax and the approver reads inc-tax, so the same buyer needs both during one order. |
-| DN-11 | Pack and unit of measure model | Dev | P1 | Done | The same line sells by the box and by the carton at different prices. Cart lines are keyed by product and pack so they never merge. |
-| DN-12 | Adopt the existing brand theme | Dev | P2 | Done | Navy #29387d, red #ea2227 and Gilroy, read from the live site's computed styles rather than eyeballed. |
-| DN-13 | Catalogue seeded with real products | Dev | P2 | Done | Sixty real items replaced invented placeholders so the storefront can be judged against products that actually exist. |
-| DN-14 | Control characters in generated code | Dev | P1 | Done | Shell escaping wrote literal backspace bytes into regex rules, so every packaging and variant rule silently matched nothing while looking correct in every editor. |
-| DN-15 | Product images added for testing | Dev | P2 | Done | Fifty-two of 71 products now carry real photography so the layout can be judged with images rather than placeholder tiles. |
-| DN-16 | Database schema designed and migrated | Dev | P1 | Done | Thirty tables covering catalogue, packs as SKUs, variants, attributes, documents, batches, orders, per-supplier invoices, quotes, bulk upload and audit. |
-| DN-17 | Typecheck was silently passing on a stale cache | Dev | P1 | Done | tsc ran with incremental caching and reported no errors while real type errors existed in the tree. Every earlier typecheck-clean claim was suspect. |
-| DN-18 | Cart moved to the server | Dev | P1 | Done | The cart was localStorage, so the browser held prices. It is now database rows priced entirely on the server; the client cannot tell the server what anything costs. |
-| DN-19 | Checkout writes real orders | Dev | P1 | Done | One transaction creates the order, one invoice per supplier and every line, or nothing at all. Reference numbers are allocated server-side inside that transaction. |
+| SEC-01 | Remove the test credentials before any deployment | Client | P1 | Open | Four accounts exist with the password 123456: admin, musawi1989@gmail.com, supplier1, supplier2. The sign-in page lists them on screen. This is fine on a local machine and unacceptable anywhere else. |
+| SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
+| SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |

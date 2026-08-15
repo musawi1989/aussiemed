@@ -18,7 +18,6 @@ import type { Pack, Product } from "./types";
 const CART_KEY = "aussiemed.cart.v2";
 const QUOTE_KEY = "aussiemed.quote.v2";
 const WISHLIST_KEY = "aussiemed.wishlist.v1";
-const SESSION_KEY = "aussiemed.session.v1";
 const VAT_PREF_KEY = "aussiemed.vatPref.v1";
 
 /**
@@ -61,10 +60,6 @@ type StoreValue = {
   includeVat: boolean;
   setIncludeVat: (value: boolean) => void;
 
-  /** Demo-only session flag. Real auth is backend work. */
-  signedIn: boolean;
-  signIn: () => void;
-  signOut: () => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -91,7 +86,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [quoteEntries, setQuoteEntries] = useState<CartEntry[]>([]);
   const [wishlist, setWishlist] = useState<number[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
   const [includeVat, setIncludeVatState] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -99,7 +93,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEntries(readJSON<CartEntry[]>(CART_KEY, []));
     setQuoteEntries(readJSON<CartEntry[]>(QUOTE_KEY, []));
     setWishlist(readJSON<number[]>(WISHLIST_KEY, []));
-    setSignedIn(readJSON<boolean>(SESSION_KEY, false));
     setIncludeVatState(readJSON<boolean>(VAT_PREF_KEY, false));
     setReady(true);
   }, []);
@@ -113,9 +106,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready) writeJSON(WISHLIST_KEY, wishlist);
   }, [wishlist, ready]);
-  useEffect(() => {
-    if (ready) writeJSON(SESSION_KEY, signedIn);
-  }, [signedIn, ready]);
   useEffect(() => {
     if (ready) writeJSON(VAT_PREF_KEY, includeVat);
   }, [includeVat, ready]);
@@ -262,13 +252,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       inQuote,
       includeVat,
       setIncludeVat: setIncludeVatState,
-      signedIn,
-      signIn: () => setSignedIn(true),
-      signOut: () => setSignedIn(false),
     }),
     [
       ready, lines, totals, cartOps, qtyInCart, wishlist, toggleWishlist,
-      inWishlist, quoteLines, quoteOps, inQuote, includeVat, signedIn,
+      inWishlist, quoteLines, quoteOps, inQuote, includeVat,
     ]
   );
 
