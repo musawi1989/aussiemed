@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**144 items** · 81 outstanding · **22 outstanding P1**
+**148 items** · 82 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -19,10 +19,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | AC-07 | Approve the supplier invoice numbering | Accountant | P2 | Open | AM-2026-000318-01 is invented. One invoice per supplier per order. |
 | AC-08 | Confirm the rounding policy | Accountant | P3 | Open | Half-up to 2 decimals. Per-line VAT is accumulated then rounded once, so the invoice split and the order total agree to the cent. |
 | AC-09 | Decide payment terms and credit accounts | Client | P2 | Open | Trade buyers usually expect credit limits and 30-day terms. Not modelled at all. v1 ships offline / purchase order only. |
-| AC-10 | Confirm the default price display | Client | P3 | Open | Prices are shown Ex. VAT everywhere, and since 15 Aug 2026 there is no way for a buyer to see an inc-VAT figure at all — the header toggle was removed at the client's request before VAT was folded into the displayed price. |
+| AC-10 | Confirm the default price display | Client | P3 | Open | Prices are shown Ex. VAT everywhere, and since 15 Aug 2026 there is no way for a buyer to see an inc-VAT figure at all â€” the header toggle was removed at the client's request before VAT was folded into the displayed price. |
 | AC-11 | Approve the VAT rounding method on invoices | Accountant | P2 | Open | VAT is rounded per line rather than once per invoice, so the printed lines always add up to the printed total. The alternative rounds once and can leave lines that do not sum. |
 | AC-12 | Confirm the reference number sequence resets each year | Accountant | P2 | Open | OUR DECISION: the sequence restarts at 000001 each calendar year, so AM-2026-000001 and AM-2027-000001 can both exist. If accounting needs a single unbroken sequence this must change before real orders. |
-| AC-13 | Decide whether an order should reserve stock | Client | P2 | Open | OUR DECISION: checkout does not decrement or reserve anything, because there are no stock levels — only an in/out flag. Two customers can order the last unit. |
+| AC-13 | Decide whether an order should reserve stock | Client | P2 | Open | OUR DECISION: checkout does not decrement or reserve anything, because there are no stock levels â€” only an in/out flag. Two customers can order the last unit. |
 
 ## Data
 
@@ -34,7 +34,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-04 | Wrong image on the scrub top | Client | P3 | Done | The product's primary image was a stock photo of a pocket watch. Excluded from the build; the file is still in public/products/. |
 | DA-05 | Approve the product descriptions | Client | P2 | Open | The source had no descriptions. All 71 active products now carry text we generated from the product name and supplier listing, and it goes out under AussieMed's name. |
 | DA-06 | Supply the real supplier list | Client | P1 | Open | Four suppliers exist: two carried over from the extraction with invented names and two test suppliers (Livingstone and Chemist Warehouse) whose catalogues seeded the products. |
-| DA-07 | Supply the hero banner image | Client | P2 | Open | The live site loads Content/Banner/July-2026/u1oannrj.png, which the extraction never captured — only Brand, Category, Product and WebHtml folders were mirrored. |
+| DA-07 | Supply the hero banner image | Client | P2 | Open | The live site loads Content/Banner/July-2026/u1oannrj.png, which the extraction never captured â€” only Brand, Category, Product and WebHtml folders were mirrored. |
 | DA-08 | Obtain Gilroy Regular and Medium | Agency | P2 | Open | The theme references them but the files were never delivered, so the live site already falls back to a generic sans for body text. Gilroy is a commercial typeface. |
 | DA-09 | Explain the disappearing product | Client | P3 | Deferred | Product 180 (Vaseline) was on the storefront listing at 12:45 UTC and gone by 13:05 the same day, while its detail page still loaded. |
 | DA-10 | Supply real pack and carton structures | Client | P2 | Open | Outer packs were invented for 15 lines (a box that comes 10 to a carton). Real pack hierarchies are needed. |
@@ -52,7 +52,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-22 | Supplier 1 is named AussieMed Distribution rather than a real trading name | Client | P3 | Done | The supplier1 login and its company record are named after the storefront itself, so a supplier signing in sees the AussieMed name in the header where their own company should be. The other seeded supplier is correctly Chemist Warehouse. |
 | DA-23 | Two suppliers were asked for; four exist | Client | P2 | Done | The brief was Chemist Warehouse and Livingstone for testing, with the products that made no sense removed. Northline Uniforms and AussieMed Distribution survived that clean-up and still own 11 of the 71 products between them, so a third of the supplier list and a seventh of the catalogue is left over from the old extraction. |
 | DA-24 | 13 of 60 products have no image | Client | P2 | Open | Those products render as a monogram tile rather than a photograph. It is a deliberate stand-in and reads acceptably in a grid, but on a trade catalogue an image is often how a buyer confirms they have the right item. |
-| DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image — visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
+| DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image â€” visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
 
 ## Legal
 
@@ -73,7 +73,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-02 | Quote requests are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Open | Captured in the browser only. |
 | FN-04 | Notify Me does not register a subscription | Dev | P1 | Open | Captured locally. The restock email flow does not exist. |
-| FN-07 | Size and colour switching is not wired | Dev | P2 | Open | The variant dropdown built on 15 Aug 2026 (DEC-12) switches between sibling products by size or volume, and that works. The separate Size and Colour chips on gloves and the scrub top are a different thing and still do nothing — no sibling SKU exists behind any of them. |
+| FN-07 | Size and colour switching is not wired | Dev | P2 | Open | The variant dropdown built on 15 Aug 2026 (DEC-12) switches between sibling products by size or volume, and that works. The separate Size and Colour chips on gloves and the scrub top are a different thing and still do nothing â€” no sibling SKU exists behind any of them. |
 | FN-08 | Stock is a boolean | Dev | P2 | Open | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
@@ -116,7 +116,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-01 | Build the backend | Dev | P1 | In progress | Express and Prisma per extraction/BACKEND_SPEC.md: roles, auth, orders, invoices, emails. Eight phases. |
 | BE-02 | Build the admin panel | Dev | P1 | Done | Products, categories, suppliers, customers, orders, marketing, reports, settings. |
 | BE-03 | Build the supplier portal | Dev | P1 | In progress | Suppliers manage their own products but can never self-approve. Must have a failing-then-passing test. |
-| BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Open | Parsed natively with exceljs, never by splitting on commas — that is what broke comma-containing category names. |
+| BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Open | Parsed natively with exceljs, never by splitting on commas â€” that is what broke comma-containing category names. |
 | BE-05 | Build the email flows | Dev | P2 | Open | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
 | BE-06 | Add an audit log | Dev | P2 | Done | Every status transition and every admin or supplier write should be recorded. |
 | BE-07 | Seed the database from the catalogue | Dev | P1 | Done | Done. 146 categories, 71 products, 94 SKUs, 173 price tiers and 4 suppliers loaded from src/data/catalog.json. |
@@ -125,7 +125,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-10 | Retire the catalogue snapshot endpoint | Dev | P2 | Open | Client components fetch the whole catalogue from /api/v1/catalog/snapshot. Fine for 71 products; not for thousands. Goes away when the cart moves server-side. |
 | BE-12 | Merge a guest cart into the user cart on sign-in | Dev | P2 | Open | Carts are keyed by a cookie so a visitor can shop before signing in. The merge on sign-in is specified but cannot be built until auth exists. |
 | BE-13 | Expire abandoned guest carts | Dev | P3 | Open | Cart rows are never cleaned up. Every visitor who adds an item creates one that lives forever. |
-| BE-14 | Confirm the default order and invoice status | Client | P2 | Open | OUR DECISION: new orders are Pending and each supplier invoice is Pending. The real workflow — who moves an order to Processing, and when an invoice becomes Issued — is not defined. |
+| BE-14 | Confirm the default order and invoice status | Client | P2 | Open | OUR DECISION: new orders are Pending and each supplier invoice is Pending. The real workflow â€” who moves an order to Processing, and when an invoice becomes Issued â€” is not defined. |
 | BE-15 | Passwords were built instead of the specified email OTP | Client | P2 | Open | BACKEND_SPEC.md specifies passwordless sign-in by emailed code. Passwords were requested instead and built. Livingstone advertises password-free login as a feature, so the spec was not arbitrary. |
 | BE-16 | Confirm the session lifetime | Client | P3 | Open | OUR INVENTED VALUE: sessions last 7 days, then require signing in again. No idle timeout and no re-authentication for sensitive actions. |
 | BE-17 | Purge expired sessions on a schedule | Dev | P3 | Open | Expired session rows are never deleted. purgeExpiredSessions() exists but nothing calls it. |
@@ -180,7 +180,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| DEC-01 | Fresh build — the previous site is reference only | Client | P3 | Done | Stated 14 Aug 2026: nothing to do with the previous site. The extraction is mined for data and business rules; its code and behaviour are discarded. |
+| DEC-01 | Fresh build â€” the previous site is reference only | Client | P3 | Done | Stated 14 Aug 2026: nothing to do with the previous site. The extraction is mined for data and business rules; its code and behaviour are discarded. |
 | DEC-02 | Keep the existing visual brand | Client | P3 | Done | Stated 14 Aug 2026, correcting an earlier over-broad reading: the storefront must keep the current AussieMed look, not be redesigned. |
 | DEC-03 | Local only until the client approves | Client | P3 | Done | Stated 14 Aug 2026: not to go online until there is a version they are happy with locally. |
 | DEC-04 | External connectors are handled last | Client | P3 | Done | Stated 14 Aug 2026: anything needing a third-party account waits until the end so the build never stalls on credentials. |
@@ -199,3 +199,12 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-17 | Renaming a category does not change its URL | Dev | P3 | Done | The slug is the address. A category that has been linked to, bookmarked or indexed keeps working when its display name changes, and changing both would silently break every existing link. |
 | DEC-18 | A product cannot go live without a SKU and a category | Dev | P3 | Done | Both make a live product broken rather than merely incomplete: no SKU means nothing to buy, no category means nobody can browse to it. The admin screen refuses the transition and says which one is missing. |
 | DEC-19 | Delivered and cancelled orders cannot be reopened | Client | P3 | Done | Both are closed documents the customer already holds. A status that contradicts what they received is worse than no status at all. |
+| DEC-20 | The back office looks like the reference operations UI, not like the shop | Client | P3 | Done | The client supplied screenshots of the tool they use day to day. Staff processing orders are doing operational work, and the storefront chrome was both a distraction and the reason documents printed badly. |
+
+## Frontend
+
+| ID | Item | Owner | Priority | Status | Why it matters |
+| --- | --- | --- | --- | --- | --- |
+| FE-33 | The back office had the shop wrapped around it | Dev | P2 | Done | Every admin and supplier screen rendered inside the storefront header and footer, so warehouse staff worked around a cart and a Browse All Category bar, and the printed order documents carried both onto the paper. |
+| FE-34 | The delivery address printed as raw JSON | Dev | P2 | Done | The address is stored as a JSON snapshot so editing an address book entry cannot alter where a historical order was sent. Two screens printed that string verbatim, including the delivery note the customer receives. |
+| FE-35 | The first admin page after signing in shows the sign-in door | Dev | P2 | Open | An admin signs in, lands on a page that still shows the sign-in form, and reasonably concludes their password was wrong. A reload fixes it. |

@@ -233,7 +233,7 @@ export function OrdersTable({
                     key={column.key}
                     className={`px-4 py-3 align-top ${
                       column.numeric ? "text-right tnum" : ""
-                    }`}
+                    } ${column.nowrap ? "whitespace-nowrap" : ""}`}
                   >
                     <Cell row={row} column={column.key} />
                   </td>

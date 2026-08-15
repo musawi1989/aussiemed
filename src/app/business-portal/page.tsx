@@ -1,59 +1,26 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { RoleSignInForm } from "@/components/RoleSignInForm";
-import { TestCredentials } from "@/components/TestCredentials";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 
-export const metadata: Metadata = {
-  title: "Business Portal",
-  description:
-    "Supplier sign-in for AussieMed. Manage your products, see the orders placed against them and track your invoices.",
-};
-
 const aed = (fils: number) => formatAED(fils / 100);
 
 /**
- * The supplier's door.
+ * The supplier's dashboard.
  *
  * A supplier sees only their own products and only their own invoice lines —
  * never another supplier's, and never the whole order. Enforced by querying
  * through their supplier id rather than by filtering in the page.
+ *
+ * The role gate and the identity block live in the layout, so every screen
+ * added to this portal later inherits both rather than repeating them.
  */
 export default async function BusinessPortalPage() {
   const user = await getSessionUser();
 
-  if (!user || user.role !== "Supplier") {
+  if (!user?.supplierId) {
     return (
-      <div className="mx-auto max-w-md px-4 py-12">
-        <h1 className="text-2xl font-bold tracking-tight text-text">
-          Business portal
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-text-muted">
-          For suppliers. Manage your products, see the orders placed against
-          them and track your invoices.
-        </p>
-
-        <div className="mt-6">
-          <RoleSignInForm expectRole="Supplier" next="/business-portal" accent="navy" />
-        </div>
-
-        <p className="mt-4 text-center text-sm text-text-muted">
-          Buying from AussieMed?{" "}
-          <Link href="/sign-in" className="font-bold text-navy hover:underline">
-            Account sign-in
-          </Link>
-        </p>
-
-        <TestCredentials role="Supplier" />
-      </div>
-    );
-  }
-
-  if (!user.supplierId) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-12 text-center">
+      <div className="mx-auto max-w-md py-12 text-center">
         <h1 className="text-xl font-bold text-text">No supplier attached</h1>
         <p className="mt-2 text-sm text-text-muted">
           This account has the supplier role but is not linked to a company, so
@@ -82,22 +49,12 @@ export default async function BusinessPortalPage() {
   const revenue = invoices.reduce((n, i) => n + i.totalFils, 0);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-5">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-navy">
-            Business portal
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
-            {supplier?.companyName}
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {user.name} &middot; {user.email}
-          </p>
-        </div>
-      </div>
+    <>
+      <h1 className="text-xl font-bold tracking-tight text-text">
+        {supplier?.companyName}
+      </h1>
 
-      <ul className="mt-6 grid gap-3 sm:grid-cols-4">
+      <ul className="mt-5 grid gap-3 sm:grid-cols-4">
         {[
           { label: "Products", value: String(products.length) },
           { label: "Out of stock", value: String(outOfStock.length) },
@@ -228,6 +185,6 @@ export default async function BusinessPortalPage() {
           </p>
         )}
       </section>
-    </div>
+    </>
   );
 }

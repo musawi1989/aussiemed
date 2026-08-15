@@ -1,5 +1,6 @@
 import { PrintableDoc } from "@/components/admin/PrintableDoc";
 import { DocTable, SellerBlock, day, loadOrderForDocs } from "@/lib/order-docs";
+import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 /**
  * The delivery note — the copy that travels with the goods.
@@ -24,6 +25,7 @@ export default async function DeliveryNotePage({
   // Cancelled lines are not in the box, so they are not on the note.
   const shipped = items.filter(({ item }) => item.status !== "Cancelled");
   const held = items.filter(({ item }) => item.status === "Backordered");
+  const shipping = parseShippingAddress(order.shippingSnapshot);
 
   return (
     <PrintableDoc
@@ -39,10 +41,14 @@ export default async function DeliveryNotePage({
           <p className="font-bold text-text">
             {order.organisation?.name ?? order.user?.name ?? "Guest"}
           </p>
-          {order.shippingSnapshot ? (
-            <p className="whitespace-pre-line text-text-muted">
-              {order.shippingSnapshot}
-            </p>
+          {shipping ? (
+            <address className="not-italic text-text-muted">
+              {addressLines(shipping).map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </address>
           ) : (
             <p className="text-text-muted">
               {order.deliveryType === "PickUp"
@@ -50,7 +56,6 @@ export default async function DeliveryNotePage({
                 : "No delivery address recorded"}
             </p>
           )}
-          <p className="mt-1 text-text-muted">{order.user?.phone ?? ""}</p>
         </div>
         <div className="text-sm tnum leading-relaxed text-text-muted">
           <p>Order {order.reference}</p>

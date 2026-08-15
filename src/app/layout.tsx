@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { getAllProducts, getDepartments, getSuppliers } from "@/lib/catalog";
-import { CatalogProvider } from "@/lib/catalog-client";
-import { getSessionUser } from "@/lib/auth";
-import { CartProvider } from "@/lib/cart-client";
-import { StoreProvider } from "@/lib/store";
 import "./globals.css";
+
+/**
+ * The document, and nothing else.
+ *
+ * The storefront's header and footer used to live here, which meant every page
+ * in the application wore the shop's chrome — a warehouse processing an order
+ * got a shopping cart and a "Browse All Category" bar, and a printed tax
+ * invoice carried both onto the paper.
+ *
+ * Now this file owns only what is genuinely global: the document, the
+ * typeface and the stylesheet. The storefront's furniture belongs to the
+ * (shop) route group; /admin and /business-portal have an operations shell of
+ * their own. Route groups are invisible in the URL, so nothing moved.
+ */
 
 /**
  * Body typeface. Gilroy Regular/Medium were never delivered with the theme, so
@@ -41,40 +48,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [departments, products, suppliers, user] = await Promise.all([
-    getDepartments(),
-    getAllProducts(),
-    getSuppliers(),
-    getSessionUser(),
-  ]);
-
   return (
     <html lang="en" className={bodyFont.variable}>
-      <body className="flex min-h-screen flex-col">
-        <CatalogProvider initialProducts={products} initialSuppliers={suppliers}>
-        <CartProvider>
-        <StoreProvider>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-card focus:bg-brand focus:px-4 focus:py-2 focus:text-on-brand"
-          >
-            Skip to content
-          </a>
-          <Header
-            departments={departments}
-            sessionUser={user ? { name: user.name, role: user.role } : null}
-          />
-          <main id="main" className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </StoreProvider>
-        </CartProvider>
-        </CatalogProvider>
-      </body>
+      <body className="flex min-h-screen flex-col">{children}</body>
     </html>
   );
 }

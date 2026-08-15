@@ -5,6 +5,7 @@ import { getOrderByReference } from "@/lib/orders";
 import { getSessionUser } from "@/lib/auth";
 import { readCartKey } from "@/lib/cart-cookie";
 import { formatAED } from "@/lib/money";
+import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 type Params = Promise<{ reference: string }>;
 
@@ -43,9 +44,10 @@ export default async function OrderPage({ params }: { params: Params }) {
 
   if (!isAdmin && !isOwner && !isGuestWithClaim) notFound();
 
-  const shipping = order.shippingSnapshot
-    ? (JSON.parse(order.shippingSnapshot) as Record<string, string>)
-    : null;
+  // Shared with the admin screen and the delivery note. A snapshot written by
+  // an older checkout no longer throws JSON.parse on the page a customer opens
+  // to find out where their order is going.
+  const shipping = parseShippingAddress(order.shippingSnapshot);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -69,13 +71,13 @@ export default async function OrderPage({ params }: { params: Params }) {
       {shipping && (
         <section className="mt-6 rounded-card border border-border-base bg-surface p-5 shadow-card">
           <h2 className="text-base font-bold text-text">Delivering to</h2>
-          <p className="mt-2 text-sm leading-relaxed text-text-muted">
-            {shipping.company}
-            <br />
-            {shipping.contact} &middot; {shipping.phone}
-            <br />
-            {shipping.line1}, {shipping.emirate}
-          </p>
+          <address className="mt-2 text-sm not-italic leading-relaxed text-text-muted">
+            {addressLines(shipping).map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
+          </address>
         </section>
       )}
 

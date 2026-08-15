@@ -59,9 +59,17 @@ export function DocTable({
   head: React.ReactNode;
   children: React.ReactNode;
 }) {
+  /**
+   * A long product name would otherwise take the whole table, squeezing the
+   * item code below the width of its own heading — the codes then read as part
+   * of the description, and a figure breaks as "AED" above "84.58". Headings
+   * and every figure hold their line; only the description wraps, which is the
+   * one column that should. Cells sit at the top so a code stays level with the
+   * first line of the name it belongs to.
+   */
   return (
     <div className="mt-3 overflow-x-auto">
-      <table className="w-full min-w-[36rem] text-sm">
+      <table className="w-full min-w-[36rem] text-sm [&_.tnum]:whitespace-nowrap [&_td]:align-top [&_th]:whitespace-nowrap">
         <thead className="border-b border-border-strong text-left text-xs font-bold uppercase tracking-wide text-text-subtle">
           {head}
         </thead>

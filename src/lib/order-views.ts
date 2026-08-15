@@ -76,32 +76,39 @@ export type ColumnDef = {
   label: string;
   /** Right-align money and counts so columns of figures line up. */
   numeric?: boolean;
+  /**
+   * Atomic values that must never break across two lines. A reference split as
+   * "AM-2026-" / "000004" or a total as "AED" / "217.51" stops being readable
+   * at a glance, which is the only thing a table of this density is for. Free
+   * text — names, addresses, notes — is left to wrap.
+   */
+  nowrap?: boolean;
   /** Only these can be sorted in the database without loading everything. */
   sortable?: boolean;
   hint?: string;
 };
 
 export const COLUMNS: ColumnDef[] = [
-  { key: "id", label: "Order", sortable: true },
-  { key: "created", label: "Created", sortable: true },
-  { key: "placed", label: "Placed", sortable: true },
+  { key: "id", label: "Order", sortable: true, nowrap: true },
+  { key: "created", label: "Created", sortable: true, nowrap: true },
+  { key: "placed", label: "Placed", sortable: true, nowrap: true },
   { key: "customer", label: "Customer" },
   { key: "organisation", label: "Organisation", hint: "The account being invoiced" },
   { key: "email", label: "Email" },
-  { key: "phone", label: "Phone" },
-  { key: "total", label: "Total", numeric: true, sortable: true },
-  { key: "status", label: "Status", sortable: true },
-  { key: "paid", label: "Paid" },
-  { key: "terms", label: "Terms", hint: "Prepaid, Net 7, Net 30, Net 60" },
-  { key: "trn", label: "TRN", hint: "Missing means the tax invoice is not compliant" },
-  { key: "suppliers", label: "Suppliers", numeric: true, hint: "How many invoices this order splits into" },
-  { key: "lines", label: "Lines", numeric: true },
-  { key: "zeroRated", label: "Zero rated", numeric: true, hint: "Portion of the order carrying no VAT" },
-  { key: "vat", label: "VAT", numeric: true },
-  { key: "deliveryType", label: "Delivery" },
-  { key: "shipmentDate", label: "Ship by" },
-  { key: "tracking", label: "Tracking" },
-  { key: "poNumber", label: "PO number" },
+  { key: "phone", label: "Phone", nowrap: true },
+  { key: "total", label: "Total", numeric: true, sortable: true, nowrap: true },
+  { key: "status", label: "Status", sortable: true, nowrap: true },
+  { key: "paid", label: "Paid", nowrap: true },
+  { key: "terms", label: "Terms", hint: "Prepaid, Net 7, Net 30, Net 60", nowrap: true },
+  { key: "trn", label: "TRN", hint: "Missing means the tax invoice is not compliant", nowrap: true },
+  { key: "suppliers", label: "Suppliers", numeric: true, nowrap: true, hint: "How many invoices this order splits into" },
+  { key: "lines", label: "Lines", numeric: true, nowrap: true },
+  { key: "zeroRated", label: "Zero rated", numeric: true, nowrap: true, hint: "Portion of the order carrying no VAT" },
+  { key: "vat", label: "VAT", numeric: true, nowrap: true },
+  { key: "deliveryType", label: "Delivery", nowrap: true },
+  { key: "shipmentDate", label: "Ship by", nowrap: true },
+  { key: "tracking", label: "Tracking", nowrap: true },
+  { key: "poNumber", label: "PO number", nowrap: true },
   { key: "customerNotes", label: "Customer notes" },
   { key: "internalNotes", label: "Internal notes" },
 ];

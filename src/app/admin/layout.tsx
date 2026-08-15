@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { RoleSignInForm } from "@/components/RoleSignInForm";
 import { TestCredentials } from "@/components/TestCredentials";
-import { AdminNav } from "@/components/AdminNav";
+import { OpsShell, initialsOf } from "@/components/ops/OpsShell";
+import type { OpsGroup } from "@/components/ops/OpsSidebar";
 import { getSessionUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * The admin door.
+ * The admin door, and the shell behind it.
  *
  * The guard lives in the layout so it covers every screen beneath /admin,
  * including ones added later — a page that forgets to check is the usual way
@@ -22,6 +22,48 @@ export const metadata: Metadata = {
  * Signing in happens here too, so an admin who follows a link to a deep screen
  * lands back on it after signing in rather than on the dashboard.
  */
+
+/**
+ * Grouped the way the work is, not the way the database is: what is on sale,
+ * what has been sold, who is involved, and the machinery underneath.
+ */
+const GROUPS: OpsGroup[] = [
+  {
+    heading: null,
+    icon: "dashboard",
+    links: [{ href: "/admin", label: "Dashboard", exact: true }],
+  },
+  {
+    heading: "Catalogue",
+    icon: "catalogue",
+    links: [
+      { href: "/admin/products", label: "Products" },
+      { href: "/admin/categories", label: "Categories" },
+    ],
+  },
+  {
+    heading: "Sales",
+    icon: "sales",
+    links: [{ href: "/admin/orders", label: "Orders" }],
+  },
+  {
+    heading: "People",
+    icon: "people",
+    links: [
+      { href: "/admin/customers", label: "Customers" },
+      { href: "/admin/suppliers", label: "Suppliers" },
+    ],
+  },
+  {
+    heading: "System",
+    icon: "system",
+    links: [
+      { href: "/admin/settings", label: "Settings" },
+      { href: "/admin/audit", label: "Audit trail" },
+    ],
+  },
+];
+
 export default async function AdminLayout({
   children,
 }: {
@@ -31,43 +73,40 @@ export default async function AdminLayout({
 
   if (!user || user.role !== "Admin") {
     return (
-      <div className="mx-auto max-w-md px-4 py-12">
-        <h1 className="text-2xl font-bold tracking-tight text-text">Admin</h1>
-        <p className="mt-2 text-sm leading-relaxed text-text-muted">
-          Administration for AussieMed staff.
-        </p>
+      <div className="flex min-h-screen items-center justify-center bg-surface-sunken px-4 py-12">
+        <div className="w-full max-w-md">
+          <p className="text-sm font-bold uppercase tracking-wide text-red">
+            Admin
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
+            AussieMed
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-text-muted">
+            Administration for AussieMed staff.
+          </p>
 
-        <div className="mt-6">
-          <RoleSignInForm expectRole="Admin" next="/admin" accent="navy" />
+          <div className="mt-6">
+            <RoleSignInForm expectRole="Admin" next="/admin" accent="navy" />
+          </div>
+
+          <TestCredentials role="Admin" />
         </div>
-
-        <TestCredentials role="Admin" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-5">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-red">
-            Admin
-          </p>
-          <Link
-            href="/admin"
-            className="mt-1 block text-2xl font-bold tracking-tight text-text hover:text-navy"
-          >
-            AussieMed
-          </Link>
-          <p className="mt-1 text-sm text-text-muted">
-            {user.name} &middot; {user.email}
-          </p>
-        </div>
-      </div>
-
-      <AdminNav />
-
+    <OpsShell
+      brand={{ label: "Admin", href: "/admin" }}
+      groups={GROUPS}
+      user={{
+        name: user.name,
+        email: user.email,
+        initials: initialsOf(user.name),
+        context: "Administration",
+      }}
+    >
       {children}
-    </div>
+    </OpsShell>
   );
 }

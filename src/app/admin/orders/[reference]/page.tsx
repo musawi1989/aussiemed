@@ -7,6 +7,7 @@ import { ORDER_STATUSES } from "@/lib/order-views";
 import { StatusPill } from "@/components/StatusPill";
 import { OrderLineCard } from "@/components/admin/OrderLineCard";
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
+import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 const aed = (fils: number) => formatAED(fils / 100);
 const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
@@ -55,6 +56,7 @@ export default async function AdminOrderPage({
 
   const now = new Date();
   const soon = new Date(now.getTime() + EXPIRY_WARNING_DAYS * 86_400_000);
+  const shipping = parseShippingAddress(order.shippingSnapshot);
 
   const allItems = order.invoices.flatMap((i) => i.items);
   const zeroRatedFils = allItems
@@ -302,10 +304,19 @@ export default async function AdminOrderPage({
                 }
               />
             </dl>
-            {order.shippingSnapshot && (
-              <p className="mt-3 whitespace-pre-line rounded-card bg-surface-sunken px-3 py-2 text-xs leading-relaxed text-text-muted">
-                {order.shippingSnapshot}
-              </p>
+            {shipping && (
+              <div className="mt-3 rounded-card bg-surface-sunken px-3 py-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-text-subtle">
+                  Delivering to
+                </p>
+                <address className="mt-1 text-xs not-italic leading-relaxed text-text-muted">
+                  {addressLines(shipping).map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </address>
+              </div>
             )}
           </section>
 
