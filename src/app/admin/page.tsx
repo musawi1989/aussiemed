@@ -1,51 +1,23 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { RoleSignInForm } from "@/components/RoleSignInForm";
-import { TestCredentials } from "@/components/TestCredentials";
-import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
-
-export const metadata: Metadata = {
-  title: "Admin",
-  description: "AussieMed administration.",
-  robots: { index: false, follow: false },
-};
 
 const aed = (fils: number) => formatAED(fils / 100);
 
 /**
- * The admin door and dashboard.
+ * The dashboard.
  *
- * Read-only for now: real figures from the database, so the numbers can be
- * trusted, with the management screens still to come. Everything below is
- * counted live rather than cached, so admin figures cannot drift from the
- * storefront's.
+ * Every figure is counted live rather than cached, so admin numbers cannot
+ * drift from the storefront's. At this size that is free; BE-23 tracks the
+ * point where it stops being.
  */
 export default async function AdminPage() {
-  const user = await getSessionUser();
-
-  if (!user || user.role !== "Admin") {
-    return (
-      <div className="mx-auto max-w-md px-4 py-12">
-        <h1 className="text-2xl font-bold tracking-tight text-text">Admin</h1>
-        <p className="mt-2 text-sm leading-relaxed text-text-muted">
-          Administration for AussieMed staff.
-        </p>
-
-        <div className="mt-6">
-          <RoleSignInForm expectRole="Admin" next="/admin" accent="navy" />
-        </div>
-
-        <TestCredentials role="Admin" />
-      </div>
-    );
-  }
-
   const [
     products,
     activeProducts,
+    pendingProducts,
     outOfStockSkus,
+    uncategorised,
     categories,
     suppliers,
     customers,
@@ -56,9 +28,13 @@ export default async function AdminPage() {
   ] = await Promise.all([
     db.productMaster.count(),
     db.productMaster.count({ where: { status: "Active" } }),
-    db.productSku.count({ where: { manualOutOfStock: true } }),
+    db.productMaster.count({ where: { status: "PendingApproval" } }),
+    db.productSku.count({ where: { manualOutOfStock: true, isActive: true } }),
+    db.productMaster.count({
+      where: { status: "Active", categories: { none: {} } },
+    }),
     db.category.count(),
-    db.supplier.count(),
+    db.supplier.count({ where: { status: "Active" } }),
     db.user.count({ where: { role: "Customer" } }),
     db.order.count(),
     db.order.count({ where: { status: "Pending" } }),
@@ -71,61 +47,103 @@ export default async function AdminPage() {
   ]);
 
   const stats = [
-    { label: "Orders", value: String(orders), hint: `${pendingOrders} pending` },
+    {
+      label: "Orders",
+      value: String(orders),
+      hint: `${pendingOrders} pending`,
+      href: "/admin/orders",
+    },
     {
       label: "Revenue",
       value: aed(revenue._sum.totalFils ?? 0),
       hint: "all orders, inc. VAT",
+      href: "/admin/orders",
     },
-    { label: "Products", value: String(products), hint: `${activeProducts} active` },
-    { label: "Out of stock", value: String(outOfStockSkus), hint: "SKUs" },
-    { label: "Categories", value: String(categories), hint: "" },
-    { label: "Suppliers", value: String(suppliers), hint: "" },
-    { label: "Customers", value: String(customers), hint: "" },
+    {
+      label: "Products",
+      value: String(activeProducts),
+      // "71 in total" reads as a bigger catalogue; it is 60 plus 11 retired.
+      hint: `live · ${products - activeProducts} retired`,
+      href: "/admin/products",
+    },
+    {
+      label: "Out of stock",
+      value: String(outOfStockSkus),
+      hint: "active SKUs",
+      href: "/admin/products?stock=out",
+    },
+    {
+      label: "Categories",
+      value: String(categories),
+      hint: "",
+      href: "/admin/categories",
+    },
+    {
+      label: "Suppliers",
+      value: String(suppliers),
+      hint: "active",
+      href: "/admin/suppliers",
+    },
+    {
+      label: "Customers",
+      value: String(customers),
+      hint: "",
+      href: "/admin/customers",
+    },
   ];
 
-  /** Screens still to build, listed so the gap is visible rather than implied. */
-  const upcoming = [
-    ["Products", "Approve, edit and deactivate. A supplier can never self-approve."],
-    ["Categories & brands", "Rename safely, with counts that match the storefront."],
-    ["Suppliers", "Create with a mandatory secondary email, edit, suspend."],
-    ["Customers", "View accounts, credit terms and order history."],
-    ["Orders & invoices", "Status transitions and resending documents."],
-    ["Bulk upload", "Comma-safe .xlsx with a per-row report."],
-    ["Marketing", "Wishlists and abandoned carts."],
-    ["Reports", "Sales by supplier, category and period."],
-    ["Settings", "VAT rate, email templates, general configuration."],
-  ];
+  /**
+   * Things that need a person, rather than things that happened. An empty list
+   * here should mean there is nothing to do — so only put something in it when
+   * that is true.
+   */
+  const attention = [
+    pendingProducts > 0 && {
+      href: "/admin/products?status=PendingApproval",
+      text: `${pendingProducts} product${pendingProducts === 1 ? "" : "s"} waiting for approval`,
+    },
+    uncategorised > 0 && {
+      href: "/admin/products",
+      text: `${uncategorised} active product${uncategorised === 1 ? " has" : "s have"} no category, so nobody can browse to ${uncategorised === 1 ? "it" : "them"}`,
+    },
+    pendingOrders > 0 && {
+      href: "/admin/orders?status=Pending",
+      text: `${pendingOrders} order${pendingOrders === 1 ? "" : "s"} still pending`,
+    },
+  ].filter(Boolean) as { href: string; text: string }[];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-5">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-red">
-            Admin
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
-            AussieMed
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {user.name} &middot; {user.email}
-          </p>
-        </div>
-      </div>
+    <>
+      {attention.length > 0 && (
+        <ul className="mt-6 space-y-2">
+          {attention.map((item) => (
+            <li key={item.text}>
+              <Link
+                href={item.href}
+                className="block rounded-card border-l-4 border-accent-border bg-accent-soft px-4 py-3 text-sm font-semibold text-text transition-colors hover:bg-surface-hover"
+              >
+                {item.text}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <li
-            key={stat.label}
-            className="rounded-card border-l-4 border-red bg-surface p-4 shadow-card"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">
-              {stat.label}
-            </p>
-            <p className="mt-1 text-2xl font-bold tnum text-text">{stat.value}</p>
-            {stat.hint && (
-              <p className="mt-0.5 text-xs text-text-subtle tnum">{stat.hint}</p>
-            )}
+          <li key={stat.label}>
+            <Link
+              href={stat.href}
+              className="block rounded-card border-l-4 border-red bg-surface p-4 shadow-card transition-shadow hover:shadow-raised"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">
+                {stat.label}
+              </p>
+              <p className="mt-1 text-2xl font-bold tnum text-text">{stat.value}</p>
+              {stat.hint && (
+                <p className="mt-0.5 text-xs text-text-subtle tnum">{stat.hint}</p>
+              )}
+            </Link>
           </li>
         ))}
       </ul>
@@ -143,7 +161,7 @@ export default async function AdminPage() {
             {recent.map((order) => (
               <li key={order.id}>
                 <Link
-                  href={`/orders/${order.reference}`}
+                  href={`/admin/orders/${order.reference}`}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border-base bg-surface p-4 shadow-card transition-colors hover:border-navy-border"
                 >
                   <div>
@@ -169,26 +187,6 @@ export default async function AdminPage() {
           </ul>
         )}
       </section>
-
-      <section className="mt-10">
-        <h2 className="text-lg font-bold tracking-tight text-text">
-          Still to build
-        </h2>
-        <p className="mt-1 text-sm text-text-muted">
-          The dashboard above reads real data. These screens do not exist yet.
-        </p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {upcoming.map(([title, note]) => (
-            <li
-              key={title}
-              className="rounded-card border border-dashed border-border-strong bg-surface-sunken p-4"
-            >
-              <p className="text-sm font-bold text-text">{title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-text-muted">{note}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+    </>
   );
 }
