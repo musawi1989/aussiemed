@@ -134,41 +134,49 @@ export function Header({
 
             {browseOpen && (
               <div className="absolute left-0 top-full z-40 max-h-[70vh] w-[min(92vw,20rem)] overflow-y-auto border border-border-base bg-surface py-1 shadow-raised">
-                {departments.map((dept) => (
-                  <div key={dept.id} className="border-b border-border-base last:border-0">
-                    <Link
-                      href={`/products?category=${dept.slug}`}
-                      onClick={() => setBrowseOpen(false)}
-                      className="block px-4 py-2.5 text-sm font-bold text-text transition-colors hover:bg-navy-soft hover:text-navy"
-                    >
-                      {dept.name}
-                    </Link>
-                    <ul className="pb-1.5">
-                      {dept.children.slice(0, 6).map((child) => (
-                        <li key={child.id}>
-                          <Link
-                            href={`/products?category=${child.slug}`}
-                            onClick={() => setBrowseOpen(false)}
-                            className="block px-4 py-1 pl-6 text-sm text-text-muted transition-colors hover:text-red"
-                          >
-                            {child.name}
-                          </Link>
-                        </li>
-                      ))}
-                      {dept.children.length > 6 && (
-                        <li>
-                          <Link
-                            href={`/products?category=${dept.slug}`}
-                            onClick={() => setBrowseOpen(false)}
-                            className="block px-4 py-1 pl-6 text-xs font-semibold text-navy hover:underline"
-                          >
-                            + {dept.children.length - 6} more
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                ))}
+                {/* Only what a buyer can actually reach. The tree is far wider
+                    than the range that fills it, and a menu entry that leads
+                    to an empty page is worse than no entry. */}
+                {departments
+                  .filter((dept) => dept.productCount > 0)
+                  .map((dept) => {
+                    const children = dept.children.filter((c) => c.productCount > 0);
+                    return (
+                      <div key={dept.id} className="border-b border-border-base last:border-0">
+                        <Link
+                          href={`/products?category=${dept.slug}`}
+                          onClick={() => setBrowseOpen(false)}
+                          className="block px-4 py-2.5 text-sm font-bold text-text transition-colors hover:bg-navy-soft hover:text-navy"
+                        >
+                          {dept.name}
+                        </Link>
+                        <ul className="pb-1.5">
+                          {children.slice(0, 6).map((child) => (
+                            <li key={child.id}>
+                              <Link
+                                href={`/products?category=${child.slug}`}
+                                onClick={() => setBrowseOpen(false)}
+                                className="block px-4 py-1 pl-6 text-sm text-text-muted transition-colors hover:text-red"
+                              >
+                                {child.name}
+                              </Link>
+                            </li>
+                          ))}
+                          {children.length > 6 && (
+                            <li>
+                              <Link
+                                href={`/products?category=${dept.slug}`}
+                                onClick={() => setBrowseOpen(false)}
+                                className="block px-4 py-1 pl-6 text-xs font-semibold text-navy hover:underline"
+                              >
+                                + {children.length - 6} more
+                              </Link>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>

@@ -46,10 +46,12 @@ check(
   `db=${await prisma.category.count()} json=${expectedCategories}`
 );
 
+// Active only: retired products stay in the table because orders reference them.
 check(
   "product count matches the catalogue",
-  (await prisma.productMaster.count()) === catalog.products.length,
-  `db=${await prisma.productMaster.count()} json=${catalog.products.length}`
+  (await prisma.productMaster.count({ where: { status: "Active" } })) ===
+    catalog.products.length,
+  `db=${await prisma.productMaster.count({ where: { status: "Active" } })} json=${catalog.products.length}`
 );
 
 const expectedSkus = catalog.products.reduce(
@@ -63,9 +65,13 @@ check(
   `db=${await prisma.productSku.count({ where: { isActive: true } })} json=${expectedSkus}`
 );
 
+// Active only, for the same reason as SKUs: a retired supplier stays in the
+// table because its invoices still name it.
 check(
   "supplier count matches",
-  (await prisma.supplier.count()) === catalog.suppliers.length
+  (await prisma.supplier.count({ where: { status: "Active" } })) ===
+    catalog.suppliers.length,
+  `db=${await prisma.supplier.count({ where: { status: "Active" } })} json=${catalog.suppliers.length}`
 );
 
 /* ---------- structural ---------- */
@@ -79,8 +85,12 @@ check(
   `${productsWithoutSku} orphaned`
 );
 
+// Active only. A retired product loses its category links, because the seed
+// rebuilds those from the catalogue and a retired product is no longer in it.
+// Nothing browses a retired product, and its order lines carry their own
+// snapshot of name, SKU and tax class, so the links are not needed.
 const productsWithoutCategory = await prisma.productMaster.count({
-  where: { categories: { none: {} } },
+  where: { status: "Active", categories: { none: {} } },
 });
 check(
   "no product is left uncategorised",
@@ -138,7 +148,7 @@ check("no price is fractional", fractional.length === 0, `${fractional.length} f
 /* ---------- tax ---------- */
 
 const zeroRated = await prisma.productMaster.count({
-  where: { taxClass: "ZeroRated" },
+  where: { taxClass: "ZeroRated", status: "Active" },
 });
 const jsonZeroRated = catalog.products.filter(
   (p: any) => p.taxClass === "zero-rated"

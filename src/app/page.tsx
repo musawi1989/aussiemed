@@ -49,6 +49,9 @@ export default async function HomePage() {
     queryProducts({ inStockOnly: true, sort: "relevance" }),
   ]);
   const withTiers = featured.items.filter((p) => p.tiers.length > 0).slice(0, 8);
+  // A tile that leads to an empty page is worse than one fewer tile: the
+  // category tree is far wider than the range that fills it. See FN-11.
+  const visibleDepartments = departments.filter((d) => d.productCount > 0);
 
   return (
     <div>
@@ -106,7 +109,7 @@ export default async function HomePage() {
         </h2>
 
         <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {departments.map((dept) => {
+          {visibleDepartments.map((dept) => {
             const image = CATEGORY_IMAGES[dept.slug];
             return (
               <li key={dept.id}>

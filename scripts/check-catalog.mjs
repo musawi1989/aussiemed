@@ -273,13 +273,45 @@ check(
 
 // A path that points at nothing renders as a broken image in production, and
 // Next's image optimiser fails the request rather than falling back.
-const brokenImage = catalog.products
-  .flatMap((p) => p.images.map((src) => ({ p, src })))
-  .find(({ src }) => !existsSync(resolve(root, "public", `.${src}`)));
+const referencedImages = catalog.products.flatMap((p) =>
+  p.images.map((src) => ({ p, src }))
+);
+
+const brokenImage = referencedImages.find(
+  ({ src }) => !existsSync(resolve(root, "public", `.${src}`))
+);
 check(
   "every referenced image file exists on disk",
   brokenImage === undefined,
   brokenImage && `${brokenImage.p.name} -> ${brokenImage.src}`
+);
+
+/**
+ * Existing is not enough: four files in the seed set were SVG placeholders
+ * saved with a .jpg extension. They passed the check above and then failed in
+ * the browser, because the image optimiser rejects them with a 400 — and a
+ * rejected image shows as broken rather than falling back to the monogram
+ * tile, so those products looked worse than the ones with no image at all.
+ *
+ * Sniff the magic bytes instead of trusting the extension.
+ */
+const IMAGE_MAGIC = [
+  { name: "jpeg", test: (b) => b[0] === 0xff && b[1] === 0xd8 },
+  { name: "png", test: (b) => b[0] === 0x89 && b[1] === 0x50 },
+  { name: "gif", test: (b) => b.subarray(0, 3).toString("latin1") === "GIF" },
+  { name: "webp", test: (b) => b.subarray(8, 12).toString("latin1") === "WEBP" },
+];
+
+const notAnImage = referencedImages.find(({ src }) => {
+  const file = resolve(root, "public", `.${src}`);
+  if (!existsSync(file)) return false; // already reported above
+  const head = readFileSync(file).subarray(0, 16);
+  return !IMAGE_MAGIC.some((m) => m.test(head));
+});
+check(
+  "every referenced image is actually an image, not markup with an image name",
+  notAnImage === undefined,
+  notAnImage && `${notAnImage.p.name} -> ${notAnImage.src}`
 );
 
 /* --- summary ------------------------------------------------------ */

@@ -325,6 +325,22 @@ const retiredSkus = await prisma.productSku.updateMany({
   where: { skuCode: { notIn: [...seenSkuCodes] }, isActive: true },
   data: { isActive: false },
 });
+
+// Suppliers go the same way. They cannot be deleted either — an invoice names
+// the supplier it was raised against, and that stays true after they leave the
+// catalogue.
+const retiredSuppliers = await prisma.supplier.updateMany({
+  where: {
+    companyName: { notIn: catalog.suppliers.map((s) => s.name) },
+    status: "Active",
+  },
+  data: { status: "Inactive" },
+});
+if (retiredSuppliers.count > 0) {
+  console.log(
+    `  retired suppliers ${retiredSuppliers.count} (deactivated, not deleted)`
+  );
+}
 if (retiredSkus.count > 0) {
   console.log(`  retired skus      ${retiredSkus.count} (deactivated, not deleted)`);
 }
@@ -350,6 +366,23 @@ const outOfStock = await prisma.productSku.count({
   where: { manualOutOfStock: true },
 });
 console.log(`  out of stock skus ${outOfStock}`);
+
+/**
+ * Bump the stamp the storefront's cache checks itself against, so a running
+ * dev server picks this seed up within a second instead of serving whatever it
+ * read at boot. Written inline rather than imported from src/lib/catalog.ts,
+ * which is marked server-only and cannot load outside Next.
+ */
+const current = await prisma.setting.findUnique({
+  where: { key: "catalogVersion" },
+});
+const next = String(Number(current?.value ?? "0") + 1);
+await prisma.setting.upsert({
+  where: { key: "catalogVersion" },
+  update: { value: next },
+  create: { key: "catalogVersion", value: next },
+});
+console.log(`  catalog version   ${next}`);
 
 await prisma.$disconnect();
 console.log("\nSeed complete\n");

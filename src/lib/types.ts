@@ -6,10 +6,14 @@ export type CategoryRef = {
 
 export type Category = CategoryRef & {
   parentId?: number | null;
+  /** Active products filed directly here. */
+  productCount: number;
 };
 
 export type Department = CategoryRef & {
   children: Category[];
+  /** Active products anywhere beneath this department, including its own. */
+  productCount: number;
 };
 
 export type PriceTier = {

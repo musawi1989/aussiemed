@@ -381,15 +381,13 @@ function badgesFor(name, index) {
 const isOutOfStock = (name, index) => index % 13 === 5 || /discontinued/i.test(name);
 
 /**
- * Supplier ids 20 and 21 come from the extraction; their names are ours, since
- * the extraction never exposed them. 30 and 31 are the two test suppliers whose
- * public catalogues seeded the products.
+ * Only the two test suppliers whose public catalogues seeded the products.
+ *
+ * Extraction suppliers 20 and 21 (Northline Uniforms, AussieMed Distribution)
+ * were dropped on 15 Aug 2026 along with their 11 products — see DA-23. Their
+ * rows survive in the database as Inactive because invoices name them.
  */
-const SUPPLIERS = [
-  { id: 20, name: "Northline Uniforms", isPlaceholder: true },
-  { id: 21, name: "AussieMed Distribution", isPlaceholder: true },
-  ...TEST_SUPPLIERS,
-];
+const SUPPLIERS = [...TEST_SUPPLIERS];
 
 /** Structured specs. Filterable later; for now they render as a details table. */
 function buildAttributes({ brand, unit, packSize, categoryPath, taxClass, supplierName }) {
@@ -412,7 +410,6 @@ function buildAttributes({ brand, unit, packSize, categoryPath, taxClass, suppli
  * ------------------------------------------------------------------ */
 
 const rawCategories = read("extraction/data/categories.json");
-const rawProducts = read("extraction/data/products.json");
 
 const departments = buildCategoryTree(rawCategories);
 
@@ -502,36 +499,13 @@ function buildProduct({
   };
 }
 
-// --- real products -------------------------------------------------
-for (const row of rawProducts) {
-  const meta = REAL_PRODUCT_META[row.productMasterId] ?? {};
-  const name = tidyName(row.name);
-  const basePrice = round2(row.displayPriceAED);
-
-  products.push(
-    buildProduct({
-      id: row.productMasterId,
-      skuId: row.skuId,
-      sku: meta.sku ?? `AM-${row.productMasterId}`,
-      name,
-      brand: meta.brand,
-      description: meta.description,
-      categoryId: meta.categoryId,
-      basePrice,
-      unit: row.unit ?? "Each",
-      packSize: meta.packSize,
-      supplierId: row.supplierId,
-      outOfStock: Boolean(row.outOfStock),
-      // listImage/pdpImages in the source are social icons, the site logo, and
-      // a scraped JS template fragment — no imagery. Discarded entirely.
-      images: meta.images ?? [],
-      tiers: normaliseTiers(row.tierQty, row.tierPriceAED, basePrice),
-      isPlaceholder: false,
-      detailKey: row.detailKey ?? null,
-      sourceNote: row._note ?? null,
-    })
-  );
-}
+// --- extraction products (no longer emitted) ------------------------
+// The 11 products the extraction carried were removed from the storefront on
+// 15 Aug 2026: none had imagery, none had a description or category in the
+// source, and the brief was a catalogue of the two test suppliers only. The
+// extraction itself stays on disk as read-only reference material, and
+// REAL_PRODUCT_META above records the mapping work in case it is ever needed.
+// DA-01 covers loading the client's own range, which will not come from here.
 
 // --- test catalogue ------------------------------------------------
 // Sixty real products seeded from two public supplier catalogues, so the

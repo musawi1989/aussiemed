@@ -28,8 +28,25 @@ import type {
 
 const fromFils = (fils: number) => Math.round(fils) / 100;
 
-/** One process-lifetime cache. The catalogue changes only on re-seed. */
+/**
+ * The catalogue is cached in the process, because rebuilding it touches every
+ * product, SKU, tier and image.
+ *
+ * It is NOT cached for the life of the process. It used to be, and that meant a
+ * running server kept serving whatever it read first: a re-seed left the
+ * storefront showing a retired SKU as a purchasable unit for hours. So the
+ * cache carries the version stamp it was built from and re-checks it against
+ * the database, at most once a second, before handing itself back.
+ *
+ * One single-row lookup per second is cheap next to being wrong, and it works
+ * across processes — a bump by the seed or by the admin panel is seen by every
+ * server, not only the one that made the change.
+ */
+const VERSION_KEY = "catalogVersion";
+const VERSION_CHECK_MS = 1_000;
+
 let cache: {
+  version: string;
   products: Product[];
   departments: Department[];
   suppliers: Supplier[];
@@ -38,6 +55,13 @@ let cache: {
   categoryBySlug: Map<string, CategoryRef & { parentId: number | null }>;
   categoryById: Map<number, CategoryRef & { parentId: number | null }>;
 } | null = null;
+
+let lastCheckedAt = 0;
+
+async function storedVersion(): Promise<string> {
+  const row = await db.setting.findUnique({ where: { key: VERSION_KEY } });
+  return row?.value ?? "0";
+}
 
 /**
  * Numeric ids: the storefront types use numbers while the database uses cuids.
@@ -76,11 +100,23 @@ function assignIds(keys: string[]): Map<string, number> {
 }
 
 async function load() {
-  if (cache) return cache;
+  if (cache) {
+    const now = Date.now();
+    if (now - lastCheckedAt < VERSION_CHECK_MS) return cache;
+    lastCheckedAt = now;
+    if ((await storedVersion()) === cache.version) return cache;
+    // The stamp moved: something rewrote the catalogue underneath us.
+    cache = null;
+  }
+
+  const version = await storedVersion();
 
   const [dbCategories, dbSuppliers, dbProducts] = await Promise.all([
     db.category.findMany({ orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }] }),
-    db.supplier.findMany({ orderBy: { companyName: "asc" } }),
+    db.supplier.findMany({
+      where: { status: "Active" },
+      orderBy: { companyName: "asc" },
+    }),
     db.productMaster.findMany({
       where: { status: "Active" },
       include: {
@@ -131,21 +167,42 @@ async function load() {
     categoryBySlug.set(node.slug, node);
   }
 
+  /**
+   * How many active products sit in each category. The navigation uses this to
+   * leave out categories nothing is filed under: the tree came from a supplier
+   * far larger than this catalogue, and without it a buyer can click a
+   * department on the front page and land on an empty page.
+   */
+  const directCount = new Map<string, number>();
+  for (const p of dbProducts) {
+    for (const link of p.categories) {
+      directCount.set(link.categoryId, (directCount.get(link.categoryId) ?? 0) + 1);
+    }
+  }
+
   const departments: Department[] = dbCategories
     .filter((c) => c.parentId === null)
-    .map((dept) => ({
-      id: catNumeric.get(dept.id)!,
-      name: dept.name,
-      slug: dept.slug,
-      children: dbCategories
-        .filter((c) => c.parentId === dept.id)
-        .map((child) => ({
+    .map((dept) => {
+      const children = dbCategories.filter((c) => c.parentId === dept.id);
+      return {
+        id: catNumeric.get(dept.id)!,
+        name: dept.name,
+        slug: dept.slug,
+        // A department counts everything beneath it, not only what is filed
+        // directly against it, or a department whose products all sit in its
+        // children would look empty.
+        productCount:
+          (directCount.get(dept.id) ?? 0) +
+          children.reduce((n, c) => n + (directCount.get(c.id) ?? 0), 0),
+        children: children.map((child) => ({
           id: catNumeric.get(child.id)!,
           name: child.name,
           slug: child.slug,
           parentId: catNumeric.get(dept.id)!,
+          productCount: directCount.get(child.id) ?? 0,
         })),
-    }));
+      };
+    });
 
   /* ---- suppliers ---- */
 
@@ -275,6 +332,7 @@ async function load() {
   }
 
   cache = {
+    version,
     products,
     departments,
     suppliers,
@@ -283,12 +341,32 @@ async function load() {
     categoryBySlug,
     categoryById,
   };
+  lastCheckedAt = Date.now();
   return cache;
 }
 
-/** Drops the cache — call after a write once the admin panel exists. */
-export function invalidateCatalog() {
+/**
+ * Call after any write that changes what the storefront shows.
+ *
+ * Bumps the stored stamp as well as dropping the local copy, so other server
+ * processes drop theirs too rather than serving the old catalogue until they
+ * happen to restart.
+ */
+export async function invalidateCatalog(): Promise<void> {
   cache = null;
+  lastCheckedAt = 0;
+  await bumpCatalogVersion();
+}
+
+/** Exported for the seed, which writes outside the app's own request cycle. */
+export async function bumpCatalogVersion(): Promise<string> {
+  const next = String(Number(await storedVersion()) + 1);
+  await db.setting.upsert({
+    where: { key: VERSION_KEY },
+    update: { value: next },
+    create: { key: VERSION_KEY, value: next },
+  });
+  return next;
 }
 
 export { PAGE_SIZE } from "./query";

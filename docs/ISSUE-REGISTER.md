@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**135 items** · 87 outstanding · **24 outstanding P1**
+**137 items** · 81 outstanding · **23 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -31,12 +31,12 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-01 | Supply the real product catalogue | Client | P1 | Open | 60 of 71 products are seeded from Livingstone and Chemist Warehouse public catalogues for testing. Only 11 are AussieMed products and they carry no categories or images. |
 | DA-02 | Verify the product-to-category mapping | Client | P2 | Open | The extraction had no product-category link at all, so every mapping on the site is ours. The catalogue is now 71 products across 146 categories and none of that mapping has been checked by anyone who knows the range. |
 | DA-03 | Supply product photography | Client | P1 | Open | AussieMed has almost no imagery of its own: only 2 usable photos in the whole extraction. The 52 images now on the site are the seed suppliers own photographs used for local testing and cannot ship. |
-| DA-04 | Wrong image on the scrub top | Client | P3 | Open | The product's primary image was a stock photo of a pocket watch. Excluded from the build; the file is still in public/products/. |
+| DA-04 | Wrong image on the scrub top | Client | P3 | Done | The product's primary image was a stock photo of a pocket watch. Excluded from the build; the file is still in public/products/. |
 | DA-05 | Approve the product descriptions | Client | P2 | Open | The source had no descriptions. All 71 active products now carry text we generated from the product name and supplier listing, and it goes out under AussieMed's name. |
 | DA-06 | Supply the real supplier list | Client | P1 | Open | Four suppliers exist: two carried over from the extraction with invented names and two test suppliers (Livingstone and Chemist Warehouse) whose catalogues seeded the products. |
 | DA-07 | Supply the hero banner image | Client | P2 | Open | The live site loads Content/Banner/July-2026/u1oannrj.png, which the extraction never captured — only Brand, Category, Product and WebHtml folders were mirrored. |
 | DA-08 | Obtain Gilroy Regular and Medium | Agency | P2 | Open | The theme references them but the files were never delivered, so the live site already falls back to a generic sans for body text. Gilroy is a commercial typeface. |
-| DA-09 | Explain the disappearing product | Client | P3 | Open | Product 180 (Vaseline) was on the storefront listing at 12:45 UTC and gone by 13:05 the same day, while its detail page still loaded. |
+| DA-09 | Explain the disappearing product | Client | P3 | Deferred | Product 180 (Vaseline) was on the storefront listing at 12:45 UTC and gone by 13:05 the same day, while its detail page still loaded. |
 | DA-10 | Supply real pack and carton structures | Client | P2 | Open | Outer packs were invented for 15 lines (a box that comes 10 to a carton). Real pack hierarchies are needed. |
 | DA-11 | Supply real variant data | Client | P2 | Open | Size and colour axes are invented. Product 183 had variationButtons: 6, so real variant data existed in the old system. |
 | DA-12 | Supply real product specifications | Client | P2 | Open | Spec attributes are currently derived generically. Trade buyers check material, standard, sterility and pack size before ordering. |
@@ -49,9 +49,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-19 | Supplier email addresses are invented | Client | P2 | Open | The seed writes orders@<supplier>.example and accounts@<supplier>.example because secondaryEmail is mandatory. No supplier will receive anything at these addresses. |
 | DA-20 | Supply the real packaging quantities | Client | P1 | Open | OUR INVENTED VALUES: how many units make a carton, and how many cartons make a box, are guessed per product family (12 and 4 by default, 10 and 5 for gloves, 20 and 5 for masks). The break discounts of 4% and 8% are also invented. |
 | DA-21 | Verify the automatic variant grouping | Client | P2 | Open | Products are grouped into families by stripping sizes and volumes from their names. It found 2 families in the seeded catalogue. A real catalogue will group differently and some groupings will be wrong. |
-| DA-22 | Supplier 1 is named AussieMed Distribution rather than a real trading name | Client | P3 | Open | The supplier1 login and its company record are named after the storefront itself, so a supplier signing in sees the AussieMed name in the header where their own company should be. The other seeded supplier is correctly Chemist Warehouse. |
-| DA-23 | Two suppliers were asked for; four exist | Client | P2 | Open | The brief was Chemist Warehouse and Livingstone for testing, with the products that made no sense removed. Northline Uniforms and AussieMed Distribution survived that clean-up and still own 11 of the 71 products between them, so a third of the supplier list and a seventh of the catalogue is left over from the old extraction. |
-| DA-24 | 19 of 71 products have no image at all | Client | P2 | Open | Those products render as a coloured placeholder with two letters in it. On a trade catalogue an image is often how a buyer confirms they have the right item, and a placeholder reads as a broken listing rather than a pending one. |
+| DA-22 | Supplier 1 is named AussieMed Distribution rather than a real trading name | Client | P3 | Done | The supplier1 login and its company record are named after the storefront itself, so a supplier signing in sees the AussieMed name in the header where their own company should be. The other seeded supplier is correctly Chemist Warehouse. |
+| DA-23 | Two suppliers were asked for; four exist | Client | P2 | Done | The brief was Chemist Warehouse and Livingstone for testing, with the products that made no sense removed. Northline Uniforms and AussieMed Distribution survived that clean-up and still own 11 of the 71 products between them, so a third of the supplier list and a seventh of the catalogue is left over from the old extraction. |
+| DA-24 | 13 of 60 products have no image | Client | P2 | Open | Those products render as a monogram tile rather than a photograph. It is a deliberate stand-in and reads acceptably in a grid, but on a trade catalogue an image is often how a buyer confirms they have the right item. |
+| DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image — visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
 
 ## Legal
 
@@ -77,7 +78,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
 | FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Open | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
-| FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Open | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
+| FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Done | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
 
 ## Done
 
@@ -135,7 +136,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-22 | Confirm one supplier account per company | Client | P2 | Open | OUR DECISION: each supplier company links to a single user. Real suppliers usually need several people with their own logins. |
 | BE-23 | Admin figures are counted live, never cached | Dev | P3 | Open | OUR DECISION: every number on the admin dashboard is counted from the database on each request. Caching them is how the old platform let admin counts and storefront counts disagree. |
 | BE-24 | Supplier data is scoped by query, not by filtering | Dev | P3 | Open | OUR DECISION: a supplier's products and invoice lines are fetched through their supplier id, so another supplier's rows are never loaded rather than loaded and hidden. |
-| BE-25 | Invalidate the catalogue cache after a seed or an edit | Dev | P1 | Open | The data layer caches the catalogue for the life of the process, so a running server keeps serving whatever it read first. This is not theoretical: on 15 Aug 2026 the dev server was still showing a retired carton SKU as a purchasable unit chip on the product page, hours after the database had deactivated it. |
+| BE-25 | Invalidate the catalogue cache after a seed or an edit | Dev | P1 | Done | The data layer caches the catalogue for the life of the process, so a running server keeps serving whatever it read first. This is not theoretical: on 15 Aug 2026 the dev server was still showing a retired carton SKU as a purchasable unit chip on the product page, hours after the database had deactivated it. |
 | BE-26 | Seed now upserts instead of wiping | Dev | P3 | Done | Once orders existed, re-seeding failed on a foreign key: order lines reference SKU rows. The database was correctly refusing to let a re-seed destroy order history. |
 
 ## Infrastructure
@@ -190,3 +191,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-13 | One sign-in button in the header, with a dropdown per role | Client | P3 | Done | Stated 15 Aug 2026: replace the Business portal and Account links with a single blue Sign in button whose dropdown offers sign in as a buyer and sign in as a supplier. |
 | DEC-14 | The AED label and the Ex/Inc VAT toggle are gone from the header | Client | P3 | Done | Stated 15 Aug 2026: remove the AED text and the VAT options because VAT is to be carried in the displayed price later. |
 | DEC-15 | Sign out lives in the header, in the sign in button slot | Client | P3 | Done | Stated 15 Aug 2026: the sign out button always sits where the Sign in button would be when signed out. |
+| DEC-16 | Empty categories are hidden from navigation, not removed | Dev | P3 | Done | The category tree came from Livingstone and is far wider than the 60 test products fill. Hiding what is empty keeps every menu entry useful; removing them would lose the shape of the intended range, and hard-coding a shorter list would need maintaining by hand. |
