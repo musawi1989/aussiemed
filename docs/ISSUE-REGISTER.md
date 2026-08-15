@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**157 items** · 86 outstanding · **22 outstanding P1**
+**160 items** · 84 outstanding · **19 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -11,7 +11,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
 | AC-01 | Confirm the volume price breaks | Client | P1 | Open | Supplier 21's tiers were entered backwards in the source (thresholds descending, tier 1 repeating the base price). They were normalised on an assumption. Every price on the site depends on it. |
-| AC-02 | Confirm the zero-rated VAT classification | Accountant | P1 | Open | 23 of 61 lines are classified zero-rated rather than 5%. Classified by reading product names, which is not good enough for tax. Charging VAT on a zero-rated line misstates a document the customer keeps. |
+| AC-02 | Confirm the zero-rated VAT classification | Accountant | P2 | Open | 23 of 61 lines are classified zero-rated rather than 5%. Classified by reading product names, which is not good enough for tax. Charging VAT on a zero-rated line misstates a document the customer keeps. |
 | AC-03 | Capture the Tax Registration Number (TRN) | Client | P1 | Open | A UAE tax invoice must show the supplier TRN. It is not captured or displayed anywhere. |
 | AC-04 | Make order documents compliant tax invoices | Accountant | P1 | Open | The order page is a summary, not a compliant tax invoice. UAE FTA mandates specific fields. |
 | AC-05 | Confirm the VAT rate and whether it must be configurable | Accountant | P2 | Open | 5% is hardcoded as a constant. A rate change would need a code change and would break historical orders if applied retroactively. |
@@ -60,7 +60,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | --- | --- | --- | --- | --- | --- |
 | LG-01 | Supply terms and conditions | Client | P1 | Open | Deliberately left empty. Terms of sale are a legal document and must come from the business. |
 | LG-02 | Supply the privacy policy | Client | P1 | Open | Deliberately left empty. A privacy policy must describe what the system actually does with personal data, so it depends on the backend. |
-| LG-03 | Confirm the contact email address | Client | P1 | Open | info@aussiemed.com is assumed throughout. The old site used the misspelled assuiemed.com. |
+| LG-03 | Confirm the contact email address | Client | P1 | Done | info@aussiemed.com is assumed throughout. The old site used the misspelled assuiemed.com. |
 | LG-04 | Approve the About / Contact / Order Support copy | Client | P3 | Open | All placeholder text. |
 | LG-05 | Transfer the theme licence | Agency | P2 | Open | The front-end theme was likely purchased under the development agency's account. The extraction also contains their vendor libraries and fonts. |
 | LG-06 | Supply company registration details | Client | P2 | Open | Trade licence number, registered address and TRN are needed for the footer and for invoices. |
@@ -77,7 +77,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-08 | Stock is a boolean | Dev | P2 | Open | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
-| FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Open | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
+| FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Done | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
 | FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Done | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
 | FN-12 | Nothing shows which clients are overdue to reorder | Dev | P2 | Open | In a reorder-first business this is the single most useful signal there is: a clinic that buys gloves every three weeks and has not ordered in five needs a phone call. It is computable from order history alone once there are three orders per client — no new data capture required. |
 | FN-13 | The client account has no Buy Again | Dev | P2 | Open | A returning buyer has to search for products they have already bought. For a reorder-first marketplace this is the shortest path between the platform and revenue, and it needs no metrics work at all — just their own order history, sorted by how often they buy each line. |
@@ -147,6 +147,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Open | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
 | BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
 | BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
+| BE-34 | No cost price, so no margin is known | Dev | P2 | Open | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
 
 ## Infrastructure
 
@@ -158,7 +159,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | IN-04 | Decide on a payment gateway | Client | P2 | Open | v1 ships offline / purchase order only. Gateway integration is a pluggable interface. |
 | IN-05 | Supply Google and Facebook OAuth keys | Client | P3 | Open | Social login endpoints currently return 501. |
 | IN-06 | Remove noindex before launch | Dev | P1 | Open | The site is set to noindex, nofollow site-wide so it cannot be indexed while in development. |
-| IN-07 | Confirm the GitHub repository is private | Client | P1 | Open | The repository contains the previous agency's purchased theme, fonts and vendor libraries. |
+| IN-07 | Confirm the GitHub repository is private | Client | P1 | Done | The repository contains the previous agency's purchased theme, fonts and vendor libraries. |
 | IN-08 | Correct the git author name | Client | P3 | Open | Commits are authored as 'AussieMed' because git had no identity configured. |
 | IN-09 | Set up continuous integration | Dev | P3 | Open | No CI runs the checks automatically. The spec asks for the currency grep check to run in CI. |
 | IN-10 | Plan backups and disaster recovery | Client | P3 | Open | No backup strategy exists for the database or uploaded files. |
@@ -207,6 +208,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-19 | Delivered and cancelled orders cannot be reopened | Client | P3 | Done | Both are closed documents the customer already holds. A status that contradicts what they received is worse than no status at all. |
 | DEC-20 | The back office looks like the reference operations UI, not like the shop | Client | P3 | Done | The client supplied screenshots of the tool they use day to day. Staff processing orders are doing operational work, and the storefront chrome was both a distraction and the reason documents printed badly. |
 | DEC-21 | Uploaded files go through a storage seam, not straight to disk | Dev | P3 | Done | Local disk is right for a laptop and wrong for most hosting: a container filesystem is discarded on every deploy, and two instances behind a load balancer do not share one. Hosting is IN-01 and is not chosen yet. |
+| DEC-22 | AussieMed is the seller of record | Client | P3 | Done | Determines who carries the VAT liability and the credit risk, what the customer's invoice looks like, and who chases payment. It had been drifting undecided while the build leaned the other way. |
+| DEC-23 | VAT is a checkout concern only | Client | P3 | Done | Settles a question open since the Ex/Inc VAT toggle was removed: whether buyers need to see VAT while browsing. |
 
 ## Frontend
 
