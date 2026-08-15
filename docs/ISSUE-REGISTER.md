@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**148 items** · 82 outstanding · **22 outstanding P1**
+**148 items** · 81 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -207,4 +207,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | --- | --- | --- | --- | --- | --- |
 | FE-33 | The back office had the shop wrapped around it | Dev | P2 | Done | Every admin and supplier screen rendered inside the storefront header and footer, so warehouse staff worked around a cart and a Browse All Category bar, and the printed order documents carried both onto the paper. |
 | FE-34 | The delivery address printed as raw JSON | Dev | P2 | Done | The address is stored as a JSON snapshot so editing an address book entry cannot alter where a historical order was sent. Two screens printed that string verbatim, including the delivery note the customer receives. |
-| FE-35 | The first admin page after signing in shows the sign-in door | Dev | P2 | Open | An admin signs in, lands on a page that still shows the sign-in form, and reasonably concludes their password was wrong. A reload fixes it. |
+| FE-35 | Withdrawn: the first admin page after signing in was reported as showing the sign-in door | Dev | P3 | Done | Recorded on 16 Aug 2026 as a defect. It was not one — the finding was an artefact of the test that produced it, and the record is kept so nobody investigates it a second time. |
