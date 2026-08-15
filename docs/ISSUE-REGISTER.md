@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**168 items** · 89 outstanding · **24 outstanding P1**
+**169 items** · 88 outstanding · **23 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -149,9 +149,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
 | BE-34 | No cost price, so no margin is known | Dev | P2 | Open | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
 | BE-35 | Products are hard-tied to one supplier | Dev | P1 | Open | ProductMaster.supplierId is a required field, so every product belongs to exactly one supplier and cannot have a backup. It also means supplier identity is carried on the product record itself, which is how it leaks to customers. |
-| BE-36 | No purchase orders exist | Dev | P1 | Open | Nothing buys anything. Customer orders are recorded but there is no mechanism to order the goods from a supplier, which is the entire middle of the business. |
+| BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |
 | BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Open | Goods arrive pooled by item, not by customer. Without an allocation record there is no way to know whose units arrived, and no way to answer a recall. |
 | BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
+| BE-39 | The supplier portal still shows customer orders | Dev | P1 | Open | It lists order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
 
 ## Infrastructure
 
@@ -186,7 +187,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
-| SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Open | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
+| SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Done | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
 
 ## Decision
 

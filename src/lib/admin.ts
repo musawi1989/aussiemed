@@ -62,7 +62,7 @@ export async function requireAdmin(): Promise<SessionUser> {
  * Postgres later; a String column ports cleanly either way. Only the fields
  * that changed are recorded, so the log stays readable.
  */
-async function audit(
+export async function audit(
   actor: SessionUser,
   action: string,
   entity: string,

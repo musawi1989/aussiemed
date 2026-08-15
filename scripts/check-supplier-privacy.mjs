@@ -82,9 +82,60 @@ for (const path of PUBLIC_PATHS) {
   );
 }
 
+/* 4. The other direction: no customer reaches a supplier — SEC-05.
+ *
+ * Checked against the rendered purchase order rather than the schema, because
+ * the risk is a template quietly rendering something, not a column existing.
+ * Only the document is read; the operator's own name legitimately appears in
+ * the sidebar, and the supplier's name legitimately appears on their own order.
+ */
+{
+  const { default: Database } = await import("better-sqlite3");
+  const db = new Database("dev.db", { readonly: true });
+
+  const po = db
+    .prepare(`select "poNumber" from "PurchaseOrder" order by "poNumber" limit 1`)
+    .get();
+
+  if (!po) {
+    console.log("\n  SKIP  no purchase orders exist yet");
+    db.close();
+  } else {
+    const identifiers = [
+      ...db.prepare(`select "name","email" from "User" where "role" = 'Customer'`).all()
+        .flatMap((u) => [u.name, u.email]),
+      ...db.prepare(`select "name" from "Organisation"`).all().map((o) => o.name),
+      ...db.prepare(`select "reference" from "Order"`).all().map((o) => o.reference),
+    ].filter(Boolean);
+    db.close();
+
+    const auth = await fetch(`${BASE}/api/v1/auth`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ identifier: "admin", password: "123456", expectRole: "Admin" }),
+    });
+
+    if (!auth.ok) {
+      fail("could not sign in to read a purchase order");
+    } else {
+      const cookie = auth.headers.getSetCookie().join("; ").split(";")[0];
+      const html = await (
+        await fetch(`${BASE}/admin/purchasing/${po.poNumber}`, { headers: { cookie } })
+      ).text();
+
+      // <main> only — the shell around it carries the operator's identity.
+      const main = html.slice(html.indexOf('id="main"'));
+      const found = identifiers.filter((value) => main.includes(value));
+
+      if (found.length === 0) pass(`${po.poNumber} names no customer`);
+      else fail(`${po.poNumber} names ${found.join(", ")}`);
+    }
+  }
+}
+
 console.log(
   failures === 0
-    ? "\nNo supplier reaches an anonymous visitor\n"
+    ? "\nNeither side can see the other\n"
     : `\n${failures} check(s) failed\n`
 );
 process.exit(failures === 0 ? 0 : 1);
