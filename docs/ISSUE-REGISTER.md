@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**105 items** · 74 outstanding · **20 outstanding P1**
+**109 items** · 77 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -99,6 +99,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DN-18 | Cart moved to the server | Dev | P1 | Done | The cart was localStorage, so the browser held prices. It is now database rows priced entirely on the server; the client cannot tell the server what anything costs. |
 | DN-19 | Checkout writes real orders | Dev | P1 | Done | One transaction creates the order, one invoice per supplier and every line, or nothing at all. Reference numbers are allocated server-side inside that transaction. |
 | DN-20 | Four sign-in accounts seeded | Dev | P1 | Done | admin, musawi1989@gmail.com, supplier1 and supplier2, each able to sign in by username or email. Suppliers are attached to their seeded companies. |
+| DN-21 | Three sign-in doors, one per role | Dev | P2 | Done | Buyers sign in at the account page, suppliers at the business portal, admins at /admin. Signing in at the wrong door names the right one instead of letting someone into the wrong area. |
 
 ## Backend
 
@@ -122,6 +123,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-17 | Purge expired sessions on a schedule | Dev | P3 | Open | Expired session rows are never deleted. purgeExpiredSessions() exists but nothing calls it. |
 | BE-18 | Password hashing uses scrypt, not bcrypt | Dev | P3 | Open | OUR DECISION: scrypt from Node's own crypto module, so there is no dependency to keep patched. The spec names bcrypt. Both are appropriate; only src/lib/auth.ts knows the format. |
 | BE-19 | Guest checkout is allowed | Client | P2 | Open | OUR DECISION: an order can be placed without signing in, and is then tied to the cart cookie. Signing in simply attaches the order to the account. |
+| BE-20 | Build the admin screens behind the dashboard | Dev | P1 | Open | /admin authenticates and shows live figures, but every management screen is still missing: products, categories, suppliers, customers, orders, bulk upload, marketing, reports, settings. |
+| BE-21 | Build the supplier portal behind its dashboard | Dev | P1 | Open | The business portal authenticates and shows a supplier their own products and invoice lines, read-only. Creating and editing products, toggling stock and bulk upload are not built. |
+| BE-22 | Confirm one supplier account per company | Client | P2 | Open | OUR DECISION: each supplier company links to a single user. Real suppliers usually need several people with their own logins. |
 
 ## Infrastructure
 
@@ -152,6 +156,6 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| SEC-01 | Remove the test credentials before any deployment | Client | P1 | Open | Four accounts exist with the password 123456: admin, musawi1989@gmail.com, supplier1, supplier2. The sign-in page lists them on screen. This is fine on a local machine and unacceptable anywhere else. |
+| SEC-01 | Remove the test credentials before any deployment | Client | P1 | Open | Four accounts share the password 123456: admin, musawi1989@gmail.com, supplier1, supplier2. Fine on a laptop, unacceptable anywhere else. |
 | SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |

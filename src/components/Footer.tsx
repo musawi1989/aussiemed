@@ -15,9 +15,9 @@ const COLUMNS = [
   {
     title: "Your account",
     links: [
-      { label: "Business portal", href: "/account" },
+      { label: "Business portal (suppliers)", href: "/business-portal" },
+      { label: "Sign in", href: "/sign-in" },
       { label: "Reorder", href: "/account" },
-      { label: "Your orders", href: "/account/orders" },
     ],
   },
   {

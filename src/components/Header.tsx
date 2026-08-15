@@ -84,8 +84,9 @@ export function Header({ departments }: { departments: Department[] }) {
         </Suspense>
 
         <div className="ml-auto flex items-center gap-3 sm:gap-4">
+          {/* Business portal is the supplier door; Account is the buyer door. */}
           <Link
-            href="/account"
+            href="/business-portal"
             className="hidden shrink-0 rounded-card bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover lg:block"
           >
             Business portal
