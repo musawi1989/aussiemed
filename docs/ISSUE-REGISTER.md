@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**160 items** · 84 outstanding · **19 outstanding P1**
+**168 items** · 89 outstanding · **24 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -148,6 +148,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
 | BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
 | BE-34 | No cost price, so no margin is known | Dev | P2 | Open | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
+| BE-35 | Products are hard-tied to one supplier | Dev | P1 | Open | ProductMaster.supplierId is a required field, so every product belongs to exactly one supplier and cannot have a backup. It also means supplier identity is carried on the product record itself, which is how it leaks to customers. |
+| BE-36 | No purchase orders exist | Dev | P1 | Open | Nothing buys anything. Customer orders are recorded but there is no mechanism to order the goods from a supplier, which is the entire middle of the business. |
+| BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Open | Goods arrive pooled by item, not by customer. Without an allocation record there is no way to know whose units arrived, and no way to answer a recall. |
+| BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
 
 ## Infrastructure
 
@@ -182,6 +186,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
+| SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Open | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
 
 ## Decision
 
@@ -210,6 +215,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-21 | Uploaded files go through a storage seam, not straight to disk | Dev | P3 | Done | Local disk is right for a laptop and wrong for most hosting: a container filesystem is discarded on every deploy, and two instances behind a load balancer do not share one. Hosting is IN-01 and is not chosen yet. |
 | DEC-22 | AussieMed is the seller of record | Client | P3 | Done | Determines who carries the VAT liability and the credit risk, what the customer's invoice looks like, and who chases payment. It had been drifting undecided while the build leaned the other way. |
 | DEC-23 | VAT is a checkout concern only | Client | P3 | Done | Settles a question open since the Ex/Inc VAT toggle was removed: whether buyers need to see VAT while browsing. |
+| DEC-24 | AussieMed is a cross-dock distributor, not a marketplace | Client | P1 | Done | Changes what the platform fundamentally is. Neither side of a transaction may see the other, which rules out the supplier-facing order model the build had grown. |
+| DEC-25 | Two suppliers per item, with automatic fallback | Client | P1 | Done | A single supplier per product makes every product only as reliable as one company, and in cross-dock a supplier who cannot supply means a customer waits a full cycle. |
+| DEC-26 | One consolidated purchase order per supplier per day | Client | P1 | Done | Sending a purchase order per customer order would flood suppliers and lose the buying power of pooled quantities. |
 
 ## Frontend
 

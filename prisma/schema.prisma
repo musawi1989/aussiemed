@@ -137,9 +137,24 @@ model Supplier {
   trn            String?
   status         String  @default("Active")
 
-  products ProductMaster[]
-  invoices OrderSupplierInvoice[]
-  uploads  BulkUploadJob[]
+  /// Temporarily unable to supply anything at all — closed, suspended, on
+  /// holiday. Every line where they are primary reverts to the backup while
+  /// this is false. Distinct from status, which is a lasting classification
+  /// rather than a this-week fact, and from ProductSupply.isAvailable, which
+  /// takes out one item rather than the company. See DEC-25.
+  isAvailable Boolean @default(true)
+
+  /// What this supplier has committed to, agreed personally at onboarding —
+  /// BE-33. "On time" is meaningless without a promise to measure against.
+  promisedLeadTimeDays Int?
+  /// How quickly they should acknowledge a purchase order, in hours.
+  ackSlaHours          Int  @default(24)
+
+  products       ProductMaster[]
+  invoices       OrderSupplierInvoice[]
+  uploads        BulkUploadJob[]
+  supplies       ProductSupply[]
+  purchaseOrders PurchaseOrder[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -297,11 +312,65 @@ model ProductSku {
   notify       NotifySubscription[]
   batches      SkuBatch[]
   images       ProductImage[]
+  supplies     ProductSupply[]
+  poLines      PurchaseOrderLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([productMasterId])
+}
+
+/// Who can supply this pack, and on what terms — DEC-25.
+///
+/// A product is not owned by a supplier. It has a primary supplier and a
+/// backup, each with their own cost, lead time and part number, because they
+/// are different companies selling the same thing. Tying the product to one
+/// supplier made every product only as reliable as one company, and in a
+/// cross-dock model a supplier who cannot supply means a customer waits a full
+/// cycle.
+///
+/// This is also where cost lives, superseding the first half of BE-34: two
+/// suppliers means two costs, so cost cannot sit on the SKU.
+model ProductSupply {
+  id       String     @id @default(cuid())
+  skuId    String
+  sku      ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  /// rank: Primary | Backup. One of each per SKU, enforced below.
+  rank String
+
+  /// What AussieMed pays this supplier for one pack, in fils. Never a float,
+  /// and never visible outside the admin — a supplier seeing the markup on
+  /// their own goods is a commercial problem, not merely a privacy one.
+  ///
+  /// Nullable on purpose. Cost arrives with the real catalogue, and a missing
+  /// cost must read as "not recorded" rather than as zero, which would show a
+  /// 100% margin on every product and be believed.
+  costFils Int?
+
+  /// What this supplier calls the item. Their picker works from their own
+  /// catalogue, so the purchase order leads with this and carries our SKU
+  /// alongside only as a reference.
+  supplierPartNumber String?
+
+  /// Overrides the supplier's default lead time for this item.
+  leadTimeDays Int?
+
+  /// This supplier cannot currently supply this particular item. Distinct from
+  /// Supplier.isAvailable, which takes the whole company out — they are
+  /// different situations and either one moves a line to the backup.
+  isAvailable Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([skuId, rank])
+  @@unique([skuId, supplierId])
+  @@index([supplierId])
 }
 
 /// Volume break: buying minQty or more drops the unit price.
@@ -659,6 +728,11 @@ model OrderItem {
   /// Warehouse-facing. Never shown to the customer.
   internalNotes String?
 
+  /// What has been bought for this line and physically received against it.
+  /// Under cross-dock, Allocated stops meaning reserved from stock and starts
+  /// meaning received at the sorting facility and assigned to this customer.
+  allocations PurchaseAllocation[]
+
   @@index([orderId])
   @@index([invoiceId])
   @@index([batchCodeSnapshot])
@@ -743,6 +817,117 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([at])
+}
+
+/// One consolidated order to one supplier for one day — DEC-26.
+///
+/// Customer orders accumulate through the day; at the cutoff every unpurchased
+/// line is grouped by supplier and quantities are summed per item, so a
+/// supplier receives one order for fifty gloves rather than eleven orders for
+/// gloves. Pooling is the point: it is what makes the quantities worth pricing.
+///
+/// This document must never carry a customer name, address, order reference or
+/// even a count of customers. That is not a detail of the layout, it is the
+/// model — see SEC-05, and test it rather than assume it.
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  poNumber   String   @unique
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  /// status: Draft | Sent | Acknowledged | PartiallyReceived | Received | Cancelled
+  status String @default("Draft")
+
+  /// The cutoff this batch covers. Anything ordered after it belongs to the
+  /// next purchase order, which is what makes the boundary reproducible.
+  cutoffAt DateTime
+
+  sentAt         DateTime?
+  acknowledgedAt DateTime?
+  expectedAt     DateTime?
+  receivedAt     DateTime?
+  cancelledAt    DateTime?
+
+  /// What AussieMed expects to pay, in fils. Sell prices never appear here.
+  totalCostFils Int @default(0)
+
+  /// Staff-only. Never sent to the supplier.
+  internalNotes String?
+  /// Written on the document the supplier receives.
+  supplierNotes String?
+
+  lines PurchaseOrderLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([cutoffAt])
+}
+
+model PurchaseOrderLine {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  skuId String
+  sku   ProductSku @relation(fields: [skuId], references: [id])
+
+  /// Snapshotted like every other document line: what the supplier called it
+  /// and what it cost on the day. Renegotiating a price later must not rewrite
+  /// a purchase order already sent.
+  supplierPartNumberSnapshot String?
+  nameSnapshot               String
+  skuCodeSnapshot            String
+  unitCostFilsSnapshot       Int
+
+  qtyOrdered  Int
+  qtyReceived Int @default(0)
+
+  /// True when this line fell back from the primary supplier, so a reviewer can
+  /// see at a glance which lines were not the first choice.
+  wasFallback Boolean @default(false)
+
+  lineCostFils Int
+
+  allocations PurchaseAllocation[]
+
+  @@index([purchaseOrderId])
+  @@index([skuId])
+}
+
+/// Which received units belong to which customer — BE-37.
+///
+/// The keystone of the cross-dock model. Goods arrive pooled by item with no
+/// idea who they are for; this is the record that assigns them, on our side of
+/// the wall, so a recalled batch can be traced to the exact clinics that
+/// received it while the supplier still never learns a customer existed.
+///
+/// It is also what makes a short delivery expressible: three of five units
+/// received means three allocations and two order lines still waiting.
+model PurchaseAllocation {
+  id                  String            @id @default(cuid())
+  purchaseOrderLineId String
+  purchaseOrderLine   PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Cascade)
+
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+
+  qty Int
+
+  /// Recorded at goods-in, against what physically arrived, then copied onto
+  /// the order line. Lot traceability for medical consumables is not optional:
+  /// a recall must be answerable with "which customers received batch X".
+  batchCode String?
+  expiresOn DateTime?
+
+  allocatedBy String?
+  allocatedAt DateTime @default(now())
+
+  @@index([purchaseOrderLineId])
+  @@index([orderItemId])
+  @@index([batchCode])
 }
 
 /// Key/value configuration — VAT rate, email templates, general settings.
