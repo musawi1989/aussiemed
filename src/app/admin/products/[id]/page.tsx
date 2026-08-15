@@ -6,6 +6,8 @@ import { StatusPill } from "@/components/StatusPill";
 import { ProductStatusActions } from "@/components/ProductStatusActions";
 import { SkuEditor } from "@/components/SkuEditor";
 import { ProductDetailsForm } from "@/components/ProductDetailsForm";
+import { ProductImages } from "@/components/admin/ProductImages";
+import { MAX_IMAGE_BYTES } from "@/lib/storage";
 
 /**
  * One product, everything about it.
@@ -149,23 +151,17 @@ export default async function AdminProductPage({
             <h2 className="text-base font-bold tracking-tight text-text">
               Images
             </h2>
-            <p className="mt-1 text-xs leading-relaxed text-text-muted">
-              Uploads are not built yet — DA-03 and BE-20. These are the files
-              the catalogue references today.
-            </p>
-            {product.images.length === 0 ? (
-              <p className="mt-3 text-sm text-text-muted">
-                No image. The storefront shows a monogram tile instead.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-1">
-                {product.images.map((image) => (
-                  <li key={image.id} className="truncate text-xs text-text-muted">
-                    {image.path}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ProductImages
+              productId={product.id}
+              slug={product.slug}
+              productName={product.name}
+              images={product.images.map((image) => ({
+                id: image.id,
+                path: image.path,
+                altText: image.altText,
+              }))}
+              maxMb={MAX_IMAGE_BYTES / 1024 / 1024}
+            />
           </section>
 
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">

@@ -8,6 +8,7 @@ import {
 } from "./order-views";
 import { db } from "./db";
 import { getSessionUser, type SessionUser } from "./auth";
+import { putProductImage, removeStoredImage } from "./storage";
 
 /**
  * Every write the admin screens make goes through this file.
@@ -257,6 +258,128 @@ export async function setProductStatus(
     id,
     { status: existing.status },
     { status }
+  );
+  await invalidateCatalog();
+  return ok(undefined);
+}
+
+/* ------------------------------------------------------------------ *
+ * Product images
+ * ------------------------------------------------------------------ */
+
+/**
+ * Adding, ordering and removing product photography — BE-29.
+ *
+ * Until now the only way to give a product an image was to put a file on disk
+ * and re-seed, which meant DA-03 and DA-24 could only ever be closed by us and
+ * never by the client. The bytes go to src/lib/storage.ts; this file records
+ * the row, keeps the ordering coherent and audits the change.
+ *
+ * The first image, by sortOrder, is the one the storefront shows.
+ */
+export async function addProductImage(
+  productId: string,
+  bytes: Buffer,
+  altText: string | null
+): Promise<Result<{ url: string }>> {
+  const actor = await requireAdmin();
+
+  const product = await db.productMaster.findUnique({
+    where: { id: productId },
+    select: { id: true, slug: true, name: true },
+  });
+  if (!product) return fail("That product no longer exists.");
+
+  const stored = await putProductImage(bytes, product.slug);
+  if (!stored.ok) return fail(stored.error);
+
+  // Appended, never inserted at the front: uploading a second photograph
+  // should not silently change which one the catalogue shows.
+  const last = await db.productImage.findFirst({
+    where: { productMasterId: productId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  const image = await db.productImage.create({
+    data: {
+      productMasterId: productId,
+      path: stored.url,
+      // Falls back to the product name so the image is never announced to a
+      // screen reader as an empty string.
+      altText: trim(altText) ?? product.name,
+      sortOrder: (last?.sortOrder ?? -1) + 1,
+    },
+  });
+
+  await audit(actor, "product.image.add", "ProductMaster", productId, null, {
+    imageId: image.id,
+    path: image.path,
+  });
+  await invalidateCatalog();
+  return ok({ url: stored.url });
+}
+
+export async function removeProductImage(imageId: string): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const image = await db.productImage.findUnique({ where: { id: imageId } });
+  if (!image) return fail("That image has already been removed.");
+
+  await db.productImage.delete({ where: { id: imageId } });
+
+  // The file is only deleted if we are the ones who stored it. Seed
+  // photography is referenced from elsewhere in public/ and is left alone —
+  // removing the row is enough, and deleting a shared file would break every
+  // other product pointing at it.
+  await removeStoredImage(image.path);
+
+  await audit(
+    actor,
+    "product.image.remove",
+    "ProductMaster",
+    image.productMasterId,
+    { imageId, path: image.path },
+    null
+  );
+  await invalidateCatalog();
+  return ok(undefined);
+}
+
+/** Promotes one image to the front, which is what the storefront displays. */
+export async function setPrimaryProductImage(imageId: string): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const image = await db.productImage.findUnique({ where: { id: imageId } });
+  if (!image) return fail("That image has already been removed.");
+
+  const siblings = await db.productImage.findMany({
+    where: { productMasterId: image.productMasterId },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true },
+  });
+
+  // Rewritten as a dense 0..n-1 sequence rather than by giving the chosen one
+  // a lower number. Repeated promotions would otherwise drift into negatives,
+  // and duplicate sortOrders make "the first image" a matter of luck.
+  const reordered = [
+    imageId,
+    ...siblings.map((s) => s.id).filter((id) => id !== imageId),
+  ];
+
+  await db.$transaction(
+    reordered.map((id, index) =>
+      db.productImage.update({ where: { id }, data: { sortOrder: index } })
+    )
+  );
+
+  await audit(
+    actor,
+    "product.image.primary",
+    "ProductMaster",
+    image.productMasterId,
+    { primary: siblings[0]?.id ?? null },
+    { primary: imageId }
   );
   await invalidateCatalog();
   return ok(undefined);

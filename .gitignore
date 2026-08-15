@@ -11,6 +11,10 @@ next-env.d.ts
 /orders/
 /outbox/
 
+# Uploaded product photography. Content, not source — it belongs to whatever
+# storage IN-01 settles on, not to the repository. See src/lib/storage.ts.
+/public/uploads/
+
 .DS_Store
 *.pem
 npm-debug.log*

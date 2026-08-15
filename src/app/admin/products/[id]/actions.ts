@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  addProductImage,
+  removeProductImage,
   replaceTiers,
+  setPrimaryProductImage,
   setProductStatus,
   updateProduct,
   updateSku,
@@ -93,6 +96,63 @@ export async function saveSkuAction(
 
   if (result.ok) revalidatePath(`/admin/products/${productId}`);
   return toState(result, "SKU saved.");
+}
+
+/* ------------------------------------------------------------------ *
+ * Images — BE-29
+ * ------------------------------------------------------------------ */
+
+/**
+ * The storefront reads images through the cached catalogue, so both the
+ * product page and every grid the product appears in have to be revalidated,
+ * not just the admin screen the upload happened on.
+ */
+function revalidateProduct(productId: string, slug: string | null) {
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath("/admin/products");
+  revalidatePath("/products");
+  if (slug) revalidatePath(`/products/${slug}`);
+}
+
+export async function uploadImageAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const slug = text(data, "slug") || null;
+  const file = data.get("file");
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Choose an image file first." };
+  }
+
+  // Read once, here, so the service layer works in bytes and never has to know
+  // this arrived over HTTP as multipart form data.
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  const result = await addProductImage(productId, bytes, text(data, "altText") || null);
+  if (result.ok) revalidateProduct(productId, slug);
+  return toState(result, "Image added.");
+}
+
+export async function removeImageAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const result = await removeProductImage(text(data, "imageId"));
+  if (result.ok) revalidateProduct(productId, text(data, "slug") || null);
+  return toState(result, "Image removed.");
+}
+
+export async function makePrimaryImageAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const result = await setPrimaryProductImage(text(data, "imageId"));
+  if (result.ok) revalidateProduct(productId, text(data, "slug") || null);
+  return toState(result, "That is now the image the catalogue shows.");
 }
 
 /**

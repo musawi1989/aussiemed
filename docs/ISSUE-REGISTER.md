@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**148 items** · 81 outstanding · **22 outstanding P1**
+**150 items** · 80 outstanding · **21 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -140,7 +140,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-26 | Seed now upserts instead of wiping | Dev | P3 | Done | Once orders existed, re-seeding failed on a foreign key: order lines reference SKU rows. The database was correctly refusing to let a re-seed destroy order history. |
 | BE-27 | No marketing screens: wishlists and abandoned carts | Dev | P3 | Open | Both are already recorded in the database and nobody can see either. An abandoned cart is the cheapest sale to recover, and a wishlist says what a buyer wants before they buy it. |
 | BE-28 | No reports: sales by supplier, category or period | Dev | P3 | Open | The dashboard totals every order ever placed and nothing else. There is no way to answer which supplier sells most, what a month looked like, or which categories are dead. |
-| BE-29 | Product images cannot be uploaded | Dev | P1 | Open | The admin product screen lists the image files a product references but cannot add or replace one, so the only way to give a product a photograph is to put a file on disk and re-seed. That blocks DA-03 and DA-24 from ever being closed by the client rather than by us. |
+| BE-29 | Product images cannot be uploaded | Dev | P1 | Done | The admin product screen listed the image files a product references but could not add or replace one, so the only way to give a product a photograph was to put a file on disk and re-seed. That blocked DA-03 and DA-24 from ever being closed by the client rather than by us. |
 
 ## Infrastructure
 
@@ -200,6 +200,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-18 | A product cannot go live without a SKU and a category | Dev | P3 | Done | Both make a live product broken rather than merely incomplete: no SKU means nothing to buy, no category means nobody can browse to it. The admin screen refuses the transition and says which one is missing. |
 | DEC-19 | Delivered and cancelled orders cannot be reopened | Client | P3 | Done | Both are closed documents the customer already holds. A status that contradicts what they received is worse than no status at all. |
 | DEC-20 | The back office looks like the reference operations UI, not like the shop | Client | P3 | Done | The client supplied screenshots of the tool they use day to day. Staff processing orders are doing operational work, and the storefront chrome was both a distraction and the reason documents printed badly. |
+| DEC-21 | Uploaded files go through a storage seam, not straight to disk | Dev | P3 | Done | Local disk is right for a laptop and wrong for most hosting: a container filesystem is discarded on every deploy, and two instances behind a load balancer do not share one. Hosting is IN-01 and is not chosen yet. |
 
 ## Frontend
 
@@ -208,3 +209,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-33 | The back office had the shop wrapped around it | Dev | P2 | Done | Every admin and supplier screen rendered inside the storefront header and footer, so warehouse staff worked around a cart and a Browse All Category bar, and the printed order documents carried both onto the paper. |
 | FE-34 | The delivery address printed as raw JSON | Dev | P2 | Done | The address is stored as a JSON snapshot so editing an address book entry cannot alter where a historical order was sent. Two screens printed that string verbatim, including the delivery note the customer receives. |
 | FE-35 | Withdrawn: the first admin page after signing in was reported as showing the sign-in door | Dev | P3 | Done | Recorded on 16 Aug 2026 as a defect. It was not one — the finding was an artefact of the test that produced it, and the record is kept so nobody investigates it a second time. |
+| FE-36 | The 404 page rendered its header and footer twice | Dev | P2 | Done | Introduced by the (shop) route group split in c75b2b5 and live for one commit. An unmatched URL was fine; a notFound() thrown inside the storefront — an unlisted product, an order reference that is not yours — came out with two headers and two footers. |
