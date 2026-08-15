@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**109 items** · 77 outstanding · **22 outstanding P1**
+**121 items** · 79 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -126,6 +126,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-20 | Build the admin screens behind the dashboard | Dev | P1 | Open | /admin authenticates and shows live figures, but every management screen is still missing: products, categories, suppliers, customers, orders, bulk upload, marketing, reports, settings. |
 | BE-21 | Build the supplier portal behind its dashboard | Dev | P1 | Open | The business portal authenticates and shows a supplier their own products and invoice lines, read-only. Creating and editing products, toggling stock and bulk upload are not built. |
 | BE-22 | Confirm one supplier account per company | Client | P2 | Open | OUR DECISION: each supplier company links to a single user. Real suppliers usually need several people with their own logins. |
+| BE-23 | Admin figures are counted live, never cached | Dev | P3 | Open | OUR DECISION: every number on the admin dashboard is counted from the database on each request. Caching them is how the old platform let admin counts and storefront counts disagree. |
+| BE-24 | Supplier data is scoped by query, not by filtering | Dev | P3 | Open | OUR DECISION: a supplier's products and invoice lines are fetched through their supplier id, so another supplier's rows are never loaded rather than loaded and hidden. |
 
 ## Infrastructure
 
@@ -159,3 +161,18 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-01 | Remove the test credentials before any deployment | Client | P1 | Open | Four accounts share the password 123456: admin, musawi1989@gmail.com, supplier1, supplier2. Fine on a laptop, unacceptable anywhere else. |
 | SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
+
+## Decision
+
+| ID | Item | Owner | Priority | Status | Why it matters |
+| --- | --- | --- | --- | --- | --- |
+| DEC-01 | Fresh build — the previous site is reference only | Client | P3 | Done | Stated 14 Aug 2026: nothing to do with the previous site. The extraction is mined for data and business rules; its code and behaviour are discarded. |
+| DEC-02 | Keep the existing visual brand | Client | P3 | Done | Stated 14 Aug 2026, correcting an earlier over-broad reading: the storefront must keep the current AussieMed look, not be redesigned. |
+| DEC-03 | Local only until the client approves | Client | P3 | Done | Stated 14 Aug 2026: not to go online until there is a version they are happy with locally. |
+| DEC-04 | External connectors are handled last | Client | P3 | Done | Stated 14 Aug 2026: anything needing a third-party account waits until the end so the build never stalls on credentials. |
+| DEC-05 | Follow Livingstone for B2B catalogue and pricing behaviour | Client | P3 | Done | Stated 14 Aug 2026 with livingstone.com.au as the reference, and all suggested changes accepted. |
+| DEC-06 | Seed the catalogue from two real suppliers for testing | Client | P3 | Done | Stated 14 Aug 2026: list Chemist Warehouse and Livingstone as suppliers with 30 items each, and remove the invented placeholders. |
+| DEC-07 | Add product images | Client | P3 | Done | Stated 15 Aug 2026. Supplier photography was downloaded for local testing. |
+| DEC-08 | Four test accounts with a shared placeholder password | Client | P3 | Done | Stated 15 Aug 2026: admin, musawi1989@gmail.com, supplier1 and supplier2, all with 123456. Explicitly described as local testing only, chosen to be memorable, and to be changed before anything real. |
+| DEC-09 | One sign-in door per role | Client | P3 | Done | Stated 15 Aug 2026: the business portal is the supplier login, the account login is for buyers, and admin is reached at /admin. |
+| DEC-10 | Record every generated value and decision in this register | Client | P3 | Done | Stated 14 Aug 2026 and repeated 15 Aug: everything invented on the client's behalf must be written down rather than left in the code. |

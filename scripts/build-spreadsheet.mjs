@@ -74,6 +74,7 @@ const countOpen = (key, value) =>
 const blocks = [
   ["", ""],
   ["Total items", items.length],
+  ["Decisions recorded", items.filter((i) => i.Area === "Decision").length],
   ["Outstanding", outstanding.length],
   ["Closed", count("Status", "Done")],
   ["Deferred", count("Status", "Deferred")],
@@ -181,10 +182,17 @@ function addSheet(name, rows, tabColor) {
   return sheet;
 }
 
+const isDecision = (i) => i.Area === "Decision";
+
 addSheet(
   "Needs attention",
-  [...outstanding].sort(byUrgency),
+  outstanding.filter((i) => !isDecision(i)).sort(byUrgency),
   RED
+);
+addSheet(
+  "Decisions",
+  items.filter(isDecision),
+  NAVY
 );
 addSheet(
   "Deferred",
@@ -193,7 +201,7 @@ addSheet(
 );
 addSheet(
   "Done",
-  items.filter((i) => i.Status === "Done").sort(byUrgency),
+  items.filter((i) => i.Status === "Done" && !isDecision(i)).sort(byUrgency),
   GREEN
 );
 
@@ -201,5 +209,8 @@ await workbook.xlsx.writeFile(OUT);
 
 console.log(`  wrote docs/Things That Need Attention.xlsx`);
 console.log(
-  `    Needs attention ${outstanding.length} · Deferred ${count("Status", "Deferred")} · Done ${count("Status", "Done")}`
+  `    Needs attention ${outstanding.filter((i) => !isDecision(i)).length}` +
+    ` · Decisions ${items.filter(isDecision).length}` +
+    ` · Deferred ${count("Status", "Deferred")}` +
+    ` · Done ${items.filter((i) => i.Status === "Done" && !isDecision(i)).length}`
 );

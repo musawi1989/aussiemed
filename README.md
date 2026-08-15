@@ -41,6 +41,10 @@ owner and a priority.
 - `docs/ISSUE-REGISTER.md` — the same list as readable Markdown.
 - `docs/issue-register.csv` — **the source of truth. Edit this one.**
 
+The workbook has a **Decisions** tab recording what the client actually asked
+for, separate from what we assumed. A reader can then tell a requirement from
+a guess.
+
 The `.xlsx` and `.md` are generated, so edits to them are overwritten. Change
 the CSV and run `npm run register`. Validation runs inside `npm run verify`,
 because an unquoted comma silently shifts every column after it — which is the
