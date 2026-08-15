@@ -8,13 +8,14 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { formatAED } from "@/lib/money";
 import { useCatalog } from "@/lib/catalog-client";
 import { useCart } from "@/lib/cart-client";
+import { SignInMenu } from "./SignInMenu";
 import { useStore } from "@/lib/store";
 import type { Department } from "@/lib/types";
 
 /**
  * Mirrors the live AussieMed header: a white utility bar (logo, scoped search,
- * business portal, currency, account, badges) sitting above a navy nav bar with
- * the red "Browse All Category" block on the left.
+ * one sign-in button, badges) sitting above a navy nav bar with the red
+ * "Browse All Category" block on the left.
  */
 
 const MAIN_NAV = [
@@ -25,7 +26,15 @@ const MAIN_NAV = [
   { label: "Contact Us", href: "/contact" },
 ];
 
-export function Header({ departments }: { departments: Department[] }) {
+export function Header({
+  departments,
+  sessionUser,
+}: {
+  departments: Department[];
+  /** Passed from the layout so the header knows who is signed in without a
+   *  round trip of its own. */
+  sessionUser: { name: string; role: string } | null;
+}) {
   const { wishlist, quoteLines, ready } = useStore();
   const { cart, ready: cartReady } = useCart();
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -84,30 +93,10 @@ export function Header({ departments }: { departments: Department[] }) {
         </Suspense>
 
         <div className="ml-auto flex items-center gap-3 sm:gap-4">
-          {/* Business portal is the supplier door; Account is the buyer door. */}
-          <Link
-            href="/business-portal"
-            className="hidden shrink-0 rounded-card bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover lg:block"
-          >
-            Business portal
-          </Link>
-
-          <VatToggle />
-
-          <span className="hidden items-center gap-1 text-sm font-semibold text-text sm:flex">
-            AED
-          </span>
-
-          <Link
-            href="/account"
-            className="hidden items-center gap-1.5 text-sm font-semibold text-text transition-colors hover:text-navy sm:flex"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7}>
-              <circle cx="12" cy="8.5" r="3.7" />
-              <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
-            </svg>
-            Account
-          </Link>
+          {/* One button for both doors. The Ex/Inc VAT toggle and the AED
+              label were removed at the client's request — VAT is to be
+              handled in the price itself later. */}
+          <SignInMenu user={sessionUser} />
 
           <IconLink href="/quote" label="Quote request" count={ready ? quoteLines.length : 0}>
             <path d="M6 3h8l4 4v14H6z" />
@@ -226,44 +215,10 @@ function NavLink({
   );
 }
 
-/**
- * Ex/Inc VAT switch. Procurement compares ex-VAT, the person approving the
- * invoice reads inc-VAT — so the same buyer needs both during one order. The
- * preference persists per browser.
- */
-function VatToggle() {
-  const { includeVat, setIncludeVat, ready } = useStore();
-
-  return (
-    <div
-      role="group"
-      aria-label="Price display"
-      className="hidden items-center rounded-card border border-border-strong text-xs font-bold sm:flex"
-    >
-      {[
-        { label: "Ex. VAT", value: false },
-        { label: "Inc. VAT", value: true },
-      ].map((option) => {
-        const active = ready && includeVat === option.value;
-        return (
-          <button
-            key={option.label}
-            type="button"
-            onClick={() => setIncludeVat(option.value)}
-            aria-pressed={active}
-            className={`px-2.5 py-1.5 transition-colors first:rounded-l-card last:rounded-r-card ${
-              active
-                ? "bg-navy text-on-navy"
-                : "bg-surface text-text-muted hover:text-navy"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+/* The Ex/Inc VAT toggle used to live here. It was removed at the client's
+   request — VAT is to be carried in the displayed price instead. `includeVat`
+   still exists in the store, defaulting to ex-VAT, and no longer has any UI
+   control; see DEC-13 in the register. */
 
 function IconLink({
   href,

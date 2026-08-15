@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getAllProducts, getDepartments, getSuppliers } from "@/lib/catalog";
 import { CatalogProvider } from "@/lib/catalog-client";
+import { getSessionUser } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-client";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
@@ -43,10 +44,11 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [departments, products, suppliers] = await Promise.all([
+  const [departments, products, suppliers, user] = await Promise.all([
     getDepartments(),
     getAllProducts(),
     getSuppliers(),
+    getSessionUser(),
   ]);
 
   return (
@@ -61,7 +63,10 @@ export default async function RootLayout({
           >
             Skip to content
           </a>
-          <Header departments={departments} />
+          <Header
+            departments={departments}
+            sessionUser={user ? { name: user.name, role: user.role } : null}
+          />
           <main id="main" className="flex-1">
             {children}
           </main>

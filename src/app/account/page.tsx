@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/SignOutButton";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
@@ -75,7 +74,6 @@ export default async function AccountPage() {
               : ""}
           </p>
         </div>
-        <SignOutButton />
       </div>
 
       <section className="mt-8">

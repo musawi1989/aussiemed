@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RoleSignInForm } from "@/components/RoleSignInForm";
-import { SignOutButton } from "@/components/SignOutButton";
 import { TestCredentials } from "@/components/TestCredentials";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -96,7 +95,6 @@ export default async function BusinessPortalPage() {
             {user.name} &middot; {user.email}
           </p>
         </div>
-        <SignOutButton />
       </div>
 
       <ul className="mt-6 grid gap-3 sm:grid-cols-4">
