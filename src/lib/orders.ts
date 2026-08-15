@@ -231,6 +231,10 @@ export type CheckoutInput = {
   poReference?: string | null;
   /** INVENTED DEFAULT: v1 ships offline / purchase order only — see IN-04. */
   paymentMethod?: string;
+  /** "Delivery" or "PickUp". Anything else is treated as a delivery. */
+  deliveryType?: string | null;
+  /** What the buyer typed at checkout — a ward name, a delivery instruction. */
+  notes?: string | null;
 };
 
 export type CheckoutResult = {
@@ -295,6 +299,28 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     })) as PricedLine[];
     const orderTotals = sumLines(priced);
 
+    /**
+     * The payment due date is worked out here, from the account's terms, and
+     * then stored on the order. Deriving it on the fly would mean a customer
+     * moved from Net 30 to Net 7 silently gaining an overdue invoice on
+     * everything they had already bought.
+     */
+    const organisation = input.organisationId
+      ? await tx.organisation.findUnique({
+          where: { id: input.organisationId },
+          select: { paymentTerms: true },
+        })
+      : null;
+
+    const TERM_DAYS: Record<string, number> = {
+      Prepaid: 0,
+      Net7: 7,
+      Net30: 30,
+      Net60: 60,
+    };
+    const days = TERM_DAYS[organisation?.paymentTerms ?? "Prepaid"] ?? 0;
+    const paymentDueOn = new Date(Date.now() + days * 86_400_000);
+
     /* --- the order --- */
 
     const order = await tx.order.create({
@@ -307,6 +333,9 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
         status: "Pending",
         paymentMethod: input.paymentMethod ?? "OfflinePurchaseOrder",
         poReference: input.poReference || null,
+        paymentDueOn,
+        deliveryType: input.deliveryType === "PickUp" ? "PickUp" : "Delivery",
+        customerNotes: input.notes || null,
         subtotalFils: orderTotals.subtotalFils,
         vatFils: orderTotals.vatFils,
         totalFils: orderTotals.totalFils,

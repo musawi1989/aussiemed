@@ -1,6 +1,11 @@
 import "server-only";
 
 import { invalidateCatalog } from "./catalog";
+import {
+  ORDER_LINE_STATUSES,
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+} from "./order-views";
 import { db } from "./db";
 import { getSessionUser, type SessionUser } from "./auth";
 
@@ -20,6 +25,8 @@ import { getSessionUser, type SessionUser } from "./auth";
  * Actions return a Result rather than throwing, so a form can show the reason
  * next to the field instead of a page-level error.
  */
+
+export { ORDER_STATUSES, ORDER_LINE_STATUSES, PAYMENT_STATUSES };
 
 export type Result<T = void> =
   | { ok: true; value: T }
@@ -581,14 +588,6 @@ export async function renameCategory(
  * Orders
  * ------------------------------------------------------------------ */
 
-export const ORDER_STATUSES = [
-  "Pending",
-  "Processing",
-  "Dispatched",
-  "Delivered",
-  "Cancelled",
-] as const;
-
 export async function setOrderStatus(
   reference: string,
   status: string
@@ -623,6 +622,241 @@ export async function setOrderStatus(
     { status }
   );
   // Orders are not part of the catalogue, so no cache bump is needed here.
+  return ok(undefined);
+}
+
+/**
+ * Fulfilment on one line.
+ *
+ * The order's own status is left alone here on purpose. A line moving to
+ * Shipped does not mean the order shipped — that is exactly the case an
+ * order-level status gets wrong, and telling a customer their whole order is
+ * on its way when one line is on backorder is worse than saying nothing.
+ */
+export async function setOrderLineStatus(
+  itemId: string,
+  status: string
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  if (
+    !ORDER_LINE_STATUSES.includes(status as (typeof ORDER_LINE_STATUSES)[number])
+  ) {
+    return fail("That is not a line status we recognise.");
+  }
+
+  const item = await db.orderItem.findUnique({
+    where: { id: itemId },
+    include: { order: { select: { status: true, reference: true } } },
+  });
+  if (!item) return fail("That order line no longer exists.");
+  if (item.status === status) return ok(undefined);
+
+  if (item.order.status === "Cancelled" && status !== "Cancelled") {
+    return fail("The order is cancelled, so its lines cannot be worked on.");
+  }
+
+  await db.orderItem.update({ where: { id: itemId }, data: { status } });
+
+  await audit(
+    actor,
+    "orderLine.status",
+    "OrderItem",
+    itemId,
+    { status: item.status },
+    { status, order: item.order.reference }
+  );
+  return ok(undefined);
+}
+
+/**
+ * Lot and expiry against a line.
+ *
+ * This is the record a recall is answered from: "which customers received
+ * batch X" can only be answered if the batch was written down at the moment
+ * the goods were picked, not inferred from stock levels afterwards.
+ */
+export async function setOrderLineBatch(
+  itemId: string,
+  batchCode: string | null,
+  expiresOn: string | null
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const item = await db.orderItem.findUnique({ where: { id: itemId } });
+  if (!item) return fail("That order line no longer exists.");
+
+  let expires: Date | null = null;
+  if (expiresOn) {
+    const parsed = new Date(expiresOn);
+    if (Number.isNaN(parsed.getTime())) return fail("That expiry date is not a date.");
+    expires = parsed;
+  }
+  if (expires && !batchCode?.trim()) {
+    return fail("An expiry date needs the batch it belongs to.");
+  }
+
+  const data = {
+    batchCodeSnapshot: trim(batchCode),
+    expiresOnSnapshot: expires,
+  };
+
+  await db.orderItem.update({ where: { id: itemId }, data });
+
+  await audit(
+    actor,
+    "orderLine.batch",
+    "OrderItem",
+    itemId,
+    {
+      batchCodeSnapshot: item.batchCodeSnapshot,
+      expiresOnSnapshot: item.expiresOnSnapshot,
+    },
+    data
+  );
+  return ok(undefined);
+}
+
+/**
+ * Payment, recorded against the order rather than inferred from it.
+ *
+ * `paidFils` is the amount actually received, so a part payment on a credit
+ * account is a fact rather than a guess. Marking an order Paid stamps the
+ * moment it happened, because "when" is the question an aged receivables
+ * report is built from.
+ */
+export async function setOrderPayment(
+  reference: string,
+  paymentStatus: string,
+  paidAED: number | null,
+  dueOn: string | null
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  if (
+    !PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])
+  ) {
+    return fail("That is not a payment status we recognise.");
+  }
+
+  const order = await db.order.findUnique({ where: { reference } });
+  if (!order) return fail("That order no longer exists.");
+
+  const paidFils =
+    paidAED === null || Number.isNaN(paidAED) ? order.paidFils : toFils(paidAED);
+  if (paidFils < 0) return fail("A payment cannot be negative.");
+  if (paidFils > order.totalFils && paymentStatus !== "Refunded") {
+    return fail(
+      `That is more than the order total of ${(order.totalFils / 100).toFixed(2)}. Record an overpayment as a refund instead.`
+    );
+  }
+  if (paymentStatus === "PartiallyPaid" && paidFils <= 0) {
+    return fail("A part payment needs the amount that was received.");
+  }
+
+  let due: Date | null = order.paymentDueOn;
+  if (dueOn !== null) {
+    if (dueOn === "") due = null;
+    else {
+      const parsed = new Date(dueOn);
+      if (Number.isNaN(parsed.getTime())) return fail("That due date is not a date.");
+      due = parsed;
+    }
+  }
+
+  const data = {
+    paymentStatus,
+    paidFils: paymentStatus === "Paid" ? order.totalFils : paidFils,
+    // Stamp the moment it was settled, and clear it if it is unsettled again.
+    paidAt:
+      paymentStatus === "Paid"
+        ? (order.paidAt ?? new Date())
+        : paymentStatus === "Unpaid"
+          ? null
+          : order.paidAt,
+    paymentDueOn: due,
+  };
+
+  await db.order.update({ where: { reference }, data });
+
+  await audit(
+    actor,
+    "order.payment",
+    "Order",
+    order.id,
+    {
+      paymentStatus: order.paymentStatus,
+      paidFils: order.paidFils,
+      paymentDueOn: order.paymentDueOn,
+    },
+    data
+  );
+  return ok(undefined);
+}
+
+/** Courier, tracking and the date the warehouse expects to ship. */
+export async function setOrderDelivery(
+  reference: string,
+  input: {
+    deliveryType: string;
+    courier: string | null;
+    trackingNumber: string | null;
+    estimatedShipmentOn: string | null;
+  }
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  if (!["Delivery", "PickUp"].includes(input.deliveryType)) {
+    return fail("That is not a delivery type we recognise.");
+  }
+
+  const order = await db.order.findUnique({ where: { reference } });
+  if (!order) return fail("That order no longer exists.");
+
+  let shipOn: Date | null = null;
+  if (input.estimatedShipmentOn) {
+    const parsed = new Date(input.estimatedShipmentOn);
+    if (Number.isNaN(parsed.getTime())) return fail("That ship date is not a date.");
+    shipOn = parsed;
+  }
+
+  const data = {
+    deliveryType: input.deliveryType,
+    courier: trim(input.courier),
+    trackingNumber: trim(input.trackingNumber),
+    estimatedShipmentOn: shipOn,
+  };
+
+  const diff = changed(order as unknown as Record<string, unknown>, data);
+  await db.order.update({ where: { reference }, data });
+
+  await audit(actor, "order.delivery", "Order", order.id, diff.before, diff.after);
+  return ok(undefined);
+}
+
+/** Staff-only notes. The customer never sees these. */
+export async function setOrderInternalNotes(
+  reference: string,
+  notes: string | null
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const order = await db.order.findUnique({ where: { reference } });
+  if (!order) return fail("That order no longer exists.");
+
+  await db.order.update({
+    where: { reference },
+    data: { internalNotes: trim(notes) },
+  });
+
+  await audit(
+    actor,
+    "order.notes",
+    "Order",
+    order.id,
+    { internalNotes: order.internalNotes },
+    { internalNotes: trim(notes) }
+  );
   return ok(undefined);
 }
 

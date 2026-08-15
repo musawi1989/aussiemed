@@ -84,6 +84,11 @@ model Organisation {
   creditLimitFils Int     @default(0)
   isDisabled      Boolean @default(false)
 
+  /// Standing notes about the account, shown on every order they place —
+  /// "deliveries only before 11am", "PO required on every order". The kind of
+  /// thing that is otherwise learnt once and forgotten.
+  notes String?
+
   users     User[]
   addresses Address[]
   orders    Order[]
@@ -542,6 +547,26 @@ model Order {
   paymentMethod String  @default("OfflinePurchaseOrder")
   poReference   String?
 
+  /// Payment is tracked apart from fulfilment because on credit terms the two
+  /// are genuinely independent: a Net 30 order ships today and is paid a month
+  /// later, and a prepaid one is paid before anything is picked.
+  ///
+  /// paymentStatus: Unpaid | PartiallyPaid | Paid | Overdue | Refunded
+  paymentStatus String    @default("Unpaid")
+  paidAt        DateTime?
+  paidFils      Int       @default(0)
+  /// Taken from the account's terms when the order is placed, then stored —
+  /// later changes to those terms must not move the due date on an invoice
+  /// already issued.
+  paymentDueOn  DateTime?
+
+  /// deliveryType: Delivery | PickUp
+  deliveryType        String    @default("Delivery")
+  deliveryPriceFils   Int       @default(0)
+  estimatedShipmentOn DateTime?
+  trackingNumber      String?
+  courier             String?
+
   subtotalFils       Int
   vatFils            Int
   totalFils          Int
@@ -551,6 +576,15 @@ model Order {
 
   invoices OrderSupplierInvoice[]
   items    OrderItem[]
+
+  /// Staff-only. Customer-visible notes belong to the user and organisation;
+  /// this is what the warehouse and accounts write to each other.
+  internalNotes String?
+
+  /// What the customer typed at checkout — a delivery instruction, a ward
+  /// name, a "please call before delivering". Distinct from internalNotes so
+  /// nobody has to guess which of the two the customer can see.
+  customerNotes String?
 
   placedAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -609,8 +643,25 @@ model OrderItem {
   lineTotalFils Int
   vatFils       Int
 
+  /// Per-line fulfilment. An order is rarely one thing: half the lines ship
+  /// today while one waits on a supplier, and a single order-level status
+  /// cannot express that.
+  ///
+  /// status: Pending | Allocated | Picked | Packed | Shipped | Backordered | Cancelled
+  status String @default("Pending")
+
+  /// Lot traceability. For medical and dental consumables this is not
+  /// optional: a recall must be answerable with "which customers received
+  /// batch X", and only the order line can answer it.
+  batchCodeSnapshot String?
+  expiresOnSnapshot DateTime?
+
+  /// Warehouse-facing. Never shown to the customer.
+  internalNotes String?
+
   @@index([orderId])
   @@index([invoiceId])
+  @@index([batchCodeSnapshot])
   @@index([skuId])
 }
 
