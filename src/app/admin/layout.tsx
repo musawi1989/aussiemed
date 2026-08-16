@@ -37,7 +37,8 @@ const GROUPS: OpsGroup[] = [
     heading: "Catalogue",
     icon: "catalogue",
     links: [
-      { href: "/admin/products", label: "Products" },
+      { href: "/admin/products", label: "Products", exact: true },
+      { href: "/admin/products/upload", label: "Load catalogue" },
       { href: "/admin/categories", label: "Categories" },
     ],
   },
