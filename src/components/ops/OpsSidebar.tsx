@@ -12,6 +12,11 @@ export type OpsLink = {
   label: string;
   /** Path prefix owns its nested screens. Omit to match the href exactly. */
   exact?: boolean;
+  /**
+   * How many things are waiting behind this link. Shown only when there are
+   * any — a badge reading 0 is a queue announcing it has nothing to say.
+   */
+  count?: number;
 };
 
 export type OpsGroup = {
@@ -99,7 +104,14 @@ export function OpsSidebar({
                       }`}
                     >
                       {group.heading ? null : <Icon name={group.icon} />}
-                      {link.label}
+                      <span className="min-w-0 flex-1 truncate">
+                        {link.label}
+                      </span>
+                      {link.count !== undefined && link.count > 0 && (
+                        <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold tnum text-surface">
+                          {link.count}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );

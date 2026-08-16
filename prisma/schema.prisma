@@ -64,6 +64,9 @@ model User {
   notifies     NotifySubscription[]
   auditEntries AuditLog[]     @relation("AuditActor")
 
+  changesRequested AccountChange[] @relation("AccountChangeRequester")
+  changesReviewed  AccountChange[] @relation("AccountChangeReviewer")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -95,9 +98,72 @@ model Organisation {
   addresses Address[]
   orders    Order[]
   staff     OrganisationStaff[]
+  changes   AccountChange[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// A change a customer made — or wants to make — to their own account.
+///
+/// One model rather than two, because the question a customer asks is the
+/// same either way: what has been changed here, by whom, and why. Splitting
+/// changes that took effect from changes waiting on us would mean two
+/// timelines to read and keep in step.
+///
+/// The reason is never optional. It is the one thing about a change that
+/// cannot be reconstructed later from the data itself — the database will
+/// always be able to say a branch was removed, and will never be able to say
+/// the clinic closed.
+model AccountChange {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  /// kind: StaffAdded | StaffRemoved | BranchAdded | BranchEdited |
+  ///       BranchRemoved | AccountRenamed
+  kind String
+
+  /// What changed, in the customer's words, for the timeline.
+  summary String
+
+  /// Why, typed by the person making the change.
+  reason String
+
+  /// status: Applied | Pending | Approved | Rejected
+  ///
+  /// Applied is a change that took effect at once — the staff list, which the
+  /// account owns outright. Pending, Approved and Rejected belong to changes
+  /// held for an admin, because they move where goods are delivered or what
+  /// name goes on an invoice.
+  status String @default("Applied")
+
+  /// The change itself, as JSON, for anything held until approval. Cleared on
+  /// approval: from then on the record of what happened is the database.
+  payload String?
+
+  /// What the change is about, so a branch can show its own pending edit
+  /// beside it rather than only in a list somewhere else.
+  targetId String?
+
+  requestedByUserId String?
+  requestedByUser   User?    @relation("AccountChangeRequester", fields: [requestedByUserId], references: [id])
+  /// Snapshotted like every other name on a record — a person leaving the
+  /// account must not blank the history of what they changed.
+  requestedByName   String
+  requestedAt       DateTime @default(now())
+
+  reviewedByUserId String?
+  reviewedByUser   User?     @relation("AccountChangeReviewer", fields: [reviewedByUserId], references: [id])
+  reviewedByName   String?
+  reviewedAt       DateTime?
+  /// The admin's word on it. Required to reject, so "no" never arrives
+  /// without a reason attached.
+  decisionNote     String?
+
+  @@index([organisationId, requestedAt])
+  @@index([status])
+  @@index([targetId])
 }
 
 model Address {

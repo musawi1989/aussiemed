@@ -3,6 +3,14 @@ import "server-only";
 import { db } from "./db";
 import { getSessionUser, type SessionUser } from "./auth";
 import { accountMetrics, type AccountMetrics } from "./account-metrics";
+import { checkBranch } from "./account-change-plan";
+import {
+  accountChanges,
+  pendingCountFor,
+  pendingForTargets,
+  submitChange,
+  withdrawChange,
+} from "./account-changes";
 
 /**
  * The customer's own account: their orders, their branches, their staff, and
@@ -157,44 +165,75 @@ export type BranchInput = {
   emirate: string;
 };
 
-export async function addBranch(input: BranchInput): Promise<Result> {
+/**
+ * Branch changes are requested, not made.
+ *
+ * A branch is a place we deliver medical supplies to. Letting an account add
+ * one and have it live immediately means the next order can go to an address
+ * nobody at AussieMed has ever checked, and the customer finds out when the
+ * goods do not arrive. So these three write a request and return; an admin
+ * approving it is what creates, edits or archives the address. See
+ * account-change-plan for which kinds are held and why.
+ */
+export async function requestAddBranch(
+  input: BranchInput,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
   const session = await requireAccount();
 
-  const label = trim(input.label);
-  const contact = trim(input.contact);
-  const line1 = trim(input.line1);
-  const city = trim(input.city);
+  const branch = checkBranch(input);
+  if (!branch.ok) return fail(branch.error);
 
-  if (!label) return fail("Give the branch a name you will recognise.");
-  if (!contact) return fail("Who should the driver ask for?");
-  if (!line1) return fail("The delivery address is needed.");
-  if (!city) return fail("Which city is it in?");
-
-  const existing = await db.address.count({
-    where: { organisationId: session.organisationId },
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "BranchAdded",
+    subject: branch.branch.label,
+    reason,
+    payload: branch.branch,
+    actor: { id: session.id, name: session.name },
   });
-
-  await db.address.create({
-    data: {
-      organisationId: session.organisationId,
-      label,
-      contact,
-      phone: trim(input.phone) ?? "",
-      line1,
-      line2: trim(input.line2),
-      city,
-      emirate: trim(input.emirate) ?? "",
-      // The first one added is the default, so a single-site customer never
-      // has to think about it.
-      isDefault: existing === 0,
-    },
-  });
-
-  return ok(undefined);
 }
 
-/** Archived, not deleted — orders delivered there still name it. */
-export async function archiveBranch(branchId: string): Promise<Result> {
+export async function requestEditBranch(
+  branchId: string,
+  input: BranchInput,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
+  const session = await requireAccount();
+
+  const existing = await db.address.findFirst({
+    where: { id: branchId, organisationId: session.organisationId },
+  });
+  if (!existing) return fail("That branch is not on your account.");
+
+  const branch = checkBranch(input);
+  if (!branch.ok) return fail(branch.error);
+
+  // One request per branch at a time. Two pending edits would be applied in
+  // whichever order an admin happened to click them, and the customer would
+  // have no way to know which one won.
+  const queued = await db.accountChange.findFirst({
+    where: { targetId: branchId, status: "Pending" },
+  });
+  if (queued) {
+    return fail("A change to this branch is already waiting for approval.");
+  }
+
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "BranchEdited",
+    subject: branch.branch.label,
+    reason,
+    payload: branch.branch,
+    targetId: branchId,
+    actor: { id: session.id, name: session.name },
+  });
+}
+
+export async function requestRemoveBranch(
+  branchId: string,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
   const session = await requireAccount();
 
   const branch = await db.address.findFirst({
@@ -209,12 +248,60 @@ export async function archiveBranch(branchId: string): Promise<Result> {
     return fail("This is your only branch — add another before removing it.");
   }
 
-  await db.address.update({
-    where: { id: branchId },
-    data: { isArchived: true, isDefault: false },
+  const queued = await db.accountChange.findFirst({
+    where: { targetId: branchId, status: "Pending" },
   });
+  if (queued) {
+    return fail("A change to this branch is already waiting for approval.");
+  }
 
-  return ok(undefined);
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "BranchRemoved",
+    subject: branch.label ?? branch.city,
+    reason,
+    targetId: branchId,
+    actor: { id: session.id, name: session.name },
+  });
+}
+
+/** The name that goes on their invoices, so this is checked before it moves. */
+export async function requestRenameAccount(
+  name: string,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
+  const session = await requireAccount();
+
+  const clean = (name ?? "").trim().replace(/\s+/g, " ");
+  if (clean.length < 2) return fail("Give the account a name.");
+
+  const organisation = await db.organisation.findUnique({
+    where: { id: session.organisationId },
+    select: { name: true },
+  });
+  if (organisation?.name === clean) {
+    return fail("That is already the name on the account.");
+  }
+
+  const queued = await db.accountChange.findFirst({
+    where: {
+      organisationId: session.organisationId,
+      kind: "AccountRenamed",
+      status: "Pending",
+    },
+  });
+  if (queued) return fail("A name change is already waiting for approval.");
+
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "AccountRenamed",
+    subject: clean,
+    reason,
+    // The rename travels in the same shape as a branch so one reviewer screen
+    // can read every payload without knowing what kind it is looking at.
+    payload: { label: clean },
+    actor: { id: session.id, name: session.name },
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -242,8 +329,16 @@ export async function accountStaff(includeInactive = false) {
  * still exists on `OrganisationStaff` and is no longer written; dropping it is
  * registered rather than done here, so a migration is not needed for a UI
  * change.
+ *
+ * These take effect at once and are logged with the reason. The list is the
+ * account's own and affects nothing outside it, and holding "she has left"
+ * for approval would mean an order going out in the name of someone who no
+ * longer works there.
  */
-export async function addStaff(name: string): Promise<Result> {
+export async function addStaff(
+  name: string,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
   const session = await requireAccount();
 
   const cleanName = trim(name);
@@ -252,29 +347,36 @@ export async function addStaff(name: string): Promise<Result> {
   const existing = await db.organisationStaff.findFirst({
     where: { organisationId: session.organisationId, name: cleanName },
   });
+  if (existing?.isActive) return fail(`${cleanName} is already on the list.`);
 
-  if (existing) {
-    // Re-adding someone who was removed brings them back rather than failing
-    // on a constraint the person cannot see.
-    if (!existing.isActive) {
-      await db.organisationStaff.update({
-        where: { id: existing.id },
-        data: { isActive: true },
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "StaffAdded",
+    subject: cleanName,
+    reason,
+    actor: { id: session.id, name: session.name },
+    apply: async () => {
+      if (existing) {
+        // Re-adding someone who was removed brings them back rather than
+        // failing on a constraint the person cannot see.
+        await db.organisationStaff.update({
+          where: { id: existing.id },
+          data: { isActive: true },
+        });
+        return;
+      }
+      await db.organisationStaff.create({
+        data: { organisationId: session.organisationId, name: cleanName },
       });
-      return ok(undefined);
-    }
-    return fail(`${cleanName} is already on the list.`);
-  }
-
-  await db.organisationStaff.create({
-    data: { organisationId: session.organisationId, name: cleanName },
+    },
   });
-
-  return ok(undefined);
 }
 
 /** Removed from the picker, keeping the orders they placed. */
-export async function removeStaff(staffId: string): Promise<Result> {
+export async function removeStaff(
+  staffId: string,
+  reason: string
+): Promise<Result<{ applied: boolean }>> {
   const session = await requireAccount();
 
   const staff = await db.organisationStaff.findFirst({
@@ -282,12 +384,52 @@ export async function removeStaff(staffId: string): Promise<Result> {
   });
   if (!staff) return fail("That person is not on your account.");
 
-  await db.organisationStaff.update({
-    where: { id: staffId },
-    data: { isActive: false },
+  return submitChange({
+    organisationId: session.organisationId,
+    kind: "StaffRemoved",
+    subject: staff.name,
+    reason,
+    targetId: staffId,
+    actor: { id: session.id, name: session.name },
+    apply: async () => {
+      await db.organisationStaff.update({
+        where: { id: staffId },
+        data: { isActive: false },
+      });
+    },
   });
+}
 
-  return ok(undefined);
+/* ------------------------------------------------------------------ *
+ * The change log
+ * ------------------------------------------------------------------ */
+
+/**
+ * Wrappers, so the organisation id stays off the caller here too. The
+ * underlying functions take one because the admin side needs to read across
+ * accounts; nothing the customer reaches does.
+ */
+
+export async function accountChangeLog() {
+  const session = await requireAccount();
+  return accountChanges(session.organisationId);
+}
+
+export async function accountPendingByTarget() {
+  const session = await accountSession();
+  if (!session) return new Map();
+  return pendingForTargets(session.organisationId);
+}
+
+export async function accountPendingCount(): Promise<number> {
+  const session = await accountSession();
+  if (!session) return 0;
+  return pendingCountFor(session.organisationId);
+}
+
+export async function withdrawAccountChange(changeId: string): Promise<Result> {
+  const session = await requireAccount();
+  return withdrawChange(changeId, session.organisationId);
 }
 
 /* ------------------------------------------------------------------ *

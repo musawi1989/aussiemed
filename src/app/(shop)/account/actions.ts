@@ -1,13 +1,16 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  addBranch,
   addStaff,
-  archiveBranch,
   removeStaff,
+  requestAddBranch,
+  requestEditBranch,
+  requestRemoveBranch,
+  requestRenameAccount,
   toggleSavedProduct,
+  withdrawAccountChange,
 } from "@/lib/account";
 import { addToCart, clearCart } from "@/lib/orders";
 import { ensureCartKey } from "@/lib/cart-cookie";
@@ -15,11 +18,52 @@ import type { FormState } from "@/components/AdminForm";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
 
+/**
+ * Everything typed, so a refusal can hand it back.
+ *
+ * React clears an uncontrolled form as soon as its action returns. Since every
+ * change here now needs a reason, refusals are ordinary rather than rare, and
+ * one that also wipes the address someone just typed makes the second attempt
+ * cost more than the first.
+ */
+const typed = (data: FormData): Record<string, string> => {
+  const values: Record<string, string> = {};
+  for (const [key, value] of data.entries()) {
+    if (typeof value === "string") values[key] = value;
+  }
+  return values;
+};
+
+const refuse = (error: string, data: FormData): FormState => ({
+  ok: false,
+  error,
+  values: typed(data),
+});
+
 function refresh() {
   revalidatePath("/account");
   revalidatePath("/account/branches");
   revalidatePath("/account/staff");
+  revalidatePath("/account/changes");
 }
+
+const branchFrom = (data: FormData) => ({
+  label: text(data, "label"),
+  contact: text(data, "contact"),
+  phone: text(data, "phone"),
+  line1: text(data, "line1"),
+  line2: text(data, "line2"),
+  city: text(data, "city"),
+  emirate: text(data, "emirate"),
+});
+
+/**
+ * One sentence for both outcomes, because a change that took effect and one
+ * that is waiting on us are different things and a customer told "saved" for
+ * the second would keep ordering to an address that does not exist yet.
+ */
+const outcome = (applied: boolean, done: string, held: string): FormState =>
+  applied ? { ok: true, message: done } : { ok: true, message: held };
 
 /* ---------------- branches ---------------- */
 
@@ -27,30 +71,68 @@ export async function addBranchAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  const result = await addBranch({
-    label: text(data, "label"),
-    contact: text(data, "contact"),
-    phone: text(data, "phone"),
-    line1: text(data, "line1"),
-    line2: text(data, "line2"),
-    city: text(data, "city"),
-    emirate: text(data, "emirate"),
-  });
-  if (result.ok) refresh();
-  return result.ok
-    ? { ok: true, message: "Branch added." }
-    : { ok: false, error: result.error };
+  const result = await requestAddBranch(branchFrom(data), text(data, "reason"));
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return outcome(
+    result.value.applied,
+    "Branch added.",
+    "Sent for approval. It will appear once we have checked it — usually the same working day."
+  );
+}
+
+export async function editBranchAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await requestEditBranch(
+    text(data, "branchId"),
+    branchFrom(data),
+    text(data, "reason")
+  );
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return outcome(
+    result.value.applied,
+    "Branch updated.",
+    "Sent for approval. The branch keeps its current details until then."
+  );
 }
 
 export async function removeBranchAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  const result = await archiveBranch(text(data, "branchId"));
-  if (result.ok) refresh();
-  return result.ok
-    ? { ok: true, message: "Branch removed. Its past orders are unchanged." }
-    : { ok: false, error: result.error };
+  const result = await requestRemoveBranch(
+    text(data, "branchId"),
+    text(data, "reason")
+  );
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return outcome(
+    result.value.applied,
+    "Branch removed. Its past orders are unchanged.",
+    "Sent for approval. You can still order to it until then."
+  );
+}
+
+/* ---------------- the account name ---------------- */
+
+export async function renameAccountAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await requestRenameAccount(
+    text(data, "name"),
+    text(data, "reason")
+  );
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return outcome(
+    result.value.applied,
+    "Account name changed.",
+    "Sent for approval. Your invoices keep the current name until then."
+  );
 }
 
 /* ---------------- staff ---------------- */
@@ -59,21 +141,35 @@ export async function addStaffAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  const result = await addStaff(text(data, "name"));
-  if (result.ok) refresh();
-  return result.ok
-    ? { ok: true, message: "Added to the list." }
-    : { ok: false, error: result.error };
+  const result = await addStaff(text(data, "name"), text(data, "reason"));
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return { ok: true, message: "Added to the list, with your note." };
 }
 
 export async function removeStaffAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  const result = await removeStaff(text(data, "staffId"));
+  const result = await removeStaff(text(data, "staffId"), text(data, "reason"));
+  if (!result.ok) return refuse(result.error, data);
+  refresh();
+  return {
+    ok: true,
+    message: "Removed. The orders they placed are unchanged.",
+  };
+}
+
+/* ---------------- withdrawing a request ---------------- */
+
+export async function withdrawChangeAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await withdrawAccountChange(text(data, "changeId"));
   if (result.ok) refresh();
   return result.ok
-    ? { ok: true, message: "Removed. The orders they placed are unchanged." }
+    ? { ok: true, message: "Request withdrawn." }
     : { ok: false, error: result.error };
 }
 

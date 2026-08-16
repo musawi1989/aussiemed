@@ -4,6 +4,7 @@ import { TestCredentials } from "@/components/TestCredentials";
 import { OpsShell, initialsOf } from "@/components/ops/OpsShell";
 import type { OpsGroup } from "@/components/ops/OpsSidebar";
 import { getSessionUser } from "@/lib/auth";
+import { attentionCount } from "@/lib/attention";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -27,11 +28,16 @@ export const metadata: Metadata = {
  * Grouped the way the work is, not the way the database is: what is on sale,
  * what has been sold, who is involved, and the machinery underneath.
  */
-const GROUPS: OpsGroup[] = [
+const groupsFor = (waiting: number): OpsGroup[] => [
   {
     heading: null,
     icon: "dashboard",
-    links: [{ href: "/admin", label: "Dashboard", exact: true }],
+    links: [
+      { href: "/admin", label: "Dashboard", exact: true },
+      // Second, not buried under System: it is the answer to "what needs me
+      // today", and a queue nobody can find is a queue nobody works.
+      { href: "/admin/approvals", label: "Needs attention", count: waiting },
+    ],
   },
   {
     heading: "Catalogue",
@@ -104,10 +110,12 @@ export default async function AdminLayout({
     );
   }
 
+  const waiting = await attentionCount();
+
   return (
     <OpsShell
       brand={{ label: "Admin", href: "/admin" }}
-      groups={GROUPS}
+      groups={groupsFor(waiting)}
       user={{
         name: user.name,
         email: user.email,

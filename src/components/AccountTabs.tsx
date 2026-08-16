@@ -25,6 +25,8 @@ export type AccountTab = {
    * a buyer look lost at exactly the point they are mid-task.
    */
   also?: string[];
+  /** Colours the count as something waiting rather than something counted. */
+  attention?: boolean;
 };
 
 export function AccountTabs({ tabs }: { tabs: AccountTab[] }) {
@@ -54,7 +56,14 @@ export function AccountTabs({ tabs }: { tabs: AccountTab[] }) {
                 {tab.count !== undefined && tab.count > 0 && (
                   <span
                     className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tnum ${
-                      active ? "bg-navy text-on-navy" : "bg-surface-sunken text-text-muted"
+                      tab.attention
+                        ? // Surface, not white: the accent is dark on a light
+                          // theme and light on a dark one, so a fixed
+                          // foreground is unreadable in one of them.
+                          "bg-accent text-surface"
+                        : active
+                          ? "bg-navy text-on-navy"
+                          : "bg-surface-sunken text-text-muted"
                     }`}
                   >
                     {tab.count}

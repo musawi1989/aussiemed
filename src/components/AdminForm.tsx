@@ -12,7 +12,20 @@ import { useActionState } from "react";
  * the write.
  */
 
-export type FormState = { ok: boolean; error?: string; message?: string } | null;
+export type FormState = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  /**
+   * What was submitted, echoed back so a refused form can be redrawn with it.
+   *
+   * React resets an uncontrolled form once its action returns, success or
+   * failure alike. Without this, being told "that reason is too short" also
+   * silently deletes the name, the address and everything else the person had
+   * just typed — so the correction costs more than the original entry did.
+   */
+  values?: Record<string, string>;
+} | null;
 
 export function AdminForm({
   action,

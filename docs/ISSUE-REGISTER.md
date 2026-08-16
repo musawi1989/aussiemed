@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**176 items** · 82 outstanding · **17 outstanding P1**
+**178 items** · 82 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -160,6 +160,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-40 | Remove OrderSupplierInvoice, the last of the marketplace model | Dev | P1 | Done | A customer's order was split into one invoice per supplier at checkout. That was right for a marketplace and wrong for what AussieMed is: under DEC-22 AussieMed is the seller of record and issues one invoice, and under DEC-24 the customer never learns a supplier was involved. |
 | BE-41 | No admin queue for enquiries | Dev | P2 | Done | Capturing quote requests, bulk-buy enquiries and restock demand without anywhere to read them would only have moved the problem. |
 | BE-42 | OrganisationStaff.email is no longer collected | Dev | P3 | Open | The Who orders list records who at a practice placed an order. Nobody on it signs in, so an email address was never used for anything — it was asked for, stored, and read by nothing. Client asked for the field to go on 16 Aug 2026. |
+| BE-43 | Account changes were made silently and with no reason attached | Dev | P2 | Done | A customer could add or remove a person from Who orders, add a branch, or remove one, and nothing recorded who did it or why. Six months later the account would show a delivery address nobody could account for. Worse, a branch is where medical supplies get sent: an address added by a customer went live immediately, so the next order could ship to somewhere nobody at AussieMed had ever checked. |
+| BE-44 | A refused form deleted everything the person had typed | Dev | P2 | Done | React clears an uncontrolled form as soon as its action returns, success or failure alike. Now that every account change needs a reason, being told the reason is too short also silently deleted the name, the address and everything else just typed — so correcting a small mistake cost more than the original entry did. |
 
 ## Infrastructure
 

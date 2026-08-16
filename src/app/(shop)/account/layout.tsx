@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   accountBranches,
   accountIdentity,
+  accountPendingCount,
   accountSession,
   accountStaff,
 } from "@/lib/account";
@@ -32,13 +33,14 @@ export default async function AccountLayout({
 
   const session = await accountSession();
 
-  const [identity, orderCount, savedCount, branches, staff] = session
+  const [identity, orderCount, savedCount, branches, staff, waiting] = session
     ? await Promise.all([
         accountIdentity(),
         db.order.count({ where: { organisationId: session.organisationId } }),
         db.wishlistItem.count({ where: { userId: user.id } }),
         accountBranches(),
         accountStaff(),
+        accountPendingCount(),
       ])
     : [
         null,
@@ -46,6 +48,7 @@ export default async function AccountLayout({
         await db.wishlistItem.count({ where: { userId: user.id } }),
         [],
         [],
+        0,
       ];
 
   const tabs: AccountTab[] = [
@@ -65,6 +68,15 @@ export default async function AccountLayout({
       ? [
           { href: "/account/branches", label: "Branches", count: branches.length },
           { href: "/account/staff", label: "Who orders", count: staff.length },
+          // The count is deliberately what is waiting on us, not the length of
+          // the log. A badge showing 40 past changes tells nobody anything;
+          // one showing 2 waiting is the reason to click.
+          {
+            href: "/account/changes",
+            label: "Account changes",
+            count: waiting,
+            attention: waiting > 0,
+          },
         ]
       : []),
   ];
