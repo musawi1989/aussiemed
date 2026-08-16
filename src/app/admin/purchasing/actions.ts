@@ -6,6 +6,7 @@ import {
   cancelDraftPurchaseOrder,
   getCutoffHour,
   lastCutoffBefore,
+  receivePurchaseOrder,
   sendPurchaseOrder,
   setAutoSend,
 } from "@/lib/purchasing";
@@ -79,6 +80,57 @@ export async function cancelDraftAction(
   return result.ok
     ? { ok: true, message: "Draft cancelled. Its lines are back in the queue." }
     : { ok: false, error: result.error };
+}
+
+/**
+ * Goods in. The line inputs post as parallel arrays — one entry per row, in
+ * document order — which is how the form keeps a row's quantity, batch and
+ * expiry together without inventing an id scheme in the markup.
+ */
+export async function receiveAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const id = text(data, "id");
+
+  const lineIds = data.getAll("lineId").map(String);
+  const quantities = data.getAll("qtyReceived").map(String);
+  const batches = data.getAll("batchCode").map(String);
+  const expiries = data.getAll("expiresOn").map(String);
+
+  const lines = lineIds.map((lineId, index) => {
+    const expiry = (expiries[index] ?? "").trim();
+    const parsed = expiry ? new Date(`${expiry}T00:00:00Z`) : null;
+    return {
+      lineId,
+      qtyReceived: Number(quantities[index] ?? 0),
+      batchCode: (batches[index] ?? "").trim() || null,
+      // An unparseable date is treated as none rather than as 1970.
+      expiresOn: parsed && !Number.isNaN(parsed.getTime()) ? parsed : null,
+    };
+  });
+
+  if (lines.some((l) => !Number.isFinite(l.qtyReceived))) {
+    return { ok: false, error: "One of the quantities is not a number." };
+  }
+
+  const result = await receivePurchaseOrder(id, lines);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  refresh();
+  revalidatePath(`/admin/purchasing/${text(data, "poNumber")}`);
+
+  const { unitsReceived, shortfall, status } = result.value;
+  return {
+    ok: true,
+    message:
+      `${unitsReceived} unit${unitsReceived === 1 ? "" : "s"} booked in` +
+      (shortfall > 0
+        ? `. ${shortfall} short — back in the buying queue for the next order.`
+        : status === "Received"
+          ? ". Order complete."
+          : "."),
+  };
 }
 
 export async function setAutoSendAction(

@@ -84,6 +84,59 @@ export type PurchasePlan = {
   unsourceable: UnsourceableLine[];
 };
 
+/* ------------------------------------------------------------------ *
+ * Receiving
+ * ------------------------------------------------------------------ */
+
+export type ReservedAllocation = {
+  allocationId: string;
+  /** Units reserved for this customer when the purchase order was raised. */
+  qty: number;
+  /** When the customer ordered. Decides who is served first if stock is short. */
+  placedAt: number;
+};
+
+export type FilledAllocation = {
+  allocationId: string;
+  /** Units this customer actually gets. Zero means they wait for the next order. */
+  filled: number;
+  shortfall: number;
+};
+
+/**
+ * Sharing out what actually turned up — BE-37.
+ *
+ * Suppliers under-deliver. Ten ordered for three clinics and seven arrive, and
+ * something has to decide who waits. The rule is the one a person would defend
+ * in a phone call: whoever ordered first is served first, in full, and the
+ * shortfall lands on the most recent order rather than being spread thinly so
+ * that nobody receives a usable quantity.
+ *
+ * A part-filled reservation keeps only what arrived; the remainder stops being
+ * reserved and returns to outstanding demand, which is what puts it on the next
+ * purchase order automatically.
+ */
+export function allocateReceipt(
+  received: number,
+  reserved: ReservedAllocation[]
+): FilledAllocation[] {
+  let remaining = Math.max(0, received);
+
+  return [...reserved]
+    // Earliest order first; the allocation id breaks ties so two orders placed
+    // in the same millisecond still share out the same way every time.
+    .sort((a, b) => a.placedAt - b.placedAt || a.allocationId.localeCompare(b.allocationId))
+    .map((allocation) => {
+      const filled = Math.min(allocation.qty, remaining);
+      remaining -= filled;
+      return {
+        allocationId: allocation.allocationId,
+        filled,
+        shortfall: allocation.qty - filled,
+      };
+    });
+}
+
 /** Primary if it can supply, otherwise backup, otherwise nothing. */
 export function chooseSupply(supplies: SupplyOption[]): SupplyOption | null {
   const usable = supplies.filter((s) => s.available);

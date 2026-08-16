@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "./db";
 import { audit, requireAdmin, type Result } from "./admin";
 import {
+  allocateReceipt,
   planPurchaseOrders,
   type DemandLine,
   type PurchasePlan,
@@ -317,6 +318,178 @@ export async function cancelDraftPurchaseOrder(id: string): Promise<Result> {
     status: "Draft",
   }, null);
   return ok(undefined);
+}
+
+/* ------------------------------------------------------------------ *
+ * Goods in
+ * ------------------------------------------------------------------ */
+
+export type ReceiptLine = {
+  lineId: string;
+  qtyReceived: number;
+  batchCode: string | null;
+  expiresOn: Date | null;
+};
+
+export type ReceiptResult = {
+  linesReceived: number;
+  unitsReceived: number;
+  /** Units ordered but not delivered, which return to the buying queue. */
+  shortfall: number;
+  status: string;
+};
+
+/**
+ * Booking a delivery in at the sorting facility — BE-37.
+ *
+ * This is where the cross-dock model closes. Goods arrive pooled by item with
+ * no idea who they are for; this records what physically turned up, stamps the
+ * batch and expiry on it, and assigns the units to the customers waiting —
+ * without the supplier ever learning a customer existed.
+ *
+ * Short deliveries are the normal case, not an error. Whatever did not arrive
+ * stops being reserved and returns to outstanding demand, which puts it on the
+ * next purchase order by itself.
+ */
+export async function receivePurchaseOrder(
+  id: string,
+  lines: ReceiptLine[]
+): Promise<Result<ReceiptResult>> {
+  const actor = await requireAdmin();
+
+  const po = await db.purchaseOrder.findUnique({
+    where: { id },
+    include: { lines: { select: { id: true, qtyOrdered: true, qtyReceived: true } } },
+  });
+
+  if (!po) return fail("That purchase order no longer exists.");
+  if (po.status === "Draft") return fail("It has not been sent to the supplier yet.");
+  if (po.status === "Cancelled") return fail("It was cancelled.");
+
+  const byId = new Map(po.lines.map((l) => [l.id, l]));
+  for (const line of lines) {
+    const existing = byId.get(line.lineId);
+    if (!existing) return fail("A line on this receipt does not belong to this order.");
+    if (line.qtyReceived < 0) return fail("A received quantity cannot be negative.");
+    if (line.qtyReceived > existing.qtyOrdered) {
+      return fail(
+        `More was received than ordered on one line (${line.qtyReceived} of ${existing.qtyOrdered}). ` +
+          `Record what was ordered and raise the difference separately.`
+      );
+    }
+  }
+
+  const outcome = await db.$transaction(async (tx) => {
+    let unitsReceived = 0;
+    let shortfall = 0;
+
+    for (const line of lines) {
+      const reserved = await tx.purchaseAllocation.findMany({
+        where: { purchaseOrderLineId: line.lineId },
+        select: {
+          id: true,
+          qty: true,
+          orderItemId: true,
+          orderItem: { select: { id: true, qty: true, order: { select: { placedAt: true } } } },
+        },
+      });
+
+      const filled = allocateReceipt(
+        line.qtyReceived,
+        reserved.map((r) => ({
+          allocationId: r.id,
+          qty: r.qty,
+          placedAt: r.orderItem.order.placedAt.getTime(),
+        }))
+      );
+
+      for (const result of filled) {
+        if (result.filled === 0) {
+          // Nothing arrived for this customer. Releasing the reservation is
+          // what returns them to the buying queue rather than leaving them
+          // waiting on a delivery that has already been and gone.
+          await tx.purchaseAllocation.delete({ where: { id: result.allocationId } });
+        } else {
+          await tx.purchaseAllocation.update({
+            where: { id: result.allocationId },
+            data: {
+              qty: result.filled,
+              batchCode: line.batchCode,
+              expiresOn: line.expiresOn,
+            },
+          });
+        }
+        shortfall += result.shortfall;
+      }
+
+      unitsReceived += line.qtyReceived;
+
+      await tx.purchaseOrderLine.update({
+        where: { id: line.lineId },
+        data: { qtyReceived: { increment: line.qtyReceived } },
+      });
+    }
+
+    /* Bring each affected customer line up to date. */
+    const touched = await tx.purchaseAllocation.findMany({
+      where: { purchaseOrderLine: { purchaseOrderId: id } },
+      select: {
+        orderItemId: true,
+        batchCode: true,
+        expiresOn: true,
+        orderItem: { select: { id: true, qty: true, batchCodeSnapshot: true } },
+      },
+    });
+
+    const seen = new Set<string>();
+    for (const allocation of touched) {
+      if (seen.has(allocation.orderItemId)) continue;
+      seen.add(allocation.orderItemId);
+
+      const all = await tx.purchaseAllocation.findMany({
+        where: { orderItemId: allocation.orderItemId },
+        select: { qty: true },
+      });
+      const covered = all.reduce((n, a) => n + a.qty, 0);
+
+      await tx.orderItem.update({
+        where: { id: allocation.orderItemId },
+        data: {
+          // Allocated stops meaning reserved and starts meaning physically
+          // here and assigned to this customer.
+          status: covered >= allocation.orderItem.qty ? "Allocated" : "Pending",
+          // The line's own record of what it was filled from. The per-unit
+          // truth lives on the allocation; this is the readable summary that
+          // travels onto the delivery note.
+          batchCodeSnapshot:
+            allocation.orderItem.batchCodeSnapshot ?? allocation.batchCode,
+          expiresOnSnapshot: allocation.expiresOn,
+        },
+      });
+    }
+
+    /* Received in full only when every line is. */
+    const after = await tx.purchaseOrderLine.findMany({
+      where: { purchaseOrderId: id },
+      select: { qtyOrdered: true, qtyReceived: true },
+    });
+    const complete = after.every((l) => l.qtyReceived >= l.qtyOrdered);
+    const anything = after.some((l) => l.qtyReceived > 0);
+    const status = complete ? "Received" : anything ? "PartiallyReceived" : po.status;
+
+    await tx.purchaseOrder.update({
+      where: { id },
+      data: { status, receivedAt: complete ? new Date() : po.receivedAt },
+    });
+
+    return { linesReceived: lines.length, unitsReceived, shortfall, status };
+  });
+
+  await audit(actor, "purchaseOrder.receive", "PurchaseOrder", po.poNumber, {
+    status: po.status,
+  }, outcome);
+
+  return ok(outcome);
 }
 
 /*

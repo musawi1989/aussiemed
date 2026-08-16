@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { CancelDraftButton, SendButton } from "@/components/admin/PurchasingControls";
+import { GoodsInForm } from "@/components/admin/GoodsInForm";
 
 const aed = (fils: number) => formatAED(fils / 100);
 const dubai = (d: Date) =>
@@ -146,6 +147,29 @@ export default async function PurchaseOrderPage({
               </tfoot>
             </table>
           </div>
+
+          {po.status !== "Draft" && po.status !== "Cancelled" && (
+            <div className="mt-5 border-t border-border-base pt-4">
+              <h3 className="text-sm font-bold text-text">Goods in</h3>
+              <p className="mt-1 text-xs text-text-muted">
+                Record what physically arrived. Batch and expiry are per line,
+                because one delivery can carry two lots — and a recall answered
+                with the wrong lot is worse than one answered with none.
+              </p>
+              <GoodsInForm
+                purchaseOrderId={po.id}
+                poNumber={po.poNumber}
+                lines={po.lines.map((line) => ({
+                  id: line.id,
+                  name: line.nameSnapshot,
+                  skuCode: line.skuCodeSnapshot,
+                  supplierPartNumber: line.supplierPartNumberSnapshot,
+                  qtyOrdered: line.qtyOrdered,
+                  qtyReceived: line.qtyReceived,
+                }))}
+              />
+            </div>
+          )}
         </section>
 
         <div className="space-y-5">

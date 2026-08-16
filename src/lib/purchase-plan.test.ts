@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  allocateReceipt,
   chooseSupply,
   planPurchaseOrders,
   type DemandLine,
+  type ReservedAllocation,
   type SupplyOption,
 } from "./purchase-plan.ts";
 
@@ -190,6 +192,78 @@ describe("lines nobody can supply", () => {
   it("distinguishes having no supplier from having unavailable ones", () => {
     const plan = planPurchaseOrders([demand("oi-1", "ORPHAN", 1, [])]);
     assert.match(plan.unsourceable[0].reason, /No supplier is recorded/);
+  });
+});
+
+describe("sharing out a delivery", () => {
+  const reserved = (allocationId: string, qty: number, placedAt: number): ReservedAllocation => ({
+    allocationId,
+    qty,
+    placedAt,
+  });
+
+  const early = reserved("a-early", 4, 1000);
+  const middle = reserved("b-middle", 3, 2000);
+  const late = reserved("c-late", 3, 3000);
+
+  it("fills everyone when the full quantity arrives", () => {
+    const filled = allocateReceipt(10, [early, middle, late]);
+    assert.deepEqual(
+      filled.map((f) => [f.allocationId, f.filled]),
+      [["a-early", 4], ["b-middle", 3], ["c-late", 3]]
+    );
+    assert.equal(filled.every((f) => f.shortfall === 0), true);
+  });
+
+  /** The point of the rule: two clinics get a usable quantity, not three
+   *  clinics getting two-thirds of a box each. */
+  it("serves earliest orders in full and puts the shortfall on the newest", () => {
+    const filled = allocateReceipt(7, [late, early, middle]);
+    const byId = Object.fromEntries(filled.map((f) => [f.allocationId, f]));
+
+    assert.equal(byId["a-early"].filled, 4);
+    assert.equal(byId["b-middle"].filled, 3);
+    assert.equal(byId["c-late"].filled, 0);
+    assert.equal(byId["c-late"].shortfall, 3);
+  });
+
+  it("part-fills only the line the shortfall lands on", () => {
+    const filled = allocateReceipt(6, [early, middle, late]);
+    const byId = Object.fromEntries(filled.map((f) => [f.allocationId, f]));
+
+    assert.equal(byId["a-early"].filled, 4);
+    assert.equal(byId["b-middle"].filled, 2);
+    assert.equal(byId["b-middle"].shortfall, 1);
+    assert.equal(byId["c-late"].filled, 0);
+  });
+
+  it("gives nobody anything when nothing arrives", () => {
+    const filled = allocateReceipt(0, [early, middle]);
+    assert.equal(filled.every((f) => f.filled === 0), true);
+    assert.equal(
+      filled.reduce((n, f) => n + f.shortfall, 0),
+      7
+    );
+  });
+
+  it("never hands out more than was reserved, even on an over-delivery", () => {
+    const filled = allocateReceipt(50, [early, middle]);
+    assert.equal(filled.reduce((n, f) => n + f.filled, 0), 7);
+  });
+
+  it("shares out the same way every time, whatever order it is given", () => {
+    const a = allocateReceipt(5, [early, middle, late]);
+    const b = allocateReceipt(5, [late, middle, early]);
+    const key = (f: { allocationId: string; filled: number }[]) =>
+      [...f].sort((x, y) => x.allocationId.localeCompare(y.allocationId))
+        .map((v) => `${v.allocationId}:${v.filled}`)
+        .join(",");
+    assert.equal(key(a), key(b));
+  });
+
+  it("treats a negative receipt as nothing arriving", () => {
+    const filled = allocateReceipt(-5, [early]);
+    assert.equal(filled[0].filled, 0);
   });
 });
 
