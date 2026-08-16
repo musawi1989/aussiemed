@@ -15,6 +15,10 @@ function read(data: FormData): SupplierEdit {
     address: text(data, "address") || null,
     trn: text(data, "trn") || null,
     status: text(data, "status") || "Active",
+    // Blank stays blank: not agreed is a real answer, and the service layer
+    // reads it as one rather than as a target of zero.
+    promisedLeadTimeDays: text(data, "promisedLeadTimeDays") || null,
+    ackSlaHours: text(data, "ackSlaHours") || null,
   };
 }
 

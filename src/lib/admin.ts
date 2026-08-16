@@ -12,6 +12,7 @@ import { putProductImage, removeStoredImage } from "./storage";
 import { restockAlert } from "./email-message";
 import { sendQuietly } from "./mailer";
 import { publicUrl } from "./public-url";
+import { recordStatus } from "./status-events";
 
 /**
  * Every write the admin screens make goes through this file.
@@ -441,6 +442,22 @@ export async function updateSku(id: string, input: SkuEdit): Promise<Result> {
   await audit(actor, "sku.update", "ProductSku", id, diff.before, diff.after);
   await invalidateCatalog();
 
+  // Every toggle, not just the current flag — BE-31. Without this, "how long
+  // has this been unavailable" and "how quickly does that supplier restock"
+  // are unanswerable, and both are conversations the admin has with suppliers.
+  // Recorded on the transition only, so re-saving an unchanged SKU does not
+  // fill the log with non-events.
+  if (existing.manualOutOfStock !== data.manualOutOfStock) {
+    await recordStatus({
+      entity: "ProductSku",
+      entityId: id,
+      entityRef: existing.skuCode,
+      fromStatus: existing.manualOutOfStock ? "OutOfStock" : "InStock",
+      toStatus: data.manualOutOfStock ? "OutOfStock" : "InStock",
+      actor: { id: actor.id, name: actor.name, role: "Admin" },
+    });
+  }
+
   // Coming back into stock is the one moment a customer is emailed without
   // asking twice — they asked once, on Notify Me, and this is the answer.
   // Only on the transition, so re-saving a SKU that is already in stock does
@@ -585,6 +602,17 @@ export type SupplierEdit = {
   address: string | null;
   trn: string | null;
   status: string;
+  /**
+   * What they have promised — BE-33.
+   *
+   * "On time" means nothing without a promise to measure against, and these
+   * are numbers agreed personally at onboarding rather than anything the
+   * system can work out. Both nullable: an unrecorded promise must read as
+   * "not agreed" rather than as a target of zero, which every supplier would
+   * then miss.
+   */
+  promisedLeadTimeDays: string | null;
+  ackSlaHours: string | null;
 };
 
 /**
@@ -594,6 +622,36 @@ export type SupplierEdit = {
  * away. The column stays nullable for rows that predate the rule, so it is
  * enforced here rather than in the schema.
  */
+/**
+ * A promised number, or nothing.
+ *
+ * Blank means not agreed, which is not the same as zero — a target of zero
+ * days is one every supplier misses, and an on-time rate built on it would be
+ * confidently wrong. See BE-33 and lifecycle.onTimeRate, which returns null
+ * rather than a rate when there is no promise.
+ */
+function promisedNumber(
+  raw: string | null,
+  max: number
+): { ok: true; value: number | null } | { ok: false; error: string } {
+  const text = (raw ?? "").trim();
+  if (!text) return { ok: true, value: null };
+  if (!/^\d+$/.test(text)) {
+    return { ok: false, error: `"${text}" is not a whole number.` };
+  }
+  const value = Number(text);
+  if (value < 1 || value > max) {
+    return { ok: false, error: `That should be between 1 and ${max}.` };
+  }
+  return { ok: true, value };
+}
+
+/** The parsed value, once validateSupplier has already accepted it. */
+function promisedValue(raw: string | null, max: number): number | null {
+  const parsed = promisedNumber(raw, max);
+  return parsed.ok ? parsed.value : null;
+}
+
 function validateSupplier(input: SupplierEdit): string | null {
   if (!input.companyName.trim()) return "A supplier needs a company name.";
   if (!looksLikeEmail(input.primaryEmail.trim())) {
@@ -614,6 +672,12 @@ function validateSupplier(input: SupplierEdit): string | null {
   if (!["Active", "Suspended"].includes(input.status)) {
     return "That is not a supplier status we recognise.";
   }
+
+  const lead = promisedNumber(input.promisedLeadTimeDays, 365);
+  if (!lead.ok) return `Promised lead time: ${lead.error}`;
+  const ack = promisedNumber(input.ackSlaHours, 720);
+  if (!ack.ok) return `Acknowledgement window: ${ack.error}`;
+
   return null;
 }
 
@@ -638,6 +702,11 @@ export async function createSupplier(
       address: trim(input.address),
       trn: trim(input.trn),
       status: input.status,
+      promisedLeadTimeDays: promisedValue(input.promisedLeadTimeDays, 365),
+      // Defaulted in the schema, so only overridden when a figure was agreed.
+      ...(promisedValue(input.ackSlaHours, 720) === null
+        ? {}
+        : { ackSlaHours: promisedValue(input.ackSlaHours, 720) as number }),
     },
   });
 
@@ -674,6 +743,11 @@ export async function updateSupplier(
     address: trim(input.address),
     trn: trim(input.trn),
     status: input.status,
+    promisedLeadTimeDays: promisedValue(input.promisedLeadTimeDays, 365),
+    // Falls back to the schema default rather than to null: the column is not
+    // nullable, and 24 hours is the standing expectation when nothing else
+    // has been agreed.
+    ackSlaHours: promisedValue(input.ackSlaHours, 720) ?? 24,
   };
 
   const diff = changed(existing as unknown as Record<string, unknown>, data);
@@ -801,6 +875,18 @@ export async function setOrderStatus(
     { status: order.status },
     { status }
   );
+
+  // Alongside the audit entry, not instead of it: the audit is for
+  // accountability and this is for measurement. See BE-30.
+  await recordStatus({
+    entity: "Order",
+    entityId: order.id,
+    entityRef: order.reference,
+    fromStatus: order.status,
+    toStatus: status,
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+  });
+
   // Orders are not part of the catalogue, so no cache bump is needed here.
   return ok(undefined);
 }
@@ -846,6 +932,19 @@ export async function setOrderLineStatus(
     { status: item.status },
     { status, order: item.order.reference }
   );
+
+  // Per line, because an order-level status cannot say that one line sat on
+  // backorder for a fortnight while the rest shipped the same day — and that
+  // is the number worth having.
+  await recordStatus({
+    entity: "OrderItem",
+    entityId: itemId,
+    entityRef: `${item.order.reference} · ${item.skuCodeSnapshot}`,
+    fromStatus: item.status,
+    toStatus: status,
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+  });
+
   return ok(undefined);
 }
 

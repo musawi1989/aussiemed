@@ -82,6 +82,8 @@ export default async function AdminSupplierPage({
             address: supplier.address,
             trn: supplier.trn,
             status: supplier.status,
+            promisedLeadTimeDays: supplier.promisedLeadTimeDays,
+            ackSlaHours: supplier.ackSlaHours,
           }}
         />
 

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**181 items** · 79 outstanding · **16 outstanding P1**
+**181 items** · 75 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -147,10 +147,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-27 | No marketing screens: wishlists and abandoned carts | Dev | P3 | Open | Both are already recorded in the database and nobody can see either. An abandoned cart is the cheapest sale to recover, and a wishlist says what a buyer wants before they buy it. |
 | BE-28 | No reports: sales by supplier, category or period | Dev | P3 | Open | The dashboard totals every order ever placed and nothing else. There is no way to answer which supplier sells most, what a month looked like, or which categories are dead. |
 | BE-29 | Product images cannot be uploaded | Dev | P1 | Done | The admin product screen listed the image files a product references but could not add or replace one, so the only way to give a product a photograph was to put a file on disk and re-seed. That blocked DA-03 and DA-24 from ever being closed by the client rather than by us. |
-| BE-30 | Capture supplier sub-order lifecycle timestamps and an immutable status log | Dev | P1 | Open | Nothing records when a supplier acknowledged, dispatched or delivered a sub-order, so no fulfilment or lead-time question can be answered about any supplier. Unlike most gaps this one cannot be repaired later: a timestamp not captured at the moment it happened is gone, and the same reasoning already applied to SkuBatch under FN-09. |
-| BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Open | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
-| BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
-| BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
+| BE-30 | Capture supplier sub-order lifecycle timestamps and an immutable status log | Dev | P1 | Done | Nothing records when a supplier acknowledged, dispatched or delivered a sub-order, so no fulfilment or lead-time question can be answered about any supplier. Unlike most gaps this one cannot be repaired later: a timestamp not captured at the moment it happened is gone, and the same reasoning already applied to SkuBatch under FN-09. |
+| BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Done | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
+| BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Done | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
+| BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Done | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
 | BE-34 | No cost price, so no margin is known | Dev | P2 | Done | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
 | BE-35 | Products are hard-tied to one supplier | Dev | P1 | Done | ProductMaster.supplierId was a required field, so every product belonged to exactly one supplier and could not have a backup. It also meant supplier identity was carried on the product record itself, which is how it reached the browser. |
 | BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |

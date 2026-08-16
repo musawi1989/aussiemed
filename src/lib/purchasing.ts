@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "./db";
 import { audit, requireAdmin, type Result } from "./admin";
+import { recordStatus } from "./status-events";
 import { purchaseOrderSent } from "./email-message";
 import { sendQuietly } from "./mailer";
 import { publicUrl } from "./public-url";
@@ -185,7 +186,14 @@ function formatPoNumber(year: number, sequence: number): string {
 }
 
 export type BuildResult = {
-  created: { poNumber: string; supplierName: string; lineCount: number }[];
+  // The id as well as the number: the status log keys on the row, and the
+  // number is what a person reads.
+  created: {
+    id: string;
+    poNumber: string;
+    supplierName: string;
+    lineCount: number;
+  }[];
   unsourceable: PurchasePlan["unsourceable"];
 };
 
@@ -261,6 +269,7 @@ export async function buildPurchaseOrders(
       }
 
       made.push({
+        id: po.id,
         poNumber: po.poNumber,
         supplierName: order.supplierName,
         lineCount: order.lines.length,
@@ -280,6 +289,15 @@ export async function buildPurchaseOrders(
     await audit(actor, "purchaseOrder.build", "PurchaseOrder", po.poNumber, null, {
       supplier: po.supplierName,
       lines: po.lineCount,
+    });
+    // The first event in the order's life, so every later duration has
+    // something to measure from — BE-30.
+    await recordStatus({
+      entity: "PurchaseOrder",
+      entityId: po.id,
+      entityRef: po.poNumber,
+      toStatus: "Draft",
+      actor: { id: actor.id, name: actor.name, role: "Admin" },
     });
   }
 
@@ -326,6 +344,16 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
   });
 
   await audit(actor, "purchaseOrder.send", "PurchaseOrder", id, { status: "Draft" }, { status: "Sent" });
+
+  await recordStatus({
+    entity: "PurchaseOrder",
+    entityId: id,
+    entityRef: po.poNumber,
+    fromStatus: "Draft",
+    toStatus: "Sent",
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+    at: sentAt,
+  });
 
   // After the status, and never able to undo it. A purchase order the supplier
   // has been told about is sent; a bounced email is a mail problem, visible on
@@ -390,6 +418,19 @@ export async function cancelDraftPurchaseOrder(id: string): Promise<Result> {
   await audit(actor, "purchaseOrder.cancelDraft", "PurchaseOrder", po.poNumber, {
     status: "Draft",
   }, null);
+
+  // Recorded even though the purchase order row is gone. The events outlive
+  // what they describe on purpose — a draft that was built and thrown away is
+  // itself worth knowing about when the buying run is being tuned.
+  await recordStatus({
+    entity: "PurchaseOrder",
+    entityId: id,
+    entityRef: po.poNumber,
+    fromStatus: "Draft",
+    toStatus: "Cancelled",
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+  });
+
   return ok(undefined);
 }
 
@@ -561,6 +602,15 @@ export async function receivePurchaseOrder(
   await audit(actor, "purchaseOrder.receive", "PurchaseOrder", po.poNumber, {
     status: po.status,
   }, outcome);
+
+  await recordStatus({
+    entity: "PurchaseOrder",
+    entityId: po.id,
+    entityRef: po.poNumber,
+    fromStatus: po.status,
+    toStatus: outcome.status,
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+  });
 
   return ok(outcome);
 }

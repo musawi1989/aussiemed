@@ -5,6 +5,8 @@ import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { CancelDraftButton, SendButton } from "@/components/admin/PurchasingControls";
 import { GoodsInForm } from "@/components/admin/GoodsInForm";
+import { historyOf } from "@/lib/status-events";
+import { humanDuration, stages, timeBetween } from "@/lib/lifecycle";
 
 const aed = (fils: number) => formatAED(fils / 100);
 const dubai = (d: Date) =>
@@ -35,6 +37,7 @@ export default async function PurchaseOrderPage({
           primaryEmail: true,
           secondaryEmail: true,
           promisedLeadTimeDays: true,
+          ackSlaHours: true,
         },
       },
       lines: { orderBy: { skuCodeSnapshot: "asc" } },
@@ -42,6 +45,11 @@ export default async function PurchaseOrderPage({
   });
 
   if (!po) notFound();
+
+  // Read separately from the order itself: the log outlives what it describes,
+  // and a cancelled draft still has a history worth seeing.
+  const history = await historyOf("PurchaseOrder", po.id);
+  const ackMs = timeBetween(history, "Sent", "Acknowledged");
 
   const units = po.lines.reduce((n, l) => n + l.qtyOrdered, 0);
   // Null, not zero: a line with no recorded cost used to be stored as costing
@@ -213,10 +221,60 @@ export default async function PurchaseOrderPage({
               />
             </dl>
             <p className="mt-3 text-xs leading-relaxed text-text-subtle">
-              All times Dubai. Goods-in against this order is BE-37 and is not
-              built yet, so nothing can be received here today.
+              All times Dubai.
             </p>
           </section>
+
+          {/* How long each stage actually took — BE-30. The dates above say
+              when; this says how long, which is the question asked of a
+              supplier. Empty until an order has moved at least once. */}
+          {history.length > 0 && (
+            <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+              <h2 className="text-base font-bold tracking-tight text-text">
+                How long each stage took
+              </h2>
+              <ol className="mt-3 space-y-2">
+                {stages(history, Date.now()).map((stage, i) => (
+                  <li
+                    key={`${stage.status}-${stage.enteredAt}`}
+                    className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-base pb-2 last:border-0 last:pb-0"
+                  >
+                    <span className="text-sm font-bold text-text">
+                      {stage.status}
+                      {history[i]?.actorName && (
+                        <span className="ml-2 text-xs font-normal text-text-subtle">
+                          {history[i].actorRole === "Supplier"
+                            ? "by the supplier"
+                            : `by ${history[i].actorName}`}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={`text-sm tnum ${
+                        stage.leftAt === null
+                          ? "font-bold text-accent"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      {humanDuration(stage.ms)}
+                      {stage.leftAt === null ? " so far" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+
+              {ackMs !== null && (
+                <p className="mt-3 rounded-card border-l-4 border-navy-border bg-navy-soft px-3 py-2 text-sm text-text">
+                  Acknowledged {humanDuration(ackMs)} after it was sent
+                  {po.supplier.ackSlaHours
+                    ? ackMs <= po.supplier.ackSlaHours * 3_600_000
+                      ? ` — inside their ${po.supplier.ackSlaHours}-hour window.`
+                      : ` — outside their ${po.supplier.ackSlaHours}-hour window.`
+                    : "."}
+                </p>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </>

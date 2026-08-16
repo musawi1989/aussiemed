@@ -54,6 +54,7 @@ const groupsFor = (waiting: number): OpsGroup[] => [
     links: [
       { href: "/admin/orders", label: "Orders" },
       { href: "/admin/enquiries", label: "Enquiries" },
+      { href: "/admin/searches", label: "Searches" },
     ],
   },
   {

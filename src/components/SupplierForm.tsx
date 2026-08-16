@@ -26,6 +26,8 @@ export function SupplierForm({
     address: string | null;
     trn: string | null;
     status: string;
+    promisedLeadTimeDays?: number | null;
+    ackSlaHours?: number | null;
   };
 }) {
   const editing = Boolean(supplier);
@@ -76,6 +78,31 @@ export function SupplierForm({
           </div>
 
           <Field label="Address" name="address" defaultValue={supplier?.address} />
+
+          {/* What they have promised, agreed at onboarding — BE-33. Blank is
+              allowed and means not agreed: an on-time rate measured against a
+              target nobody set is a number with no meaning, so the reports
+              show "no target agreed" instead of inventing one. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Promised lead time (days)"
+              name="promisedLeadTimeDays"
+              defaultValue={
+                supplier?.promisedLeadTimeDays == null
+                  ? ""
+                  : String(supplier.promisedLeadTimeDays)
+              }
+              hint="Days from our order to their despatch, as agreed with them. Leave blank if nothing has been agreed — on-time figures stay blank rather than guessing."
+            />
+            <Field
+              label="Acknowledgement window (hours)"
+              name="ackSlaHours"
+              defaultValue={
+                supplier?.ackSlaHours == null ? "" : String(supplier.ackSlaHours)
+              }
+              hint="How quickly they should confirm a purchase order. Defaults to 24 hours."
+            />
+          </div>
 
           <Select
             label="Status"

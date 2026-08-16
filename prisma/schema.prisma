@@ -66,6 +66,8 @@ model User {
 
   changesRequested AccountChange[] @relation("AccountChangeRequester")
   changesReviewed  AccountChange[] @relation("AccountChangeReviewer")
+  statusEvents     StatusEvent[]   @relation("StatusEventActor")
+  searches         SearchEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1084,6 +1086,88 @@ model PurchaseAllocation {
   @@index([purchaseOrderLineId])
   @@index([orderItemId])
   @@index([batchCode])
+}
+
+/// Every change of state, kept forever — BE-30, BE-31.
+///
+/// This is the one kind of gap that cannot be repaired later. A timestamp not
+/// written at the moment it happened is gone: no amount of work next year
+/// recovers when a supplier acknowledged an order in March, or how long a pack
+/// was out of stock. Everything else in the register can be built when it is
+/// needed; this had to exist before the first real order.
+///
+/// It complements AuditLog rather than replacing it. AuditLog records that an
+/// admin changed something and what the row looked like either side, as JSON,
+/// for accountability. This records only state transitions, in columns, so
+/// "how long does a supplier take to acknowledge" is a query rather than a
+/// parsing exercise.
+///
+/// Append-only by convention and by use: nothing in the application updates or
+/// deletes a row here.
+model StatusEvent {
+  id String @id @default(cuid())
+
+  /// entity: Order | OrderItem | PurchaseOrder | ProductSku
+  entity   String
+  entityId String
+  /// The human-readable reference, so a query does not need a join to be
+  /// readable and a deleted row still says what it was about.
+  entityRef String?
+
+  /// Null for the first event, which has nothing before it.
+  fromStatus String?
+  toStatus   String
+
+  /// Who caused it. A supplier acknowledging their own order is not an admin,
+  /// and a cutoff run is neither.
+  actorUserId String?
+  actorUser   User?   @relation("StatusEventActor", fields: [actorUserId], references: [id])
+  actorName   String?
+  /// actorRole: Admin | Supplier | Customer | System
+  actorRole   String  @default("System")
+
+  at DateTime @default(now())
+
+  @@index([entity, entityId, at])
+  @@index([entity, toStatus])
+  @@index([at])
+}
+
+/// What people searched for — BE-32.
+///
+/// A search that returns nothing is a customer saying what to stock, and it
+/// was being thrown away. For a distributor deciding what to source next, the
+/// list of terms that found nothing is one of the most valuable things the
+/// site produces, and like StatusEvent it cannot be reconstructed afterwards:
+/// nobody can recall what a visitor typed last month.
+///
+/// Only submitted searches are recorded, not keystrokes. A row per character
+/// would be noise, and would make the interesting number — how many searches
+/// found nothing — meaningless.
+model SearchEvent {
+  id String @id @default(cuid())
+
+  /// As typed, for reading back.
+  term String
+  /// Folded to lower case and single-spaced, so "Nitrile  Gloves" and
+  /// "nitrile gloves" group together in a report.
+  normalised String
+
+  /// The number that makes this worth keeping. Zero is the interesting case.
+  resultCount Int
+
+  /// Set when the search was narrowed to a department.
+  categoryScope String?
+
+  /// Null for a visitor who is not signed in, which is most of them.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  at DateTime @default(now())
+
+  @@index([normalised])
+  @@index([resultCount, at])
+  @@index([at])
 }
 
 /// Every email AussieMed tries to send — BE-05.

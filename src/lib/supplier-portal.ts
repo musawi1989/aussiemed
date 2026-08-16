@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "./db";
 import { audit, type Result } from "./admin";
+import { recordStatus } from "./status-events";
 import { getSessionUser, type SessionUser } from "./auth";
 import {
   checkSupplyTerms,
@@ -97,6 +98,18 @@ export async function acknowledgePurchaseOrder(id: string): Promise<Result> {
     status: po.status,
   }, { status: "Acknowledged" });
 
+  // The supplier is the actor here, not an admin. Recording who caused a
+  // transition is what makes "how long does this supplier take" separable
+  // from "how long do we take" — BE-30.
+  await recordStatus({
+    entity: "PurchaseOrder",
+    entityId: po.id,
+    entityRef: po.poNumber,
+    fromStatus: po.status,
+    toStatus: "Acknowledged",
+    actor: { id: actor.id, name: actor.name, role: "Supplier" },
+  });
+
   return ok(undefined);
 }
 
@@ -138,6 +151,15 @@ export async function markDispatched(
   await audit(actor, "purchaseOrder.dispatch", "PurchaseOrder", po.poNumber, {
     status: po.status,
   }, { status: "Dispatched", courier: trim(input.courier) });
+
+  await recordStatus({
+    entity: "PurchaseOrder",
+    entityId: po.id,
+    entityRef: po.poNumber,
+    fromStatus: po.status,
+    toStatus: "Dispatched",
+    actor: { id: actor.id, name: actor.name, role: "Supplier" },
+  });
 
   return ok(undefined);
 }

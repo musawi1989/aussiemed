@@ -6,6 +6,7 @@ import { Pagination } from "@/components/Pagination";
 import { ProductCard } from "@/components/ProductCard";
 import { SortSelect } from "@/components/SortSelect";
 import { getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
+import { logSearch } from "@/lib/search-log";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -68,6 +69,17 @@ export default async function ProductsPage({
     inStockOnly: params.inStock === "1",
     sort: (params.sort as SortKey) ?? "relevance",
     page,
+  });
+
+  // Recorded here rather than in the search box, because this is the only
+  // place that knows how many results the term actually found — and a term
+  // that found nothing is the whole point of keeping them. Deliberately not
+  // awaited into the render path beyond this: it never throws, and a search
+  // that fails to log still shows its results. See BE-32.
+  await logSearch({
+    term: params.q,
+    resultCount: result.total,
+    categoryScope: params.category ?? null,
   });
 
   const category = params.category
