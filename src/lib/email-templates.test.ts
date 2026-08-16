@@ -173,3 +173,138 @@ describe("findCustomerLeaks", () => {
     );
   });
 });
+
+describe("the item lists are actually filled in", () => {
+  const withItems = {
+    reference: "AM-2026-000004",
+    contactName: "Musawi",
+    itemsAll: "  4 x Nitrile Gloves (GLV-L)\n  1 x Syringes (SYR-3)",
+    itemsShipped: "  4 x Nitrile Gloves (GLV-L)",
+    itemsOutstanding: "  1 x Syringes (SYR-3)",
+  };
+
+  it("names what is late on a delay, not the whole order", () => {
+    const t = findTemplate("order-delayed")!;
+    const draft = t.audience === "Customer" ? t.render(withItems) : null!;
+    assert.match(draft.body, /Still to come:\n {2}1 x Syringes/);
+    assert.ok(!/Nitrile Gloves/.test(draft.body));
+  });
+
+  it("falls back to the whole order when nothing has shipped", () => {
+    const t = findTemplate("order-delayed")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({ ...withItems, itemsOutstanding: null })
+        : null!;
+    assert.match(draft.body, /On the order:\n {2}4 x Nitrile Gloves/);
+  });
+
+  it("separates what went from what follows on a part shipment", () => {
+    const t = findTemplate("part-shipped")!;
+    const draft = t.audience === "Customer" ? t.render(withItems) : null!;
+    const went = draft.body.indexOf("On its way:");
+    const follows = draft.body.indexOf("Still to follow:");
+    assert.ok(went >= 0 && follows > went);
+    assert.match(draft.body, /On its way:\n {2}4 x Nitrile Gloves/);
+    assert.match(draft.body, /Still to follow:\n {2}1 x Syringes/);
+  });
+
+  it("drops the heading entirely when there is no list", () => {
+    // "On its way: ." is worse than saying nothing.
+    const t = findTemplate("part-shipped")!;
+    const draft =
+      t.audience === "Customer" ? t.render({ reference: "AM-1" }) : null!;
+    assert.ok(!/On its way:/.test(draft.body));
+    assert.ok(!/Still to follow:/.test(draft.body));
+  });
+
+  it("ignores a list that is only whitespace", () => {
+    const t = findTemplate("part-shipped")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({ reference: "AM-1", itemsShipped: "   \n  " })
+        : null!;
+    assert.ok(!/On its way:/.test(draft.body));
+  });
+
+  it("lists what a supplier still owes us, not everything", () => {
+    const t = findTemplate("chase-delivery")!;
+    const draft =
+      t.audience === "Supplier"
+        ? t.render({
+            poNumber: "PO-1",
+            itemsAll: "  12 x Gloves (LIV-1)\n  5 x Syringes (LIV-2)",
+            itemsOutstanding: "  5 x Syringes (LIV-2)",
+          })
+        : null!;
+    assert.match(draft.body, /Outstanding:\n {2}5 x Syringes/);
+    assert.ok(!/12 x Gloves/.test(draft.body));
+  });
+});
+
+describe("the wording agrees with the list under it", () => {
+  const one = "  1 x Hand Sanitiser (TS-1032)";
+  const two = `${one}\n  1 x Syringes (BD326103)`;
+
+  it("says one item when one item is listed", () => {
+    const t = findTemplate("item-unavailable")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({ reference: "AM-1", itemsBackordered: one })
+        : null!;
+    assert.match(draft.body, /One item on order AM-1 cannot be supplied/);
+    assert.match(draft.body, /The item:\n {2}1 x Hand Sanitiser/);
+  });
+
+  it("says some items when more than one is listed", () => {
+    // "One item cannot be supplied" followed by six lines is an email that
+    // contradicts itself in three lines.
+    const t = findTemplate("item-unavailable")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({ reference: "AM-1", itemsBackordered: two })
+        : null!;
+    assert.match(draft.body, /Some items on order AM-1 cannot be supplied/);
+  });
+
+  it("lists only what cannot be supplied, not everything outstanding", () => {
+    const t = findTemplate("item-unavailable")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({
+            reference: "AM-1",
+            itemsBackordered: one,
+            itemsOutstanding: "  1 x Something Else (X)",
+            itemsAll: "  9 x Everything (Y)",
+          })
+        : null!;
+    assert.match(draft.body, /Hand Sanitiser/);
+    assert.ok(!/Something Else/.test(draft.body));
+    assert.ok(!/Everything/.test(draft.body));
+  });
+
+  it("leaves exactly one blank line after a list, never two", () => {
+    for (const [id, context] of [
+      ["item-unavailable", { reference: "AM-1", itemsBackordered: one }],
+      ["order-delayed", { reference: "AM-1", itemsAll: one }],
+      ["part-shipped", { reference: "AM-1", itemsShipped: one }],
+    ] as const) {
+      const t = findTemplate(id)!;
+      const draft = t.audience === "Customer" ? t.render(context) : null!;
+      assert.ok(!/\n\n\n/.test(draft.body), `${id} has a double gap`);
+    }
+  });
+
+  it("keeps every item indented the same, including the first", () => {
+    const t = findTemplate("part-shipped")!;
+    const draft =
+      t.audience === "Customer"
+        ? t.render({ reference: "AM-1", itemsShipped: two })
+        : null!;
+    const listedLines = draft.body
+      .split("\n")
+      .filter((l) => /\d+ x /.test(l))
+      .map((l) => l.match(/^\s*/)![0].length);
+    assert.equal(new Set(listedLines).size, 1, `ragged indents: ${listedLines}`);
+  });
+});

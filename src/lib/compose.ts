@@ -147,6 +147,33 @@ export async function recentPurchaseOrders(limit = 40) {
  * Filling a template in
  * ------------------------------------------------------------------ */
 
+/**
+ * The lines, written the way they would be read out on the phone.
+ *
+ * Indented and one per line, because these go into a plain-text email where a
+ * comma-separated run of seven medical product names is unreadable. Capped,
+ * since a template is a starting point and nobody wants forty lines pasted
+ * into a note they are about to edit — the count says what was left off rather
+ * than the list quietly stopping.
+ */
+const MAX_LISTED = 12;
+
+function writeItems(
+  items: { qty: number; name: string; skuCode: string }[]
+): string | null {
+  if (items.length === 0) return null;
+
+  const shown = items
+    .slice(0, MAX_LISTED)
+    .map((item) => `  ${item.qty} x ${item.name} (${item.skuCode})`);
+
+  if (items.length > MAX_LISTED) {
+    const rest = items.length - MAX_LISTED;
+    shown.push(`  and ${rest} more line${rest === 1 ? "" : "s"}`);
+  }
+  return shown.join("\n");
+}
+
 const dubaiDay = (at: Date | null) =>
   at
     ? new Intl.DateTimeFormat("en-GB", {
@@ -179,8 +206,19 @@ export async function draftFromTemplate(input: {
             trackingNumber: true,
             estimatedShipmentOn: true,
             placedByName: true,
+            poReference: true,
             user: { select: { name: true } },
             organisation: { select: { name: true } },
+            address: { select: { label: true, city: true } },
+            items: {
+              orderBy: { nameSnapshot: "asc" },
+              select: {
+                qty: true,
+                status: true,
+                nameSnapshot: true,
+                skuCodeSnapshot: true,
+              },
+            },
           },
         })
       : null;
@@ -188,6 +226,19 @@ export async function draftFromTemplate(input: {
     if (template.needsOrder && !order) {
       return { ok: false, error: "Choose an order for this one." };
     }
+
+    const lines = (order?.items ?? []).map((item) => ({
+      qty: item.qty,
+      name: item.nameSnapshot,
+      skuCode: item.skuCodeSnapshot,
+      status: item.status,
+    }));
+
+    // Shipped means gone; anything not shipped or cancelled is still owed.
+    const shipped = lines.filter((l) => l.status === "Shipped");
+    const outstanding = lines.filter(
+      (l) => l.status !== "Shipped" && l.status !== "Cancelled"
+    );
 
     return {
       ok: true,
@@ -201,6 +252,20 @@ export async function draftFromTemplate(input: {
         courier: order?.courier ?? null,
         trackingNumber: order?.trackingNumber ?? null,
         expectedOn: dubaiDay(order?.estimatedShipmentOn ?? null),
+        branchLabel: order?.address?.label ?? order?.address?.city ?? null,
+        poReference: order?.poReference ?? null,
+        itemsAll: writeItems(lines),
+        itemsShipped: writeItems(shipped),
+        // Only worth saying when it is a subset — on an order where nothing
+        // has shipped, "still to come" is every line and adds nothing over
+        // "on the order".
+        itemsOutstanding:
+          shipped.length > 0 ? writeItems(outstanding) : null,
+        // Specifically the lines that cannot be supplied, so the template that
+        // says so does not go on to list six that can.
+        itemsBackordered: writeItems(
+          lines.filter((l) => l.status === "Backordered")
+        ),
       }),
     };
   }
@@ -215,6 +280,16 @@ export async function draftFromTemplate(input: {
           sentAt: true,
           expectedAt: true,
           supplier: { select: { companyName: true } },
+          lines: {
+            orderBy: { nameSnapshot: "asc" },
+            select: {
+              qtyOrdered: true,
+              qtyReceived: true,
+              nameSnapshot: true,
+              skuCodeSnapshot: true,
+              supplierPartNumberSnapshot: true,
+            },
+          },
         },
       })
     : null;
@@ -223,6 +298,15 @@ export async function draftFromTemplate(input: {
     return { ok: false, error: "Choose a purchase order for this one." };
   }
 
+  // Their own part number leads, as on the purchase order itself: their picker
+  // works from their catalogue, not ours.
+  const poLines = (po?.lines ?? []).map((line) => ({
+    qty: line.qtyOrdered,
+    name: line.nameSnapshot,
+    skuCode: line.supplierPartNumberSnapshot ?? line.skuCodeSnapshot,
+    outstanding: line.qtyOrdered - line.qtyReceived,
+  }));
+
   return {
     ok: true,
     value: template.render({
@@ -230,6 +314,12 @@ export async function draftFromTemplate(input: {
       supplierName: po?.supplier.companyName ?? null,
       raisedOn: dubaiDay(po?.sentAt ?? null),
       expectedOn: dubaiDay(po?.expectedAt ?? null),
+      itemsAll: writeItems(poLines),
+      itemsOutstanding: writeItems(
+        poLines
+          .filter((l) => l.outstanding > 0)
+          .map((l) => ({ ...l, qty: l.outstanding }))
+      ),
     }),
   };
 }

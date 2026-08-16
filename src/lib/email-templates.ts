@@ -20,21 +20,45 @@ export type OrderContext = {
   contactName?: string | null;
   organisationName?: string | null;
   placedOn?: string | null;
-  /** "3 of 7 lines", "the gloves" — whatever the admin is writing about. */
-  items?: string | null;
   expectedOn?: string | null;
   courier?: string | null;
   trackingNumber?: string | null;
   totalLabel?: string | null;
   dueOn?: string | null;
+  branchLabel?: string | null;
+  /** The buyer's own purchase order number, if they gave one. */
+  poReference?: string | null;
+
+  /**
+   * The lines themselves, already written out.
+   *
+   * Three lists rather than one, because the right answer differs per
+   * template: an apology for a delay should name what is late, not everything
+   * on the order, and a part-shipment notice should name what actually went.
+   * Each is null when there is nothing in it, so the sentence disappears
+   * rather than reading "On its way: .".
+   */
+  itemsAll?: string | null;
+  itemsOutstanding?: string | null;
+  itemsShipped?: string | null;
+  /**
+   * The lines that cannot currently be supplied.
+   *
+   * Its own list, because "an item cannot be supplied" followed by every line
+   * still outstanding is an email that contradicts itself in three lines.
+   */
+  itemsBackordered?: string | null;
 };
 
 export type SupplierContext = {
   supplierName?: string | null;
   poNumber: string;
   raisedOn?: string | null;
-  items?: string | null;
   expectedOn?: string | null;
+  /** Everything on the order, written out. */
+  itemsAll?: string | null;
+  /** Only what has not been received yet — what a chase is actually about. */
+  itemsOutstanding?: string | null;
 };
 
 export type Draft = { subject: string; body: string };
@@ -56,14 +80,49 @@ export type EmailTemplate =
       render: (context: SupplierContext) => Draft;
     };
 
+/**
+ * Assembles the body and signs it off.
+ *
+ * The spacing is normalised here rather than balanced by hand in each
+ * template. Whether a gap is doubled depends on which optional lines happened
+ * to be present, and there are more combinations of those than anyone will
+ * check — one rule applied to the finished text is the only version that stays
+ * right as templates are edited.
+ */
 const sign = (lines: string[]) =>
-  [...lines, "", "Thank you,", "AussieMed", "info@aussiemed.com"].join("\n");
+  [...lines, "", "Thank you,", "AussieMed", "info@aussiemed.com"]
+    .join("\n")
+    // Never more than one blank line between two blocks.
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
 /** "there" rather than a blank, so a greeting never reads as a mail-merge fault. */
 const who = (name?: string | null) => (name?.trim() ? name.trim() : "there");
 
 /** Only prints the sentence when there is something to say. */
 const maybe = (line: string | null): string[] => (line ? [line] : []);
+
+/**
+ * A heading with a list under it, or nothing at all.
+ *
+ * Written as a join rather than a multi-line template literal so the wording
+ * cannot be changed by re-indenting the file — the newlines here are the
+ * email's, not the source's.
+ */
+const listed = (heading: string, items: string | null | undefined): string | null => {
+  // Only trailing whitespace. Trimming both ends stripped the indent off the
+  // first item and left it on the rest, so a two-line list came out ragged.
+  const body = (items ?? "").replace(/\s+$/, "");
+  if (body.trim() === "") return null;
+
+  // A blank line after the block, so the sentence that follows is not read as
+  // another item.
+  return [`${heading}:`, body, ""].join("\n");
+};
+
+/** How many lines a written-out list holds, so the sentence can agree with it. */
+const countLines = (items: string | null | undefined): number =>
+  (items ?? "").trim() === "" ? 0 : (items ?? "").trim().split("\n").length;
 
 /* ------------------------------------------------------------------ *
  * To a customer
@@ -99,7 +158,10 @@ const CUSTOMER_TEMPLATES: Extract<EmailTemplate, { audience: "Customer" }>[] = [
         `Hello ${who(c.contactName)},`,
         "",
         `I am sorry — order ${c.reference} is going to take longer than we said.`,
-        ...maybe(c.items ? `The delay is on ${c.items}.` : null),
+        ...maybe(
+          listed("Still to come", c.itemsOutstanding) ??
+            listed("On the order", c.itemsAll)
+        ),
         ...maybe(
           c.expectedOn
             ? `We now expect it with you by ${c.expectedOn}.`
@@ -124,7 +186,8 @@ const CUSTOMER_TEMPLATES: Extract<EmailTemplate, { audience: "Customer" }>[] = [
         `Hello ${who(c.contactName)},`,
         "",
         `Some of order ${c.reference} has left us and the rest is following.`,
-        ...maybe(c.items ? `On its way: ${c.items}.` : null),
+        ...maybe(listed("On its way", c.itemsShipped)),
+        ...maybe(listed("Still to follow", c.itemsOutstanding)),
         ...maybe(c.courier ? `Courier: ${c.courier}` : null),
         ...maybe(c.trackingNumber ? `Tracking: ${c.trackingNumber}` : null),
         "",
@@ -161,9 +224,13 @@ const CUSTOMER_TEMPLATES: Extract<EmailTemplate, { audience: "Customer" }>[] = [
       body: sign([
         `Hello ${who(c.contactName)},`,
         "",
-        `One item on order ${c.reference} cannot be supplied at the moment.`,
-        ...maybe(c.items ? `The item is ${c.items}.` : null),
-        "",
+        countLines(c.itemsBackordered) > 1
+          ? `Some items on order ${c.reference} cannot be supplied at the moment.`
+          : `One item on order ${c.reference} cannot be supplied at the moment.`,
+        ...maybe(
+          listed("The item", c.itemsBackordered) ??
+            listed("On the order", c.itemsAll)
+        ),
         "We can send an equivalent, hold the line until stock returns, or take it",
         "off the order — whichever suits you. Nothing has been charged for it.",
       ]),
@@ -270,8 +337,10 @@ const SUPPLIER_TEMPLATES: Extract<EmailTemplate, { audience: "Supplier" }>[] = [
         "",
         `Could you tell us where purchase order ${s.poNumber} has got to?`,
         ...maybe(s.expectedOn ? `It was expected by ${s.expectedOn}.` : null),
-        ...maybe(s.items ? `Outstanding: ${s.items}.` : null),
-        "",
+        ...maybe(
+          listed("Outstanding", s.itemsOutstanding) ??
+            listed("On the order", s.itemsAll)
+        ),
         "A despatch date and a tracking number would be helpful.",
       ]),
     }),
@@ -287,8 +356,7 @@ const SUPPLIER_TEMPLATES: Extract<EmailTemplate, { audience: "Supplier" }>[] = [
         `Dear ${who(s.supplierName)},`,
         "",
         `The delivery against purchase order ${s.poNumber} was short.`,
-        ...maybe(s.items ? `Missing: ${s.items}.` : null),
-        "",
+        ...maybe(listed("Short", s.itemsOutstanding)),
         "Please confirm whether the balance is following, and when, or credit it.",
       ]),
     }),
@@ -304,8 +372,7 @@ const SUPPLIER_TEMPLATES: Extract<EmailTemplate, { audience: "Supplier" }>[] = [
         `Dear ${who(s.supplierName)},`,
         "",
         `A query on the pricing against purchase order ${s.poNumber}.`,
-        ...maybe(s.items ? `The line in question: ${s.items}.` : null),
-        "",
+        ...maybe(listed("The lines in question", s.itemsAll)),
         "Could you confirm the agreed price so we can settle the invoice?",
       ]),
     }),
