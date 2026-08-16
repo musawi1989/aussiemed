@@ -1086,6 +1086,57 @@ model PurchaseAllocation {
   @@index([batchCode])
 }
 
+/// Every email AussieMed tries to send — BE-05.
+///
+/// A row is written before delivery is attempted, not after, so an email that
+/// fails is still visible. The alternative is the failure mode this replaces:
+/// nothing was sent, and nothing recorded that nothing was sent.
+///
+/// The body is stored in full. When a customer says they were never told, the
+/// answer has to be the exact words that went out, not a template and a hope
+/// that the data behind it has not moved.
+model OutboundEmail {
+  id String @id @default(cuid())
+
+  /// kind: OrderConfirmation | RestockAlert | AccountChangeDecided |
+  ///       PurchaseOrderSent | StaffAlert
+  kind String
+  /// audience: Customer | Supplier | Staff
+  audience String
+
+  toAddress String
+  subject   String
+  body      String
+
+  /// status: Queued | Sent | Failed | Suppressed
+  ///
+  /// Suppressed is not a failure. It is an address we would not send to — a
+  /// missing one, or one that is plainly not an address — recorded rather
+  /// than thrown away so it can be fixed.
+  status String @default("Queued")
+  /// Which driver handled it, so a mailbox that went missing can be traced to
+  /// the configuration in force at the time.
+  driver String
+  error  String?
+
+  /// What it is about, so the admin screen can link back to the thing.
+  entity   String?
+  entityId String?
+
+  /// Stops the same message going twice — one restock alert per subscription,
+  /// one confirmation per order. Unique, so the guarantee is the database's
+  /// rather than the caller's.
+  dedupeKey String? @unique
+
+  attempts Int      @default(0)
+  queuedAt DateTime @default(now())
+  sentAt   DateTime?
+
+  @@index([status, queuedAt])
+  @@index([entity, entityId])
+  @@index([kind])
+}
+
 /// Key/value configuration — VAT rate, email templates, general settings.
 /// Kept as rows so an admin can change them without a deploy.
 model Setting {

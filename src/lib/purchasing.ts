@@ -2,6 +2,9 @@ import "server-only";
 
 import { db } from "./db";
 import { audit, requireAdmin, type Result } from "./admin";
+import { purchaseOrderSent } from "./email-message";
+import { sendQuietly } from "./mailer";
+import { publicUrl } from "./public-url";
 import {
   allocateReceipt,
   planPurchaseOrders,
@@ -292,18 +295,81 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
 
   const po = await db.purchaseOrder.findUnique({
     where: { id },
-    include: { _count: { select: { lines: true } } },
+    include: {
+      _count: { select: { lines: true } },
+      supplier: {
+        select: {
+          companyName: true,
+          primaryEmail: true,
+          secondaryEmail: true,
+        },
+      },
+      lines: {
+        orderBy: { skuCodeSnapshot: "asc" },
+        select: {
+          supplierPartNumberSnapshot: true,
+          skuCodeSnapshot: true,
+          nameSnapshot: true,
+          qtyOrdered: true,
+        },
+      },
+    },
   });
   if (!po) return fail("That purchase order no longer exists.");
   if (po.status !== "Draft") return fail(`It has already been ${po.status.toLowerCase()}.`);
   if (po._count.lines === 0) return fail("There is nothing on it to send.");
 
+  const sentAt = new Date();
   await db.purchaseOrder.update({
     where: { id },
-    data: { status: "Sent", sentAt: new Date() },
+    data: { status: "Sent", sentAt },
   });
 
   await audit(actor, "purchaseOrder.send", "PurchaseOrder", id, { status: "Draft" }, { status: "Sent" });
+
+  // After the status, and never able to undo it. A purchase order the supplier
+  // has been told about is sent; a bounced email is a mail problem, visible on
+  // /admin/emails, not a reason to put the order back into draft.
+  //
+  // Nothing about a customer travels in this message — the template is pure
+  // and tested for exactly that.
+  // Both addresses, which is why the supplier has two. A purchase order that
+  // reached one person who is on leave has not reached the supplier, and the
+  // second address exists precisely so that is not a single point of failure.
+  // Sent separately rather than as one To line so each has its own record and
+  // one bad address cannot suppress the other.
+  const addresses = [
+    ...new Set(
+      [po.supplier.primaryEmail, po.supplier.secondaryEmail]
+        .map((value) => (value ?? "").trim())
+        .filter(Boolean)
+    ),
+  ];
+
+  for (const address of addresses) {
+    await sendQuietly(
+      purchaseOrderSent({
+        to: address,
+        supplierName: po.supplier.companyName,
+        poNumber: po.poNumber,
+        sentAt,
+        expectedAt: po.expectedAt,
+        lines: po.lines.map((line) => ({
+          supplierPartNumber: line.supplierPartNumberSnapshot,
+          skuCode: line.skuCodeSnapshot,
+          name: line.nameSnapshot,
+          qtyOrdered: line.qtyOrdered,
+        })),
+        portalUrl: `${publicUrl()}/business-portal`,
+      }),
+      {
+        entity: "PurchaseOrder",
+        entityId: id,
+        dedupeKey: `PurchaseOrderSent:${po.poNumber}:${address}`,
+      }
+    );
+  }
+
   return ok(undefined);
 }
 

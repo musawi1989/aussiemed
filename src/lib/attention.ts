@@ -39,6 +39,7 @@ export async function attentionItems(): Promise<AttentionItem[]> {
     newQuotes,
     newEnquiries,
     waitlist,
+    stuckEmail,
   ] = await Promise.all([
     db.accountChange.count({ where: { status: "Pending" } }),
     db.purchaseOrder.count({ where: { status: "Draft" } }),
@@ -46,11 +47,16 @@ export async function attentionItems(): Promise<AttentionItem[]> {
     db.order.count({ where: { status: "Pending" } }),
     db.quoteRequest.count({ where: { status: "New" } }),
     db.enquiry.count({ where: { status: "New" } }),
-    // Restock requests nobody has been told about. The email itself is BE-05
-    // and unbuilt, which is exactly why the count needs to be visible.
+    // Restock requests nobody has been told about. These now send on the
+    // moment a pack comes back in stock, so anything sitting here is a pack
+    // that never flipped rather than a message that was never written.
     db.notifySubscription.count({
       where: { notifiedAt: null, sku: { manualOutOfStock: false } },
     }),
+    // Email that did not go. Worth its own line: the whole reason BE-05
+    // records every attempt is that a send which silently fails looks
+    // exactly like one that worked.
+    db.outboundEmail.count({ where: { status: { in: ["Failed", "Queued"] } } }),
   ]);
 
   return [
@@ -103,6 +109,15 @@ export async function attentionItems(): Promise<AttentionItem[]> {
       count: unacknowledged,
       href: "/admin/purchasing",
       urgent: false,
+    },
+    {
+      key: "email",
+      label: "Email that did not go",
+      detail:
+        "Failed or still queued. A customer or supplier is missing something they were meant to be told.",
+      count: stuckEmail,
+      href: "/admin/emails?status=Failed",
+      urgent: true,
     },
     {
       key: "waitlist",

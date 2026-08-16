@@ -302,6 +302,72 @@ for (const path of PUBLIC_PATHS) {
   }
 }
 
+/* 7. Email that has actually been sent — BE-05.
+ *
+ * The templates are pure and unit tested for this, which is the stronger
+ * guarantee. This checks the other half: that the right data was handed to
+ * them. A template that cannot leak a customer still leaks one if somebody
+ * passes a clinic's name in as the supplier's.
+ *
+ * Read from what was stored, not from what a template would produce, because
+ * the stored body is what actually went out.
+ */
+{
+  const { default: Database } = await import("better-sqlite3");
+  const db = new Database("dev.db", { readonly: true });
+
+  const supplierMail = db
+    .prepare(`select "id","toAddress","subject","body" from "OutboundEmail" where "audience" = 'Supplier'`)
+    .all();
+
+  const customerIdentifiers = [
+    ...db.prepare(`select "name","email" from "User" where "role" = 'Customer'`).all()
+      .flatMap((u) => [u.name, u.email]),
+    ...db.prepare(`select "name" from "Organisation"`).all().map((o) => o.name),
+    ...db.prepare(`select "reference" from "Order"`).all().map((o) => o.reference),
+    ...db.prepare(`select "label","line1" from "Address"`).all().flatMap((a) => [a.label, a.line1]),
+  ].filter((v) => v && String(v).trim().length > 2);
+
+  const customerMail = db
+    .prepare(`select "id","body" from "OutboundEmail" where "audience" = 'Customer'`)
+    .all();
+  const supplierNames = db
+    .prepare(`select "companyName" from "Supplier"`)
+    .all()
+    .map((s) => s.companyName)
+    .filter(Boolean);
+  db.close();
+
+  if (supplierMail.length === 0 && customerMail.length === 0) {
+    console.log("\n  SKIP  no email has been sent yet");
+  } else {
+    let leaked = 0;
+    for (const mail of supplierMail) {
+      const haystack = `${mail.subject}\n${mail.body}`;
+      const found = customerIdentifiers.filter((value) => haystack.includes(value));
+      if (found.length > 0) {
+        fail(`a supplier email names ${[...new Set(found)].join(", ")}`);
+        leaked++;
+      }
+    }
+    if (supplierMail.length > 0 && leaked === 0) {
+      pass(`${supplierMail.length} supplier email(s) name no customer`);
+    }
+
+    let backwards = 0;
+    for (const mail of customerMail) {
+      const found = supplierNames.filter((name) => mail.body.includes(name));
+      if (found.length > 0) {
+        fail(`a customer email names supplier ${[...new Set(found)].join(", ")}`);
+        backwards++;
+      }
+    }
+    if (customerMail.length > 0 && backwards === 0) {
+      pass(`${customerMail.length} customer email(s) name no supplier`);
+    }
+  }
+}
+
 console.log(
   failures === 0
     ? "\nNeither side can see the other\n"

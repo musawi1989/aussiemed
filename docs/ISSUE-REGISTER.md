@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**179 items** · 81 outstanding · **17 outstanding P1**
+**180 items** · 80 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -123,7 +123,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-02 | Build the admin panel | Dev | P1 | Done | Products, categories, suppliers, customers, orders, marketing, reports, settings. |
 | BE-03 | Build the supplier portal | Dev | P1 | In progress | Suppliers manage their own products but can never self-approve. Must have a failing-then-passing test. |
 | BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Done | Parsed natively with exceljs, never by splitting on commas — that is what broke the old platform's bulk upload, where a category named Gloves, Nitrile shifted every column after it and the prices were wrong for weeks before anyone noticed. |
-| BE-05 | Build the email flows | Dev | P2 | Open | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
+| BE-05 | Build the email flows | Dev | P2 | Done | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
 | BE-06 | Add an audit log | Dev | P2 | Done | Every status transition and every admin or supplier write should be recorded. |
 | BE-07 | Seed the database from the catalogue | Dev | P1 | Done | Done. 146 categories, 71 products, 94 SKUs, 173 price tiers and 4 suppliers loaded from src/data/catalog.json. |
 | BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
@@ -163,6 +163,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-43 | Account changes were made silently and with no reason attached | Dev | P2 | Done | A customer could add or remove a person from Who orders, add a branch, or remove one, and nothing recorded who did it or why. Six months later the account would show a delivery address nobody could account for. Worse, a branch is where medical supplies get sent: an address added by a customer went live immediately, so the next order could ship to somewhere nobody at AussieMed had ever checked. |
 | BE-44 | A refused form deleted everything the person had typed | Dev | P2 | Done | React clears an uncontrolled form as soon as its action returns, success or failure alike. Now that every account change needs a reason, being told the reason is too short also silently deleted the name, the address and everything else just typed — so correcting a small mistake cost more than the original entry did. |
 | BE-45 | A purchase order line with no recorded cost was stored as costing zero | Dev | P1 | Done | buildPurchaseOrders wrote unitCostFils ?? 0, so every line drawn from a supply whose cost had not been loaded was saved as free. Downstream that is indistinguishable from a genuine zero, and the realised margin on the customer order it fulfilled came out at 100% — stated confidently on the screen whose entire purpose is deciding whether a trade is worth doing. The pure planner already modelled the cost as nullable and got it right; the flattening happened only at the database write. |
+| BE-46 | Nothing recorded that an email had not been sent | Dev | P2 | Done | Quote requests, restock requests and enquiries were stored and never sent, and nothing anywhere said so. A silent failure is the only kind that lasts: an empty inbox looks exactly like a quiet week. |
 
 ## Infrastructure
 

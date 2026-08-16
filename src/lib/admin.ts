@@ -9,6 +9,9 @@ import {
 import { db } from "./db";
 import { getSessionUser, type SessionUser } from "./auth";
 import { putProductImage, removeStoredImage } from "./storage";
+import { restockAlert } from "./email-message";
+import { sendQuietly } from "./mailer";
+import { publicUrl } from "./public-url";
 
 /**
  * Every write the admin screens make goes through this file.
@@ -437,7 +440,61 @@ export async function updateSku(id: string, input: SkuEdit): Promise<Result> {
 
   await audit(actor, "sku.update", "ProductSku", id, diff.before, diff.after);
   await invalidateCatalog();
+
+  // Coming back into stock is the one moment a customer is emailed without
+  // asking twice — they asked once, on Notify Me, and this is the answer.
+  // Only on the transition, so re-saving a SKU that is already in stock does
+  // not mail the same people again.
+  if (existing.manualOutOfStock && !data.manualOutOfStock) {
+    await notifyRestock(id);
+  }
+
   return ok(undefined);
+}
+
+/**
+ * Tells everyone waiting that a pack is available again — FN-04, BE-05.
+ *
+ * Each subscription is stamped as it is sent, so nobody is told twice, and the
+ * stamp is written whatever the mailer says: a suppressed address is still an
+ * answered subscription, and leaving it unstamped would make it queue again on
+ * the next stock change forever.
+ */
+async function notifyRestock(skuId: string): Promise<void> {
+  const sku = await db.productSku.findUnique({
+    where: { id: skuId },
+    select: {
+      skuCode: true,
+      unitLabel: true,
+      priceFils: true,
+      product: { select: { name: true, slug: true } },
+      notify: { where: { notifiedAt: null }, select: { id: true, email: true } },
+    },
+  });
+  if (!sku || sku.notify.length === 0) return;
+
+  for (const subscription of sku.notify) {
+    await sendQuietly(
+      restockAlert({
+        to: subscription.email,
+        productName: sku.product.name,
+        skuCode: sku.skuCode,
+        unitLabel: sku.unitLabel,
+        priceFils: sku.priceFils,
+        productUrl: `${publicUrl()}/products/${sku.product.slug}`,
+      }),
+      {
+        entity: "NotifySubscription",
+        entityId: subscription.id,
+        dedupeKey: `RestockAlert:${subscription.id}`,
+      }
+    );
+
+    await db.notifySubscription.update({
+      where: { id: subscription.id },
+      data: { notifiedAt: new Date() },
+    });
+  }
 }
 
 export type TierEdit = {

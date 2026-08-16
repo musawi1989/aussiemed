@@ -1,6 +1,8 @@
 import "server-only";
 
 import { db } from "./db";
+import { orderConfirmation } from "./email-message";
+import { sendQuietly } from "./mailer";
 import {
   DEFAULT_VAT_BASIS_POINTS,
   formatInvoiceNumber,
@@ -264,7 +266,7 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
   const bp = await vatBasisPoints();
   const year = new Date().getUTCFullYear();
 
-  return db.$transaction(async (tx) => {
+  const placed = await db.$transaction(async (tx) => {
     /* --- allocate the reference number --- */
 
     // Held in a settings row and incremented inside the transaction, so two
@@ -342,7 +344,9 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
             id: input.addressId,
             organisationId: input.organisationId ?? "",
           },
-          select: { id: true },
+          // The label as well as the id: the confirmation email names where
+          // the order is going, and it is read outside this transaction.
+          select: { id: true, label: true, city: true },
         })
       : null;
 
@@ -411,8 +415,46 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     return {
       reference,
       totalFils: orderTotals.totalFils,
+      orderId: order.id,
+      staffName: staff?.name ?? null,
+      branchLabel: branch ? (branch.label ?? branch.city) : null,
+      subtotalFils: orderTotals.subtotalFils,
+      vatFils: orderTotals.vatFils,
     };
   });
+
+  // Outside the transaction, and deliberately after it commits. An order that
+  // is in the database is placed; if the confirmation cannot go out, that is a
+  // mail problem to fix on /admin/emails, not a reason to lose the order.
+  await sendQuietly(
+    orderConfirmation({
+      to: input.email,
+      contactName: input.contact,
+      reference: placed.reference,
+      placedAt: new Date(),
+      lines: cart.lines.map((line) => ({
+        name: line.productName,
+        skuCode: line.skuCode,
+        unitLabel: line.unitLabel,
+        qty: line.qty,
+        lineTotalFils: line.lineTotalFils,
+      })),
+      subtotalFils: placed.subtotalFils,
+      vatFils: placed.vatFils,
+      totalFils: placed.totalFils,
+      poReference: input.poReference || null,
+      placedByName: placed.staffName,
+      branchLabel: placed.branchLabel,
+    }),
+    {
+      entity: "Order",
+      entityId: placed.orderId,
+      // One confirmation per order, whatever happens to be retried.
+      dedupeKey: `OrderConfirmation:${placed.reference}`,
+    }
+  );
+
+  return { reference: placed.reference, totalFils: placed.totalFils };
 }
 
 /* ------------------------------------------------------------------ *

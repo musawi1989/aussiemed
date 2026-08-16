@@ -74,6 +74,7 @@ const groupsFor = (waiting: number): OpsGroup[] => [
     icon: "system",
     links: [
       { href: "/admin/settings", label: "Settings" },
+      { href: "/admin/emails", label: "Email" },
       { href: "/admin/audit", label: "Audit trail" },
     ],
   },

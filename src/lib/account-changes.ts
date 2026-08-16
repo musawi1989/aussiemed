@@ -1,5 +1,7 @@
 import { db } from "./db";
 import { getSessionUser } from "./auth";
+import { accountChangeDecided } from "./email-message";
+import { sendQuietly } from "./mailer";
 import {
   branchDiff,
   checkReason,
@@ -326,7 +328,64 @@ export async function approveChange(
     });
   });
 
+  await tellTheCustomer(change, true, note);
   return ok(undefined);
+}
+
+/**
+ * Tells whoever asked for the change what was decided.
+ *
+ * Sent after the transaction, and never able to fail it: the change has
+ * happened either way, and a customer who learns about it a day later on the
+ * Account changes tab is a smaller problem than an approval rolled back
+ * because a mailbox was full.
+ *
+ * The address is the person who raised it, not a generic account contact —
+ * they are the one who will be wondering.
+ */
+async function tellTheCustomer(
+  change: {
+    id: string;
+    organisationId: string;
+    summary: string;
+    reason: string;
+    requestedByUserId: string | null;
+    requestedByName: string;
+  },
+  approved: boolean,
+  note: string
+): Promise<void> {
+  const [requester, organisation] = await Promise.all([
+    change.requestedByUserId
+      ? db.user.findUnique({
+          where: { id: change.requestedByUserId },
+          select: { email: true, name: true },
+        })
+      : null,
+    db.organisation.findUnique({
+      where: { id: change.organisationId },
+      select: { name: true },
+    }),
+  ]);
+
+  await sendQuietly(
+    accountChangeDecided({
+      to: requester?.email ?? "",
+      contactName: requester?.name ?? change.requestedByName,
+      organisationName: organisation?.name ?? "your account",
+      summary: change.summary,
+      approved,
+      decidedAt: new Date(),
+      decisionNote: note.trim() || null,
+      theirReason: change.reason,
+    }),
+    {
+      entity: "AccountChange",
+      entityId: change.id,
+      // A change is decided once, so this can only ever go out once.
+      dedupeKey: `AccountChangeDecided:${change.id}`,
+    }
+  );
 }
 
 /** Turning a request down. The note is required — "no" needs a reason. */
@@ -373,6 +432,7 @@ export async function rejectChange(
     });
   });
 
+  await tellTheCustomer(change, false, clean);
   return ok(undefined);
 }
 
