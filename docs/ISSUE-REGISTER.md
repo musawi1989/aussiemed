@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**186 items** · 73 outstanding · **15 outstanding P1**
+**187 items** · 73 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -170,6 +170,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-49 | Reports had nowhere to live in the back office | Dev | P3 | Done | Customers and Suppliers were each a single list. There was no place to ask the other question a section raises — what did they buy, what did we spend, who is slow — so the answers either did not exist or were buried in a screen built for a different purpose. |
 | BE-50 | The first card on Needs attention did nothing when clicked | Dev | P2 | Done | Account changes are the one queue that lives on the Needs attention page itself, but its card was built from the same list as the others and linked to /admin/approvals — the page the reader was already on. Clicking it changed nothing and moved nothing, so it read as a broken feature. The queue underneath was working the whole time. |
 | BE-51 | No in-site inbox, and no way to send anything on by email | Dev | P2 | Done | Needs attention counts what is outstanding right now and returns to zero when the work is done, so anything worth knowing but not doing had nowhere to live — an order arriving, a supplier confirming. There was also no way to put any of it, or an invoice, in front of somebody by email without retyping it. |
+| BE-52 | An admin could see every email but could not write one | Dev | P2 | Done | The Email screen recorded everything the system sent and gave no way to send anything. Any message about an order — it is running late, an item cannot be supplied, the payment is overdue — had to be written from a personal mailbox, which meant it was not recorded anywhere and nobody else could see it had gone. |
 
 ## Infrastructure
 

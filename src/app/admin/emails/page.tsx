@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { mailDriverName } from "@/lib/mailer";
 import { EmailRetryButton } from "@/components/admin/EmailRetryButton";
+import { ComposeEmail } from "@/components/admin/ComposeEmail";
+import { recentOrders, recentPurchaseOrders, recipients } from "@/lib/compose";
+import { EMAIL_TEMPLATES } from "@/lib/email-templates";
 
 export const metadata: Metadata = {
   title: "Email",
@@ -41,6 +44,12 @@ export default async function AdminEmailsPage({
     ? status
     : undefined;
 
+  const [people, orders, purchaseOrders] = await Promise.all([
+    recipients(),
+    recentOrders(),
+    recentPurchaseOrders(),
+  ]);
+
   const [emails, counts] = await Promise.all([
     db.outboundEmail.findMany({
       where: filter ? { status: filter } : {},
@@ -61,6 +70,30 @@ export default async function AdminEmailsPage({
       <p className="mt-1 max-w-2xl text-sm text-text-muted">
         Every message AussieMed has tried to send, whether it went or not.
       </p>
+
+      {/* Writing one sits above the record of what has been written. */}
+      <div className="mt-5">
+        <ComposeEmail
+          customers={people.customers}
+          suppliers={people.suppliers}
+          templates={EMAIL_TEMPLATES.map((t) => ({
+            id: t.id,
+            label: t.label,
+            audience: t.audience,
+            needsOrder: t.needsOrder,
+          }))}
+          orders={orders.map((o) => ({
+            value: o.reference,
+            label: o.label,
+            email: o.email,
+          }))}
+          purchaseOrders={purchaseOrders.map((p) => ({
+            value: p.poNumber,
+            label: p.label,
+            email: p.email,
+          }))}
+        />
+      </div>
 
       <p className="mt-4 rounded-card border-l-4 border-navy-border bg-navy-soft px-4 py-2.5 text-sm text-text">
         Driver: <strong className="tnum">{mailDriverName()}</strong>.{" "}
