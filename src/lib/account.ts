@@ -231,7 +231,16 @@ export async function accountStaff(includeInactive = false) {
   });
 }
 
-export async function addStaff(name: string, email: string): Promise<Result> {
+/**
+ * A name, and nothing else.
+ *
+ * Staff here are a record of who asked for what, not accounts — nobody gets a
+ * sign-in, so there is nothing an email address would be used for. The column
+ * still exists on `OrganisationStaff` and is no longer written; dropping it is
+ * registered rather than done here, so a migration is not needed for a UI
+ * change.
+ */
+export async function addStaff(name: string): Promise<Result> {
   const session = await requireAccount();
 
   const cleanName = trim(name);
@@ -247,7 +256,7 @@ export async function addStaff(name: string, email: string): Promise<Result> {
     if (!existing.isActive) {
       await db.organisationStaff.update({
         where: { id: existing.id },
-        data: { isActive: true, email: trim(email) },
+        data: { isActive: true },
       });
       return ok(undefined);
     }
@@ -255,11 +264,7 @@ export async function addStaff(name: string, email: string): Promise<Result> {
   }
 
   await db.organisationStaff.create({
-    data: {
-      organisationId: session.organisationId,
-      name: cleanName,
-      email: trim(email),
-    },
+    data: { organisationId: session.organisationId, name: cleanName },
   });
 
   return ok(undefined);
@@ -438,6 +443,12 @@ export type SavedGroup = {
     image: string | null;
     priceFils: number | null;
     outOfStock: boolean;
+    /** What quick-buy adds. Null when the product has no active SKU left. */
+    skuCode: string | null;
+    /** "Box" — the unit the quantity counts, so +1 is not ambiguous. */
+    unitShortLabel: string | null;
+    /** "100 Pieces/Box" — what one of those units actually contains. */
+    unitLabel: string | null;
   }[];
 };
 
@@ -464,11 +475,19 @@ export async function savedProducts(): Promise<SavedGroup[]> {
           categories: {
             include: { category: { select: { id: true, name: true } } },
           },
+          // Smallest pack first: quick-buy should reach for the box, not the
+          // pallet. Anyone wanting a bigger unit opens the product.
           skus: {
             where: { isActive: true },
             orderBy: { eachesPerPack: "asc" },
             take: 1,
-            select: { priceFils: true, manualOutOfStock: true },
+            select: {
+              skuCode: true,
+              unitShortLabel: true,
+              unitLabel: true,
+              priceFils: true,
+              manualOutOfStock: true,
+            },
           },
         },
       },
@@ -498,6 +517,9 @@ export async function savedProducts(): Promise<SavedGroup[]> {
       image: row.product.images[0]?.path ?? null,
       priceFils: row.product.skus[0]?.priceFils ?? null,
       outOfStock: row.product.skus[0]?.manualOutOfStock ?? false,
+      skuCode: row.product.skus[0]?.skuCode ?? null,
+      unitShortLabel: row.product.skus[0]?.unitShortLabel ?? null,
+      unitLabel: row.product.skus[0]?.unitLabel ?? null,
     });
 
     groups.set(key, group);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { QuickBuy } from "@/components/QuickBuy";
 import { formatAED } from "@/lib/money";
 import { savedProducts } from "@/lib/account";
 
@@ -64,10 +65,13 @@ export default async function MyProductsPage() {
 
               <ul className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {group.products.map((product) => (
-                  <li key={product.id}>
+                  <li
+                    key={product.id}
+                    className="flex h-full flex-col rounded-card border border-border-base bg-surface p-3 shadow-card"
+                  >
                     <Link
                       href={`/products/${product.slug}`}
-                      className="flex h-full gap-3 rounded-card border border-border-base bg-surface p-3 shadow-card transition-colors hover:border-navy-border"
+                      className="flex flex-1 gap-3 transition-colors hover:text-navy"
                     >
                       <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-card bg-surface-sunken">
                         {product.image && (
@@ -81,7 +85,7 @@ export default async function MyProductsPage() {
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm leading-snug text-text">
+                        <span className="block text-sm leading-snug">
                           {product.name}
                         </span>
                         <span className="mt-1 block text-sm font-bold tnum text-text">
@@ -93,8 +97,26 @@ export default async function MyProductsPage() {
                             ""
                           )}
                         </span>
+                        {/* What one unit is. Quick-buy counts these, and +1
+                            meaning a box of 100 rather than one glove is not
+                            something to leave a buyer to guess. */}
+                        {!product.outOfStock && product.unitLabel && (
+                          <span className="mt-0.5 block text-xs text-text-muted">
+                            {product.unitLabel}
+                          </span>
+                        )}
                       </span>
                     </Link>
+
+                    {/* Buy without leaving the list — this is a reorder list.
+                        A product with no active SKU has nothing to add, and a
+                        button that cannot work is worse than no button. */}
+                    {!product.outOfStock && product.skuCode && (
+                      <QuickBuy
+                        skuCode={product.skuCode}
+                        unitShortLabel={product.unitShortLabel}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

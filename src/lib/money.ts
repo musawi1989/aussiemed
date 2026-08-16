@@ -36,6 +36,30 @@ export function normaliseQty(input: number, min = 1): number {
 }
 
 /**
+ * "2 boxes", "1 bottle", "12 packs" — a quantity said in its own unit.
+ *
+ * "Each" is the catalogue's word for a product sold singly, and it is a unit
+ * name, not something a buyer says: "2 eaches in your cart" is not English.
+ * When that is the unit, the count carries itself and the word is dropped.
+ *
+ * Everything else takes a plain English plural. The sibilant endings need "es"
+ * ("box" -> "boxes", not "boxs") and a consonant before a final "y" turns it
+ * into "ies" ("tray" keeps its y, "ply" does not). Catalogue units are short
+ * concrete nouns — box, bottle, pack, roll, carton, tube — so these rules
+ * cover them; anything irregular arriving later belongs in a lookup here
+ * rather than at a call site.
+ */
+export function pluraliseUnit(unit: string | null, qty: number): string {
+  const word = (unit ?? "").trim().toLowerCase();
+  if (!word || word === "each") return "";
+  if (Math.abs(qty) === 1) return word;
+
+  if (/(s|x|z|ch|sh)$/.test(word)) return `${word}es`;
+  if (/[^aeiou]y$/.test(word)) return `${word.slice(0, -1)}ies`;
+  return `${word}s`;
+}
+
+/**
  * Unit price for a given quantity: the best (highest-threshold) tier the
  * quantity qualifies for, falling back to the base price.
  *

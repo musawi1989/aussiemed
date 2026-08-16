@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**175 items** · 81 outstanding · **17 outstanding P1**
+**176 items** · 82 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -159,6 +159,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-39 | The supplier portal still shows customer orders | Dev | P1 | Done | It listed order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
 | BE-40 | Remove OrderSupplierInvoice, the last of the marketplace model | Dev | P1 | Done | A customer's order was split into one invoice per supplier at checkout. That was right for a marketplace and wrong for what AussieMed is: under DEC-22 AussieMed is the seller of record and issues one invoice, and under DEC-24 the customer never learns a supplier was involved. |
 | BE-41 | No admin queue for enquiries | Dev | P2 | Done | Capturing quote requests, bulk-buy enquiries and restock demand without anywhere to read them would only have moved the problem. |
+| BE-42 | OrganisationStaff.email is no longer collected | Dev | P3 | Open | The Who orders list records who at a practice placed an order. Nobody on it signs in, so an email address was never used for anything — it was asked for, stored, and read by nothing. Client asked for the field to go on 16 Aug 2026. |
 
 ## Infrastructure
 

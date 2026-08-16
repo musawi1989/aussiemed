@@ -140,18 +140,12 @@ export function AddStaffForm() {
 
   return (
     <form action={submit} className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-text">Name</span>
-          <input name="name" required placeholder="Dr Reem Haddad" className={field} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-text">
-            Email <span className="font-normal text-text-subtle">(optional)</span>
-          </span>
-          <input name="email" type="email" className={field} />
-        </label>
-      </div>
+      {/* A name is the whole record. Nobody here signs in, so there is nothing
+          an email address would be used for. */}
+      <label className="block max-w-sm">
+        <span className="mb-1 block text-sm font-bold text-text">Name</span>
+        <input name="name" required placeholder="Dr Reem Haddad" className={field} />
+      </label>
 
       <div className="flex flex-wrap items-center gap-3">
         <button

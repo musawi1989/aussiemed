@@ -51,9 +51,6 @@ export default async function StaffPage() {
               >
                 <div className="min-w-0">
                   <p className="font-bold text-text">{person.name}</p>
-                  {person.email && (
-                    <p className="text-sm text-text-muted">{person.email}</p>
-                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <span className="text-xs tnum text-text-subtle">

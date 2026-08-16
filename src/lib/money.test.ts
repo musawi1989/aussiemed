@@ -8,6 +8,7 @@ import {
   lineTotal,
   nextTierFor,
   normaliseQty,
+  pluraliseUnit,
   round2,
   savingPercent,
   totalsFor,
@@ -284,5 +285,41 @@ describe("invoice splitting arithmetic", () => {
     assert.equal(orderVat, 72.25);
     assert.equal(summedVat, orderVat);
     assert.equal(round2(orderSubtotal + orderVat), 1517.23);
+  });
+});
+
+describe("pluraliseUnit", () => {
+  it("drops 'Each', which is a unit name and not a word a buyer says", () => {
+    // "2 eaches in your cart" is how this reads if the word is kept.
+    assert.equal(pluraliseUnit("Each", 2), "");
+    assert.equal(pluraliseUnit("each", 1), "");
+  });
+
+  it("leaves a single unit singular", () => {
+    assert.equal(pluraliseUnit("Box", 1), "box");
+    assert.equal(pluraliseUnit("Bottle", 1), "bottle");
+  });
+
+  it("adds 'es' after a sibilant rather than a bare 's'", () => {
+    assert.equal(pluraliseUnit("Box", 2), "boxes");
+    assert.equal(pluraliseUnit("Patch", 3), "patches");
+    assert.equal(pluraliseUnit("Brush", 4), "brushes");
+  });
+
+  it("turns a consonant + y into 'ies', and leaves a vowel + y alone", () => {
+    assert.equal(pluraliseUnit("Ply", 2), "plies");
+    assert.equal(pluraliseUnit("Tray", 2), "trays");
+  });
+
+  it("handles the ordinary units the catalogue actually uses", () => {
+    assert.equal(pluraliseUnit("Pack", 12), "packs");
+    assert.equal(pluraliseUnit("Carton", 2), "cartons");
+    assert.equal(pluraliseUnit("Roll", 144), "rolls");
+    assert.equal(pluraliseUnit("Tube", 2), "tubes");
+  });
+
+  it("survives a missing or blank unit rather than printing 'nulls'", () => {
+    assert.equal(pluraliseUnit(null, 2), "");
+    assert.equal(pluraliseUnit("   ", 2), "");
   });
 });
