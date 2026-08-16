@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**185 items** · 73 outstanding · **15 outstanding P1**
+**186 items** · 73 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -85,6 +85,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-15 | The account showed no account figures | Dev | P2 | Done | A trade buyer could see a list of orders but nothing about their own account: how much they spend, how often they order, whether they are overdue. |
 | FN-16 | Orders did not say who placed them or which site they were for | Dev | P2 | Done | A practice with several sites and several people ordering had one undifferentiated history, so "who ordered this and where did it go" could not be answered. |
 | FN-17 | Saved products were an undifferentiated list | Dev | P2 | Done | A buyer who has saved forty things needs them grouped to find anything. |
+| FN-18 | A customer could see their orders but never their spending | Dev | P2 | Done | The account showed a list of orders and a few headline figures on the overview, and nothing else. There was no way to ask what a practice had spent over a quarter, where it went, who was ordering it, or to get the invoices out in a form a bookkeeper could use — all questions a trade buyer asks at budget time and at year end. |
 
 ## Done
 

@@ -63,6 +63,17 @@ export default async function AccountLayout({
           },
         ]
       : []),
+    ...(session
+      ? [
+          {
+            href: "/account/reports",
+            label: "Spending",
+            // The invoice pages belong to this tab, not to Orders: somebody
+            // there is chasing a delivery, somebody here is doing the books.
+            also: ["/account/invoices"],
+          },
+        ]
+      : []),
     { href: "/account/products", label: "My products", count: savedCount },
     ...(session
       ? [
