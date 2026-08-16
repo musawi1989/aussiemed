@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { VatRateForm } from "@/components/VatRateForm";
+import { CutoffForm } from "@/components/CutoffForm";
+import { getCutoffHour } from "@/lib/purchasing";
 
 /**
  * Settings, deliberately short.
@@ -9,10 +11,11 @@ import { VatRateForm } from "@/components/VatRateForm";
  * rest is listed as outstanding with the register item that tracks it.
  */
 export default async function AdminSettingsPage() {
-  const [vat, currency, version] = await Promise.all([
+  const [vat, currency, version, cutoffHour] = await Promise.all([
     db.setting.findUnique({ where: { key: "vatRateBasisPoints" } }),
     db.setting.findUnique({ where: { key: "currency" } }),
     db.setting.findUnique({ where: { key: "catalogVersion" } }),
+    getCutoffHour(),
   ]);
 
   const percent = Number(vat?.value ?? 500) / 100;
@@ -35,7 +38,10 @@ export default async function AdminSettingsPage() {
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
-        <VatRateForm percent={percent} />
+        <div className="space-y-5">
+          <VatRateForm percent={percent} />
+          <CutoffForm hour={cutoffHour} />
+        </div>
 
         <div className="space-y-5">
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">

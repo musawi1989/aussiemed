@@ -1,5 +1,8 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CutoffBar } from "@/components/CutoffBar";
+import { cutoffState } from "@/lib/cutoff";
+import { getCutoffHour } from "@/lib/purchasing";
 import { getAllProducts, getDepartments } from "@/lib/catalog";
 import { savedProductSlugs } from "@/lib/account";
 import { CatalogProvider } from "@/lib/catalog-client";
@@ -41,12 +44,18 @@ export async function ShopChrome({
    */
   withCatalogue?: boolean;
 }) {
-  const [departments, products, user, savedSlugs] = await Promise.all([
+  const [departments, products, user, savedSlugs, cutoffHour] = await Promise.all([
     getDepartments(),
     withCatalogue ? getAllProducts() : Promise.resolve([]),
     getSessionUser(),
     withCatalogue ? savedProductSlugs() : Promise.resolve([]),
+    getCutoffHour(),
   ]);
+
+  // Computed here so every page agrees, and from the same pure module the
+  // buying run uses — a countdown that disagreed with the run would be a
+  // promise broken by arithmetic.
+  const cutoff = cutoffState(new Date(), cutoffHour);
 
   // Translated here because the browser works in catalogue ids and the
   // database works in slugs. Doing it once on the server keeps that seam out
@@ -68,6 +77,15 @@ export async function ShopChrome({
           <Header
             departments={departments}
             sessionUser={user ? { name: user.name, role: user.role } : null}
+          />
+          {/* Directly under the header, on every storefront page. The cutoff
+              is the one thing a trade buyer needs to know before they decide
+              whether to order now or in the morning, so it is not somewhere
+              they have to go and find. */}
+          <CutoffBar
+            cutoffAtMs={cutoff.nextAt.getTime()}
+            label={cutoff.label}
+            today={cutoff.today}
           />
           <main id="main" className="flex-1">
             {children}

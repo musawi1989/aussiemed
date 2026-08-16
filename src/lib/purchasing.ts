@@ -12,6 +12,12 @@ import {
   type DemandLine,
   type PurchasePlan,
 } from "./purchase-plan";
+import {
+  DEFAULT_CUTOFF_HOUR,
+  isValidCutoffHour,
+  lastCutoffBefore,
+  parseCutoffHour,
+} from "./cutoff";
 
 /**
  * Buying — BE-36, DEC-26.
@@ -40,18 +46,43 @@ const fail = (error: string): Result<never> => ({ ok: false, error });
 export const CUTOFF_HOUR_KEY = "purchaseCutoffHourDubai";
 export const AUTO_SEND_KEY = "purchaseAutoSend";
 
-/** 5pm Asia/Dubai unless configured otherwise. */
-export const DEFAULT_CUTOFF_HOUR = 17;
-
-/** UTC+4, no daylight saving — the UAE has never observed it. */
-const DUBAI_OFFSET_HOURS = 4;
+// The cutoff arithmetic itself lives in cutoff.ts, which is pure and tested,
+// so the buying run and the countdown a buyer sees cannot disagree about when
+// the day closes.
+export { DEFAULT_CUTOFF_HOUR, lastCutoffBefore } from "./cutoff";
 
 export async function getCutoffHour(): Promise<number> {
   const row = await db.setting.findUnique({ where: { key: CUTOFF_HOUR_KEY } });
-  const parsed = Number(row?.value);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 23
-    ? parsed
-    : DEFAULT_CUTOFF_HOUR;
+  const parsed = parseCutoffHour(row?.value);
+  return parsed ?? DEFAULT_CUTOFF_HOUR;
+}
+
+/**
+ * Moves the daily cutoff.
+ *
+ * Takes effect immediately and changes nothing already bought: purchase orders
+ * are built against the cutoff that had passed when they were built, and this
+ * only decides when the next one closes. What it does change is the deadline
+ * every buyer is shown, which is why it is audited.
+ */
+export async function setCutoffHour(hour: number): Promise<Result> {
+  const actor = await requireAdmin();
+
+  if (!isValidCutoffHour(hour)) {
+    return fail("Choose a whole hour of the day, from 0 to 23.");
+  }
+
+  const before = await getCutoffHour();
+  if (before === hour) return ok(undefined);
+
+  await db.setting.upsert({
+    where: { key: CUTOFF_HOUR_KEY },
+    update: { value: String(hour) },
+    create: { key: CUTOFF_HOUR_KEY, value: String(hour) },
+  });
+
+  await audit(actor, "purchasing.cutoffHour", "Setting", CUTOFF_HOUR_KEY, { hour: before }, { hour });
+  return ok(undefined);
 }
 
 export async function getAutoSend(): Promise<boolean> {
@@ -71,30 +102,6 @@ export async function setAutoSend(on: boolean): Promise<Result> {
 
   await audit(actor, "purchasing.autoSend", "Setting", AUTO_SEND_KEY, { on: before }, { on });
   return ok(undefined);
-}
-
-/**
- * The most recent cutoff that has passed, as an instant.
- *
- * Stored and compared in UTC; the hour is expressed in Dubai time because that
- * is where the warehouse is and 5pm has to mean 5pm to the people working it.
- */
-export function lastCutoffBefore(now: Date, cutoffHour: number): Date {
-  const dubai = new Date(now.getTime() + DUBAI_OFFSET_HOURS * 3_600_000);
-  const cutoff = new Date(
-    Date.UTC(
-      dubai.getUTCFullYear(),
-      dubai.getUTCMonth(),
-      dubai.getUTCDate(),
-      cutoffHour - DUBAI_OFFSET_HOURS,
-      0,
-      0,
-      0
-    )
-  );
-  // Before today's cutoff, the last one that passed was yesterday's.
-  if (cutoff > now) cutoff.setUTCDate(cutoff.getUTCDate() - 1);
-  return cutoff;
 }
 
 /* ------------------------------------------------------------------ *

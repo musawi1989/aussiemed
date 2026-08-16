@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**181 items** · 75 outstanding · **15 outstanding P1**
+**182 items** · 75 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -165,6 +165,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-45 | A purchase order line with no recorded cost was stored as costing zero | Dev | P1 | Done | buildPurchaseOrders wrote unitCostFils ?? 0, so every line drawn from a supply whose cost had not been loaded was saved as free. Downstream that is indistinguishable from a genuine zero, and the realised margin on the customer order it fulfilled came out at 100% — stated confidently on the screen whose entire purpose is deciding whether a trade is worth doing. The pure planner already modelled the cost as nullable and got it right; the flattening happened only at the database write. |
 | BE-46 | Nothing recorded that an email had not been sent | Dev | P2 | Done | Quote requests, restock requests and enquiries were stored and never sent, and nothing anywhere said so. A silent failure is the only kind that lasts: an empty inbox looks exactly like a quiet week. |
 | BE-47 | The whole catalogue shipped with every admin and supplier page | Dev | P2 | Done | The layout split was meant to stop the storefront's data loading behind the back office, and it did not. The root not-found wraps ShopChrome, which loads every product and hands it to a browser-side provider, and Next includes the root not-found boundary in the payload of every page — so around 150KB of catalogue JSON went out with every /admin and /business-portal response. Visible markup was clean; the data sat in the flight payload where View Source finds it. |
+| BE-48 | The daily cutoff could not be changed, and no buyer was told what it was | Dev | P2 | Done | The buying run has always closed at an hour held in a settings row, but nothing could write that row — the value could only be read, so 5pm was effectively hard-coded. Worse, the deadline was invisible on the storefront. A trade buyer deciding whether to order now or in the morning had no way to know which side of the cutoff they were on, and the whole cross-dock model turns on that one time. |
 
 ## Infrastructure
 

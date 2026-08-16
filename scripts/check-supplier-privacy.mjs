@@ -312,13 +312,15 @@ for (const path of PUBLIC_PATHS) {
     .all()
     .map((row) => row.costFils);
 
+  // Active only. An Inactive product 404s, and a check that passes because
+  // the page does not exist is worse than no check — it reads as proof.
   const product = db
     .prepare(
       `select p."slug", s."costFils"
        from "ProductSupply" s
        join "ProductSku" k on k."id" = s."skuId"
        join "ProductMaster" p on p."id" = k."productMasterId"
-       where s."costFils" is not null
+       where s."costFils" is not null and p."status" = 'Active' and k."isActive" = 1
        limit 1`
     )
     .get();
@@ -348,6 +350,13 @@ for (const path of PUBLIC_PATHS) {
     for (const path of paths) {
       const res = await fetch(BASE + path);
       const body = await res.text();
+
+      // A 404 carries no cost because it carries nothing. Say so rather than
+      // recording a pass that proves nothing.
+      if (res.status !== 200) {
+        fail(`${path} answered ${res.status}, so this check proved nothing`);
+        continue;
+      }
       // A bare integer can coincide with a price or an id, so only report a
       // field that looks like it is carrying cost.
       const structural = /"(cost|costFils|marginFils|marginPercent|markup\w*)"\s*:/i.test(body);
