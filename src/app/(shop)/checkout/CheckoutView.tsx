@@ -11,13 +11,36 @@ import { formatAED } from "@/lib/money";
  * The reference number comes back from the server, which allocates it inside
  * the same transaction that writes the order — the browser never invents one.
  */
-export function CheckoutView() {
+export type CheckoutBranch = {
+  id: string;
+  label: string;
+  line1: string;
+  city: string;
+  contact: string;
+  phone: string;
+  emirate: string;
+  isDefault: boolean;
+};
+
+export function CheckoutView({
+  branches = [],
+  staff = [],
+}: {
+  branches?: CheckoutBranch[];
+  staff?: { id: string; name: string }[];
+}) {
   const { cart, ready, refresh } = useCart();
   const [placed, setPlaced] = useState<{
     reference: string;
-    invoiceCount: number;
     totalAED: number;
   } | null>(null);
+
+  // Pre-selecting the default branch fills the address for the common case:
+  // a practice with one site should not retype it every time.
+  const [branchId, setBranchId] = useState(
+    branches.find((b) => b.isDefault)?.id ?? branches[0]?.id ?? ""
+  );
+  const branch = branches.find((b) => b.id === branchId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,17 +148,100 @@ export function CheckoutView() {
           </p>
         )}
 
+        {/* Only for a trade account that has set these up. An empty picker is
+            worse than none, so neither appears until there is something in it. */}
+        {(branches.length > 0 || staff.length > 0) && (
+          <fieldset className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+            <legend className="px-1 text-sm font-bold text-text">
+              This order is for
+            </legend>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              {branches.length > 0 && (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-text">
+                    Branch
+                  </span>
+                  <select
+                    name="addressId"
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text"
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.label}
+                        {b.city ? ` — ${b.city}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-xs text-text-subtle">
+                    Keeps each site&rsquo;s ordering separate on your account.
+                  </span>
+                </label>
+              )}
+
+              {staff.length > 0 && (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-text">
+                    Ordered by
+                  </span>
+                  <select
+                    name="staffId"
+                    className="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text"
+                  >
+                    <option value="">Not specified</option>
+                    {staff.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-xs text-text-subtle">
+                    Their name goes on the order.
+                  </span>
+                </label>
+              )}
+            </div>
+          </fieldset>
+        )}
+
         <fieldset className="rounded-card border border-border-base bg-surface p-5 shadow-card">
           <legend className="px-1 text-sm font-bold text-text">
             Delivery details
           </legend>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field label="Clinic or company name" name="company" required />
-            <Field label="Contact name" name="contact" required />
+            <Field
+              label="Contact name"
+              name="contact"
+              required
+              defaultValue={branch?.contact}
+              key={`contact-${branchId}`}
+            />
             <Field label="Email" name="email" type="email" required />
-            <Field label="Phone" name="phone" type="tel" required />
-            <Field label="Delivery address" name="line1" required className="sm:col-span-2" />
-            <Field label="Emirate" name="emirate" required />
+            <Field
+              label="Phone"
+              name="phone"
+              type="tel"
+              required
+              defaultValue={branch?.phone}
+              key={`phone-${branchId}`}
+            />
+            <Field
+              label="Delivery address"
+              name="line1"
+              required
+              className="sm:col-span-2"
+              defaultValue={branch?.line1}
+              key={`line1-${branchId}`}
+            />
+            <Field
+              label="Emirate"
+              name="emirate"
+              required
+              defaultValue={branch?.emirate}
+              key={`emirate-${branchId}`}
+            />
             <Field label="Purchase order reference" name="poReference" />
           </div>
         </fieldset>
@@ -215,12 +321,16 @@ function Field({
   type = "text",
   required = false,
   className = "",
+  defaultValue,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   className?: string;
+  /** Prefilled from the chosen branch. Remounted on change via a key, so
+   *  switching branch refills the field instead of leaving a stale value. */
+  defaultValue?: string;
 }) {
   return (
     <label className={`block ${className}`}>
@@ -232,6 +342,7 @@ function Field({
         type={type}
         name={name}
         required={required}
+        defaultValue={defaultValue}
         className="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text"
       />
     </label>

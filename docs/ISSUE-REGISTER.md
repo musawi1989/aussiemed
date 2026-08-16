@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**171 items** · 81 outstanding · **17 outstanding P1**
+**175 items** · 81 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -81,6 +81,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Done | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
 | FN-12 | Nothing shows which clients are overdue to reorder | Dev | P2 | Open | In a reorder-first business this is the single most useful signal there is: a clinic that buys gloves every three weeks and has not ordered in five needs a phone call. It is computable from order history alone once there are three orders per client — no new data capture required. |
 | FN-13 | The client account has no Buy Again | Dev | P2 | Open | A returning buyer has to search for products they have already bought. For a reorder-first marketplace this is the shortest path between the platform and revenue, and it needs no metrics work at all — just their own order history, sorted by how often they buy each line. |
+| FN-14 | The account had no way to repeat an order | Dev | P2 | Done | Reordering was a grid of every item ever bought, one tile each, which duplicated the order history and became unreadable as soon as anyone had ordered more than a few things. "The same as last time" means an order, not a pile of items. |
+| FN-15 | The account showed no account figures | Dev | P2 | Done | A trade buyer could see a list of orders but nothing about their own account: how much they spend, how often they order, whether they are overdue. |
+| FN-16 | Orders did not say who placed them or which site they were for | Dev | P2 | Done | A practice with several sites and several people ordering had one undifferentiated history, so "who ordered this and where did it go" could not be answered. |
+| FN-17 | Saved products were an undifferentiated list | Dev | P2 | Done | A buyer who has saved forty things needs them grouped to find anything. |
 
 ## Done
 

@@ -80,7 +80,6 @@ export async function getCart(cartKey: string): Promise<CartView> {
                 product: {
                   include: {
                     brand: true,
-                    supplier: true,
                     images: { orderBy: { sortOrder: "asc" }, take: 1 },
                   },
                 },
@@ -229,6 +228,10 @@ export type CheckoutInput = {
   deliveryType?: string | null;
   /** What the buyer typed at checkout — a ward name, a delivery instruction. */
   notes?: string | null;
+  /** Which of the account's branches this is for. */
+  addressId?: string | null;
+  /** Who at the customer is placing it — a name on their own list, not a login. */
+  staffId?: string | null;
 };
 
 export type CheckoutResult = {
@@ -314,6 +317,35 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     const days = TERM_DAYS[organisation?.paymentTerms ?? "Prepaid"] ?? 0;
     const paymentDueOn = new Date(Date.now() + days * 86_400_000);
 
+    /*
+     * Who placed it, and where it goes.
+     *
+     * Both are checked against this organisation rather than trusted from the
+     * form, because either could be swapped for another account's id. The
+     * staff name is snapshotted alongside the link for the same reason every
+     * other name on an order is: removing someone from the list later must not
+     * blank the orders they placed.
+     */
+    const staff = input.staffId
+      ? await tx.organisationStaff.findFirst({
+          where: {
+            id: input.staffId,
+            organisationId: input.organisationId ?? "",
+          },
+          select: { id: true, name: true },
+        })
+      : null;
+
+    const branch = input.addressId
+      ? await tx.address.findFirst({
+          where: {
+            id: input.addressId,
+            organisationId: input.organisationId ?? "",
+          },
+          select: { id: true },
+        })
+      : null;
+
     /* --- the order --- */
 
     const order = await tx.order.create({
@@ -329,6 +361,9 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
         paymentDueOn,
         deliveryType: input.deliveryType === "PickUp" ? "PickUp" : "Delivery",
         customerNotes: input.notes || null,
+        addressId: branch?.id ?? null,
+        staffId: staff?.id ?? null,
+        placedByName: staff?.name ?? null,
         subtotalFils: orderTotals.subtotalFils,
         vatFils: orderTotals.vatFils,
         totalFils: orderTotals.totalFils,

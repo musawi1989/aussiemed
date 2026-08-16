@@ -94,6 +94,7 @@ model Organisation {
   users     User[]
   addresses Address[]
   orders    Order[]
+  staff     OrganisationStaff[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +105,10 @@ model Address {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
+  /// The branch name a customer with several sites recognises — "Jumeirah
+  /// clinic", "Main store". An address is a branch: giving a practice with
+  /// three sites a separate Branch concept beside this one would mean two
+  /// things that mean the same, and orders already point here.
   label     String?
   contact   String
   phone     String
@@ -114,10 +119,39 @@ model Address {
   country   String  @default("United Arab Emirates")
   isDefault Boolean @default(false)
 
+  /// Removed by the customer, not deleted. Orders already delivered there
+  /// still name it, and a branch that closes must not blank its own history.
+  isArchived Boolean @default(false)
+
   orders Order[]
 
   createdAt DateTime @default(now())
 
+  @@index([organisationId])
+}
+
+/// Someone at the customer who places orders.
+///
+/// A name, not a login. The question this answers is "who ordered this?", and
+/// answering it does not need passwords, invitations or permissions — those
+/// would be a different feature with a different cost. Promoting a name to a
+/// real account later does not lose the history, because orders keep the name
+/// they were placed under as a snapshot.
+model OrganisationStaff {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  name  String
+  email String?
+  /// Removed from the picker without touching the orders they placed.
+  isActive Boolean @default(true)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([organisationId, name])
   @@index([organisationId])
 }
 
@@ -608,6 +642,13 @@ model Order {
 
   addressId        String?
   address          Address? @relation(fields: [addressId], references: [id])
+
+  /// Who at the customer placed it. The name is snapshotted alongside the
+  /// link, like every other name on an order, so removing a staff member does
+  /// not blank the orders they placed.
+  staffId      String?
+  staff        OrganisationStaff? @relation(fields: [staffId], references: [id])
+  placedByName String?
   /// The delivery address as it was at the time, so later edits to the
   /// address book cannot rewrite a historical order.
   shippingSnapshot String?

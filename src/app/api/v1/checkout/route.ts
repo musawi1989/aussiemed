@@ -51,6 +51,11 @@ export async function POST(request: Request) {
       line1: String(body.line1).trim(),
       emirate: String(body.emirate).trim(),
       poReference: body.poReference ? String(body.poReference).trim() : null,
+      notes: body.notes ? String(body.notes).trim() : null,
+      // Both are verified against the buyer's own organisation inside
+      // checkout(), never trusted from here.
+      addressId: body.addressId ? String(body.addressId) : null,
+      staffId: body.staffId ? String(body.staffId) : null,
     });
 
     return NextResponse.json({
