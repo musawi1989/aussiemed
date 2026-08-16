@@ -8,7 +8,7 @@ const COLUMNS = [
       { label: "Product range", href: "/products" },
       { label: "Get bulk prices", href: "/bulk-buy" },
       { label: "Quote request", href: "/quote" },
-      { label: "Wishlist", href: "/wishlist" },
+      { label: "My products", href: "/account/products" },
       { label: "Cart", href: "/cart" },
     ],
   },

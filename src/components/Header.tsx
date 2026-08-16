@@ -35,7 +35,7 @@ export function Header({
    *  round trip of its own. */
   sessionUser: { name: string; role: string } | null;
 }) {
-  const { wishlist, quoteLines, ready } = useStore();
+  const { quoteLines, ready } = useStore();
   const { cart, ready: cartReady } = useCart();
   const [browseOpen, setBrowseOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -103,9 +103,10 @@ export function Header({
             <path d="M14 3v4h4M9 12h6M9 16h4" />
           </IconLink>
 
-          <IconLink href="/wishlist" label="Wishlist" count={ready ? wishlist.length : 0}>
-            <path d="M12 20.5 4.2 12.9a4.7 4.7 0 0 1 0-6.7 4.8 4.8 0 0 1 6.8 0l1 1 1-1a4.8 4.8 0 0 1 6.8 0 4.7 4.7 0 0 1 0 6.7Z" />
-          </IconLink>
+          {/* The heart came out of the top bar. Saved products now live in the
+              account under My products, which is where a signed-in buyer looks
+              for their own things — and a permanent icon for a list most
+              visitors never build was paying rent it did not earn. */}
 
           <IconLink href="/cart" label="Cart" count={cartReady ? cart.itemCount : 0}>
             <path d="M3 4h2.2l2.1 11.2A2 2 0 0 0 9.3 17h8.1a2 2 0 0 0 2-1.6L21 7H6.3" />

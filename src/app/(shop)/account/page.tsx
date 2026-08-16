@@ -1,126 +1,102 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
 import { formatAED } from "@/lib/money";
-import {
-  accountBranches,
-  accountOrders,
-  accountOverview,
-  savedProducts,
-} from "@/lib/account";
+import { accountBranches, accountOrders, accountOverview } from "@/lib/account";
 
 export const metadata: Metadata = {
   title: "Your Account",
   description:
-    "Your AussieMed account: what you have ordered, what you spend, your branches and the products you have saved.",
+    "Your AussieMed account: what you have ordered, what you spend, and your branches.",
 };
 
 const aed = (fils: number) => formatAED(fils / 100);
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
- * The account landing.
+ * The account overview: the figures, then the orders.
  *
- * It used to open with a grid of every item ever ordered, one tile each, which
- * grew into an unreadable wall as soon as anyone had ordered more than a few
- * things and duplicated what the order history already said. Reordering now
- * hangs off an order, where a buyer looks for it — "the same as last time"
- * means an order, not a pile of items.
+ * The sign-in guard, the heading and the tabs live in the layout. Saved
+ * products moved to their own tab — they had grown into a wall at the bottom
+ * of this page that nobody scrolled to.
+ *
+ * Reordering hangs off an order rather than a grid of every item ever bought,
+ * because "the same as last time" means an order, not a pile of items.
  */
 export default async function AccountPage({
   searchParams,
 }: {
   searchParams: Promise<{ branch?: string }>;
 }) {
-  const user = await getSessionUser();
-  if (!user) redirect("/sign-in?next=/account");
-  if (user.role === "Admin") redirect("/admin");
-  if (user.role === "Supplier") redirect("/business-portal");
-
   const { branch } = await searchParams;
   const overview = await accountOverview();
 
-  // A personal account with no organisation has no branches or staff to show.
-  const trade = Boolean(overview);
-
-  const [orders, branches, saved] = trade
-    ? await Promise.all([accountOrders(branch), accountBranches(), savedProducts()])
-    : [[], [], await savedProducts()];
+  // A personal login with no trade account has no orders or branches to show.
+  const [orders, branches] = overview
+    ? await Promise.all([accountOrders(branch), accountBranches()])
+    : [[], []];
 
   const metrics = overview?.metrics;
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-5">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text">
-            {overview?.organisationName ?? user.name}
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {user.name} &middot; {user.email}
-          </p>
-        </div>
-        {trade && (
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/account/branches"
-              className="rounded-card border border-border-strong bg-surface px-3 py-2 text-sm font-bold text-text transition-colors hover:bg-surface-hover"
-            >
-              Branches
-            </Link>
-            <Link
-              href="/account/staff"
-              className="rounded-card border border-border-strong bg-surface px-3 py-2 text-sm font-bold text-text transition-colors hover:bg-surface-hover"
-            >
-              Who orders
-            </Link>
-          </div>
-        )}
+  if (!overview) {
+    return (
+      <div className="rounded-card border border-border-base bg-surface px-4 py-12 text-center shadow-card">
+        <h2 className="text-lg font-bold text-text">No trade account yet</h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-text-muted">
+          Your sign-in is not linked to a trade account, so there are no orders,
+          branches or terms to show. Anything you save still appears under My
+          products.
+        </p>
+        <Link
+          href="/products"
+          className="mt-5 inline-block rounded-card bg-brand px-5 py-2.5 text-sm font-bold text-on-brand transition-colors hover:bg-brand-hover"
+        >
+          Browse the catalogue
+        </Link>
       </div>
+    );
+  }
 
-      {/* --- the numbers --- */}
+  return (
+    <>
+      <section>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat label="Orders placed" value={String(metrics!.orderCount)} />
+          <Stat
+            label="Total spent"
+            value={aed(metrics!.totalSpentFils)}
+            note="excluding VAT"
+          />
+          <Stat
+            label="Average order"
+            value={metrics!.orderCount > 0 ? aed(metrics!.averageOrderFils) : "—"}
+          />
+          <Stat
+            label="You usually order"
+            value={
+              metrics!.cadenceDays !== null
+                ? `every ~${metrics!.cadenceDays} days`
+                : "—"
+            }
+            note={
+              metrics!.cadenceDays === null
+                ? "after three orders we can tell"
+                : metrics!.daysSinceLastOrder !== null
+                  ? `last order ${metrics!.daysSinceLastOrder} days ago`
+                  : undefined
+            }
+            warn={metrics!.overdue}
+          />
+        </ul>
 
-      {metrics && (
-        <section className="mt-8">
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Orders placed" value={String(metrics.orderCount)} />
-            <Stat label="Total spent" value={aed(metrics.totalSpentFils)} note="excluding VAT" />
-            <Stat
-              label="Average order"
-              value={metrics.orderCount > 0 ? aed(metrics.averageOrderFils) : "—"}
-            />
-            <Stat
-              label="You usually order"
-              value={
-                metrics.cadenceDays !== null
-                  ? `every ~${metrics.cadenceDays} days`
-                  : "—"
-              }
-              note={
-                metrics.cadenceDays === null
-                  ? "after three orders we can tell"
-                  : metrics.daysSinceLastOrder !== null
-                    ? `last order ${metrics.daysSinceLastOrder} days ago`
-                    : undefined
-              }
-              warn={metrics.overdue}
-            />
-          </ul>
+        {metrics!.overdue && (
+          <p className="mt-3 rounded-card border-l-4 border-accent-border bg-accent-soft px-4 py-2.5 text-sm font-semibold text-text">
+            It has been longer than usual since your last order. Repeat your
+            last one below in two clicks.
+          </p>
+        )}
+      </section>
 
-          {metrics.overdue && (
-            <p className="mt-3 rounded-card border-l-4 border-accent-border bg-accent-soft px-4 py-2.5 text-sm font-semibold text-text">
-              It has been longer than usual since your last order. Reorder your
-              last one below in two clicks.
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* --- orders, by branch --- */}
-
-      <section className="mt-10">
+      <section className="mt-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-lg font-bold tracking-tight text-text">
             Your orders
@@ -189,75 +165,7 @@ export default async function AccountPage({
           </ul>
         )}
       </section>
-
-      {/* --- saved products --- */}
-
-      <section className="mt-12">
-        <h2 className="text-lg font-bold tracking-tight text-text">
-          Saved products
-        </h2>
-        <p className="mt-1 text-sm text-text-muted">
-          Everything you have saved, grouped by what it is. Tap the heart on any
-          product to add it.
-        </p>
-
-        {saved.length === 0 ? (
-          <p className="mt-4 rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
-            Nothing saved yet.
-          </p>
-        ) : (
-          <div className="mt-4 space-y-6">
-            {/* Only categories with something in them — a list of empty
-                headings is the catalogue tree pretending to be a personal
-                list. */}
-            {saved.map((group) => (
-              <div key={group.categoryId ?? "none"}>
-                <h3 className="text-sm font-bold uppercase tracking-wide text-text-subtle">
-                  {group.categoryName}{" "}
-                  <span className="tnum text-text-muted">
-                    ({group.products.length})
-                  </span>
-                </h3>
-                <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {group.products.map((product) => (
-                    <li key={product.id}>
-                      <Link
-                        href={`/products/${product.slug}`}
-                        className="flex h-full gap-3 rounded-card border border-border-base bg-surface p-3 shadow-card transition-colors hover:border-navy-border"
-                      >
-                        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-card bg-surface-sunken">
-                          {product.image && (
-                            <Image
-                              src={product.image}
-                              alt=""
-                              fill
-                              sizes="56px"
-                              className="object-contain"
-                            />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm leading-snug text-text">
-                            {product.name}
-                          </span>
-                          <span className="mt-0.5 block text-xs tnum text-text-muted">
-                            {product.outOfStock
-                              ? "Out of stock"
-                              : product.priceFils !== null
-                                ? aed(product.priceFils)
-                                : ""}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+    </>
   );
 }
 

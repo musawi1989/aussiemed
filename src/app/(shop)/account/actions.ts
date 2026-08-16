@@ -7,6 +7,7 @@ import {
   addStaff,
   archiveBranch,
   removeStaff,
+  toggleSavedProduct,
 } from "@/lib/account";
 import { addToCart, clearCart } from "@/lib/orders";
 import { ensureCartKey } from "@/lib/cart-cookie";
@@ -74,6 +75,26 @@ export async function removeStaffAction(
   return result.ok
     ? { ok: true, message: "Removed. The orders they placed are unchanged." }
     : { ok: false, error: result.error };
+}
+
+/* ---------------- saved products ---------------- */
+
+/**
+ * Called by the heart on a product. Persists for a signed-in account so the
+ * saved list follows them between devices and feeds My products; a guest's
+ * hearts stay in their own browser.
+ */
+export async function toggleSavedAction(
+  slug: string
+): Promise<{ signedIn: boolean; saved: boolean }> {
+  const result = await toggleSavedProduct(slug);
+  if (!result.ok) return { signedIn: false, saved: false };
+
+  if (result.value.signedIn) {
+    revalidatePath("/account/products");
+    revalidatePath("/account");
+  }
+  return result.value;
 }
 
 /* ---------------- reorder ---------------- */

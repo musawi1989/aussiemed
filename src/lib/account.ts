@@ -375,6 +375,59 @@ export async function reorderPreview(
  * Saved products
  * ------------------------------------------------------------------ */
 
+/**
+ * Saves or unsaves a product for the signed-in account.
+ *
+ * Addressed by slug because the browser knows the catalogue's own numeric ids,
+ * not database ones, and the slug is the stable public address of a product —
+ * DEC-17 already guarantees it never changes under a rename.
+ *
+ * A guest gets `signedIn: false` rather than an error: their hearts still work
+ * in this browser, they simply do not follow them to another one.
+ */
+export async function toggleSavedProduct(
+  slug: string
+): Promise<Result<{ signedIn: boolean; saved: boolean }>> {
+  const user = await getSessionUser();
+  if (!user || user.role !== "Customer") {
+    return ok({ signedIn: false, saved: false });
+  }
+
+  const product = await db.productMaster.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+  if (!product) return fail("That product is no longer listed.");
+
+  const existing = await db.wishlistItem.findFirst({
+    where: { userId: user.id, productMasterId: product.id },
+    select: { id: true },
+  });
+
+  if (existing) {
+    await db.wishlistItem.delete({ where: { id: existing.id } });
+    return ok({ signedIn: true, saved: false });
+  }
+
+  await db.wishlistItem.create({
+    data: { userId: user.id, productMasterId: product.id },
+  });
+  return ok({ signedIn: true, saved: true });
+}
+
+/** The catalogue ids of everything this account has saved, for the store. */
+export async function savedProductSlugs(): Promise<string[]> {
+  const user = await getSessionUser();
+  if (!user || user.role !== "Customer") return [];
+
+  const saved = await db.wishlistItem.findMany({
+    where: { userId: user.id },
+    select: { product: { select: { slug: true } } },
+  });
+
+  return saved.map((row) => row.product.slug);
+}
+
 export type SavedGroup = {
   categoryId: string | null;
   categoryName: string;

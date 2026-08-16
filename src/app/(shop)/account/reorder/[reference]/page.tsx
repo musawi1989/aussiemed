@@ -39,17 +39,17 @@ export default async function ReorderPage({
   const unavailable = preview.lines.filter((l) => !l.available);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <>
       <Link
         href="/account"
         className="text-sm font-semibold text-text-muted hover:text-navy"
       >
-        &larr; Your account
+        &larr; All orders
       </Link>
 
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
+      <h2 className="mt-1 text-lg font-bold tracking-tight text-text">
         Reorder {preview.reference}
-      </h1>
+      </h2>
       <p className="mt-1 text-sm text-text-muted tnum">
         Originally placed {preview.placedAt.toISOString().slice(0, 10)} &middot;{" "}
         {preview.lines.length} {preview.lines.length === 1 ? "line" : "lines"}.
@@ -73,6 +73,6 @@ export default async function ReorderPage({
         Priced at today&rsquo;s catalogue prices, not the prices on the original
         order.
       </p>
-    </div>
+    </>
   );
 }

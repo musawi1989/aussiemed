@@ -82,17 +82,34 @@ function writeJSON(key: string, value: unknown): void {
   }
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({
+  children,
+  savedProductIds = [],
+}: {
+  children: ReactNode;
+  /**
+   * What this account has already saved, from the database.
+   *
+   * Saved products belong to the account, not to the browser: signing in on a
+   * different machine must show the same hearts filled. Guests keep using
+   * local storage, which is why both exist.
+   */
+  savedProductIds?: number[];
+}) {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [quoteEntries, setQuoteEntries] = useState<CartEntry[]>([]);
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [wishlist, setWishlist] = useState<number[]>(savedProductIds);
   const [includeVat, setIncludeVatState] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setEntries(readJSON<CartEntry[]>(CART_KEY, []));
     setQuoteEntries(readJSON<CartEntry[]>(QUOTE_KEY, []));
-    setWishlist(readJSON<number[]>(WISHLIST_KEY, []));
+    // A signed-in account's saved products come from the server and win; a
+    // guest's come from this browser.
+    if (savedProductIds.length === 0) {
+      setWishlist(readJSON<number[]>(WISHLIST_KEY, []));
+    }
     setIncludeVatState(readJSON<boolean>(VAT_PREF_KEY, false));
     setReady(true);
   }, []);

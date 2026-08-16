@@ -24,17 +24,8 @@ export default async function StaffPage() {
   const staff = await accountStaff();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/account"
-        className="text-sm font-semibold text-text-muted hover:text-navy"
-      >
-        &larr; Your account
-      </Link>
-
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
-        Who orders
-      </h1>
+    <>
+      <h2 className="text-lg font-bold tracking-tight text-text">Who orders</h2>
       <p className="mt-1 max-w-xl text-sm text-text-muted">
         The people at your practice who place orders. At checkout you pick who
         is ordering, and their name goes on the order — so months later it is
@@ -46,7 +37,7 @@ export default async function StaffPage() {
         or their own sign-in.
       </p>
 
-      <section className="mt-6">
+      <section className="mt-5">
         {staff.length === 0 ? (
           <p className="rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
             Nobody added yet. Orders will simply not name a person until you do.
@@ -90,6 +81,6 @@ export default async function StaffPage() {
         Removing someone takes them off the checkout list. The orders they
         placed keep their name.
       </p>
-    </div>
+    </>
   );
 }

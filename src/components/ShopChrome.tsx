@@ -1,6 +1,7 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getAllProducts, getDepartments } from "@/lib/catalog";
+import { savedProductSlugs } from "@/lib/account";
 import { CatalogProvider } from "@/lib/catalog-client";
 import { getSessionUser } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-client";
@@ -20,16 +21,24 @@ import { StoreProvider } from "@/lib/store";
  * in the app, including a page showing a table of orders.
  */
 export async function ShopChrome({ children }: { children: React.ReactNode }) {
-  const [departments, products, user] = await Promise.all([
+  const [departments, products, user, savedSlugs] = await Promise.all([
     getDepartments(),
     getAllProducts(),
     getSessionUser(),
+    savedProductSlugs(),
   ]);
+
+  // Translated here because the browser works in catalogue ids and the
+  // database works in slugs. Doing it once on the server keeps that seam out
+  // of every component with a heart on it.
+  const savedProductIds = products
+    .filter((product) => savedSlugs.includes(product.slug))
+    .map((product) => product.id);
 
   return (
     <CatalogProvider initialProducts={products}>
       <CartProvider>
-        <StoreProvider>
+        <StoreProvider savedProductIds={savedProductIds}>
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-card focus:bg-brand focus:px-4 focus:py-2 focus:text-on-brand"

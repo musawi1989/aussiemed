@@ -24,24 +24,15 @@ export default async function BranchesPage() {
   const branches = await accountBranches();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/account"
-        className="text-sm font-semibold text-text-muted hover:text-navy"
-      >
-        &larr; Your account
-      </Link>
-
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-text">
-        Branches
-      </h1>
+    <>
+      <h2 className="text-lg font-bold tracking-tight text-text">Branches</h2>
       <p className="mt-1 max-w-xl text-sm text-text-muted">
         The sites we deliver to. Each order is placed against one of them, so
         you can look at one site&rsquo;s ordering on its own or all of it
         together.
       </p>
 
-      <section className="mt-6">
+      <section className="mt-5">
         {branches.length === 0 ? (
           <p className="rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
             No branches yet. Add the first one below.
@@ -101,6 +92,6 @@ export default async function BranchesPage() {
         Removing a branch takes it off the list for new orders. Orders already
         delivered there keep it, so your history stays intact.
       </p>
-    </div>
+    </>
   );
 }

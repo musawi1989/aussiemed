@@ -200,7 +200,12 @@ export function BuyBox({ product }: { product: Product }) {
             >
               {added ? "Added to cart" : "Add to cart"}
             </button>
-            <WishlistButton productId={product.id} className="h-11 px-4" withLabel />
+            <WishlistButton
+            productId={product.id}
+            slug={product.slug}
+            className="h-11 px-4"
+            withLabel
+          />
           </div>
 
           {inCart > 0 && (
