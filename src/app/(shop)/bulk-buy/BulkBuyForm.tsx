@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
+import { bulkBuyAction, type EnquiryState } from "@/app/(shop)/enquiry-actions";
 
-/** Captured locally for now — submission needs the backend and a mail transport. */
+/**
+ * Volume pricing enquiries — FN-03.
+ *
+ * These used to resolve to a message on screen and nothing else, which meant
+ * the highest-intent visitors on the site were lost on arrival. They are now
+ * recorded and appear in the admin enquiry queue.
+ */
 export function BulkBuyForm() {
-  const [sent, setSent] = useState(false);
+  const [state, submit, pending] = useActionState<EnquiryState, FormData>(
+    bulkBuyAction,
+    null
+  );
 
-  if (sent) {
+  if (state?.ok) {
     return (
       <div className="rounded-panel border border-border-base bg-surface p-8 text-center shadow-card">
-        <h2 className="text-lg font-semibold text-text">Enquiry noted</h2>
+        <h2 className="text-lg font-semibold text-text">Enquiry received</h2>
         <p className="mt-2 text-sm text-text-muted">
-          Our team will be in touch with pricing.
-        </p>
-        <p className="mt-5 rounded-card border border-accent-border bg-accent-soft px-3 py-2 text-left text-sm leading-relaxed text-accent">
-          Nothing was sent. Delivering this enquiry needs the backend and an
-          email provider, both of which come later in the build.
+          It is with our team and someone will come back to you with pricing.
         </p>
       </div>
     );
@@ -23,10 +29,7 @@ export function BulkBuyForm() {
 
   return (
     <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setSent(true);
-      }}
+      action={submit}
       className="space-y-4 rounded-panel border border-border-base bg-surface p-6 shadow-card"
     >
       <div className="grid gap-4 sm:grid-cols-2">
@@ -66,12 +69,20 @@ export function BulkBuyForm() {
         </select>
       </label>
 
-      <button
-        type="submit"
-        className="h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover sm:w-auto sm:px-6"
-      >
-        Send enquiry
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:opacity-60 sm:w-auto sm:px-6"
+        >
+          {pending ? "Sending…" : "Send enquiry"}
+        </button>
+        {state?.ok === false && (
+          <p role="alert" className="text-sm font-semibold text-danger">
+            {state.error}
+          </p>
+        )}
+      </div>
     </form>
   );
 }

@@ -60,6 +60,8 @@ model User {
   quotes       QuoteRequest[]
   wishlist     WishlistItem[]
   carts        Cart[]
+  enquiries    Enquiry[]
+  notifies     NotifySubscription[]
   auditEntries AuditLog[]     @relation("AuditActor")
 
   createdAt DateTime @default(now())
@@ -725,18 +727,65 @@ model OrderItem {
 
 /// Restock alert. When a SKU's manualOutOfStock flips false, everyone here
 /// with notifiedAt = null is emailed and then stamped.
+/// Someone waiting for a product to come back — FN-04.
+///
+/// Keyed on email rather than on an account, because most people who ask are
+/// not signed in and requiring an account to be told about stock would lose
+/// most of the demand this exists to capture. When they are signed in the
+/// account is linked too, so the admin can see who is waiting.
 model NotifySubscription {
   id    String     @id @default(cuid())
   skuId String
   sku   ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
 
-  email      String
+  email  String
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
   notifiedAt DateTime?
 
   createdAt DateTime @default(now())
 
   @@unique([skuId, email])
   @@index([notifiedAt])
+  @@index([userId])
+}
+
+/// A bulk-buy or volume-pricing enquiry — FN-03.
+///
+/// These are the highest-intent visitors on the site: a clinic asking for a
+/// price on volume. They were reaching nobody. Stored rather than emailed,
+/// because email is BE-05 and unbuilt, and an enquiry sitting in a queue
+/// someone can read is worth more than one sent to an address that does not
+/// exist yet. When email arrives it sends from these rows.
+model Enquiry {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  /// kind: BulkBuy — contact and support forms can join this later.
+  kind String @default("BulkBuy")
+
+  company     String?
+  contactName String
+  email       String
+  phone       String?
+  /// What they asked for, as they wrote it. Free text on purpose: a clinic
+  /// listing "3 boxes of the blue nitrile, medium" is more useful to read than
+  /// it would be forced into a product picker.
+  message     String
+
+  /// status: New | Answered | Closed
+  status      String  @default("New")
+  answeredAt  DateTime?
+  /// Staff-only notes about the conversation.
+  internalNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 /// status: Pending | Processing | Completed | Failed

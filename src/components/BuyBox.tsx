@@ -152,7 +152,9 @@ export function BuyBox({ product }: { product: Product }) {
             Leave your email and we&rsquo;ll let you know the moment it&rsquo;s
             available again.
           </p>
-          <NotifyMe productName={product.name} />
+          {/* The pack, not the product: someone waiting on the box of 100 is
+              not necessarily waiting on the carton of 1000. */}
+          <NotifyMe productName={product.name} skuCode={pack.sku} />
         </div>
       ) : (
         <div className="space-y-3">

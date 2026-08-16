@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**170 items** · 84 outstanding · **20 outstanding P1**
+**171 items** · 81 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -70,9 +70,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
 | FN-01 | Checkout does not submit an order | Dev | P1 | Done | Done. Checkout writes a real order in one transaction, with one invoice per supplier and a server-allocated reference number. |
-| FN-02 | Quote requests are not delivered | Dev | P1 | Open | Captured in the browser only. |
-| FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Open | Captured in the browser only. |
-| FN-04 | Notify Me does not register a subscription | Dev | P1 | Open | Captured locally. The restock email flow does not exist. |
+| FN-02 | Quote requests are not delivered | Dev | P1 | Done | The form submitted and the request reached nobody. A quote request is one of the highest-intent things a visitor can do on a trade site, and every one of them was discarded on arrival. |
+| FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Done | Same as FN-02 and arguably worse: a clinic asking for a price on volume is the most valuable enquiry the site can receive, and it went nowhere. |
+| FN-04 | Notify Me does not register a subscription | Dev | P1 | Done | The worst of the three. It set a flag in the browser and told the customer "we will email you when it is back in stock" — a promise the system could not keep, because nothing was recorded anywhere. |
 | FN-07 | Size and colour switching is not wired | Dev | P2 | Open | The variant dropdown built on 15 Aug 2026 (DEC-12) switches between sibling products by size or volume, and that works. The separate Size and Colour chips on gloves and the scrub top are a different thing and still do nothing â€” no sibling SKU exists behind any of them. |
 | FN-08 | Stock is a boolean | Dev | P2 | Open | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
@@ -154,6 +154,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
 | BE-39 | The supplier portal still shows customer orders | Dev | P1 | Done | It listed order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
 | BE-40 | Remove OrderSupplierInvoice, the last of the marketplace model | Dev | P1 | Done | A customer's order was split into one invoice per supplier at checkout. That was right for a marketplace and wrong for what AussieMed is: under DEC-22 AussieMed is the seller of record and issues one invoice, and under DEC-24 the customer never learns a supplier was involved. |
+| BE-41 | No admin queue for enquiries | Dev | P2 | Done | Capturing quote requests, bulk-buy enquiries and restock demand without anywhere to read them would only have moved the problem. |
 
 ## Infrastructure
 

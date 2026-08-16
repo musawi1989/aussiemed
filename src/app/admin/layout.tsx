@@ -45,7 +45,10 @@ const GROUPS: OpsGroup[] = [
   {
     heading: "Sales",
     icon: "sales",
-    links: [{ href: "/admin/orders", label: "Orders" }],
+    links: [
+      { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/enquiries", label: "Enquiries" },
+    ],
   },
   {
     heading: "Buying",

@@ -1,21 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { ProductThumb } from "@/components/ProductThumb";
 import { QtyInput } from "@/components/QtyInput";
 import { formatAED, lineTotal, round2 } from "@/lib/money";
 import { useStore } from "@/lib/store";
+import { quoteRequestAction, type EnquiryState } from "@/app/(shop)/enquiry-actions";
 
 /**
  * Quote requests are indicative, not an order: we show the published price as a
  * reference but never a VAT line or a total to pay, because the whole point is
  * that the final number comes back from the sales team.
+ *
+ * FN-02: this used to resolve to a message on screen and discard the request.
+ * It is now recorded with a reference the customer can quote back.
  */
 export function QuoteView() {
   const { quoteLines, setQuoteQty, removeFromQuote, clearQuote, ready } =
     useStore();
-  const [sent, setSent] = useState(false);
+  const [state, submit, pending] = useActionState<EnquiryState, FormData>(
+    quoteRequestAction,
+    null
+  );
+
+  const sent = state?.ok === true;
+
+  /*
+   * Emptied only once the request is safely stored — clearing on submit would
+   * lose the list if the save failed.
+   *
+   * The ref is load-bearing, not defensive. clearQuote is a fresh function on
+   * every render, so an effect depending on it re-runs after the state change
+   * it causes, and the second run clears again, and so on: "maximum update
+   * depth exceeded". Latching it means the clear happens exactly once.
+   */
+  const cleared = useRef(false);
+  useEffect(() => {
+    if (sent && !cleared.current) {
+      cleared.current = true;
+      clearQuote();
+    }
+  }, [sent, clearQuote]);
 
   if (!ready) {
     return (
@@ -28,13 +54,15 @@ export function QuoteView() {
   if (sent) {
     return (
       <div className="mx-auto max-w-lg rounded-panel border border-border-base bg-surface p-8 text-center shadow-card">
-        <h2 className="text-lg font-semibold text-text">Quote request noted</h2>
+        <h2 className="text-lg font-semibold text-text">Quote request received</h2>
+        {state?.ok && state.reference && (
+          <p className="mt-2 text-2xl font-bold tracking-wide tnum text-navy">
+            {state.reference}
+          </p>
+        )}
         <p className="mt-2 text-sm text-text-muted">
-          Our team will come back to you with pricing on these lines.
-        </p>
-        <p className="mt-5 rounded-card border border-accent-border bg-accent-soft px-3 py-2 text-left text-sm leading-relaxed text-accent">
-          Nothing was sent. Delivering quote requests needs the backend and an
-          email provider, which come later in the build.
+          Our team will come back to you with pricing on these lines. Quote that
+          reference if you need to chase it.
         </p>
         <Link
           href="/products"
@@ -157,13 +185,17 @@ export function QuoteView() {
 
       <aside className="lg:sticky lg:top-32 lg:self-start">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-            clearQuote();
-          }}
+          action={submit}
           className="rounded-panel border border-border-base bg-surface p-5 shadow-card"
         >
+          {/* The lines travel with the request. They live in browser storage,
+              so the server has no other way to know what was on the list. */}
+          {quoteLines.map((line) => (
+            <span key={`${line.productId}:${line.packId}`}>
+              <input type="hidden" name="skuCode" value={line.pack.sku} />
+              <input type="hidden" name="qty" value={line.qty} />
+            </span>
+          ))}
           <h2 className="text-base font-semibold text-text">Request pricing</h2>
           <p className="mt-1 text-sm text-text-muted tnum">
             {quoteLines.length} {quoteLines.length === 1 ? "line" : "lines"}
@@ -200,10 +232,17 @@ export function QuoteView() {
 
           <button
             type="submit"
-            className="mt-4 h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover"
+            disabled={pending}
+            className="mt-4 h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:opacity-60"
           >
-            Send quote request
+            {pending ? "Sending…" : "Send quote request"}
           </button>
+
+          {state?.ok === false && (
+            <p role="alert" className="mt-3 text-sm font-semibold text-danger">
+              {state.error}
+            </p>
+          )}
         </form>
       </aside>
     </div>
