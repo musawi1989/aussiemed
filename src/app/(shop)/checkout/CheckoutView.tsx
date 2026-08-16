@@ -25,9 +25,16 @@ export type CheckoutBranch = {
 export function CheckoutView({
   branches = [],
   staff = [],
+  company = "",
+  email = "",
 }: {
   branches?: CheckoutBranch[];
   staff?: { id: string; name: string }[];
+  /** The account's own company name and address, prefilled for a signed-in
+   *  buyer. Empty for a guest, who types them. Both stay editable — a clinic
+   *  ordering for a sister site should not have to fight a locked field. */
+  company?: string;
+  email?: string;
 }) {
   const { cart, ready, refresh } = useCart();
   const [placed, setPlaced] = useState<{
@@ -210,7 +217,12 @@ export function CheckoutView({
             Delivery details
           </legend>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <Field label="Clinic or company name" name="company" required />
+            <Field
+              label="Clinic or company name"
+              name="company"
+              required
+              defaultValue={company}
+            />
             <Field
               label="Contact name"
               name="contact"
@@ -218,7 +230,13 @@ export function CheckoutView({
               defaultValue={branch?.contact}
               key={`contact-${branchId}`}
             />
-            <Field label="Email" name="email" type="email" required />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              required
+              defaultValue={email}
+            />
             <Field
               label="Phone"
               name="phone"

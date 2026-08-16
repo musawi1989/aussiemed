@@ -72,6 +72,32 @@ export async function accountOverview(): Promise<{
   };
 }
 
+/**
+ * Just enough to prefill a form: who they are and who they buy for.
+ *
+ * Deliberately lighter than accountOverview, which reads every order to work
+ * out the figures. Checkout only needs the two names.
+ */
+export async function accountIdentity(): Promise<{
+  organisationName: string;
+  contactName: string;
+  email: string;
+} | null> {
+  const session = await accountSession();
+  if (!session) return null;
+
+  const organisation = await db.organisation.findUnique({
+    where: { id: session.organisationId },
+    select: { name: true },
+  });
+
+  return {
+    organisationName: organisation?.name ?? "",
+    contactName: session.name,
+    email: session.email,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * Orders, by branch
  * ------------------------------------------------------------------ */

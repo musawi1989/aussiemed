@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { CheckoutView } from "./CheckoutView";
-import { accountBranches, accountSession, accountStaff } from "@/lib/account";
+import {
+  accountBranches,
+  accountIdentity,
+  accountSession,
+  accountStaff,
+} from "@/lib/account";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -19,9 +24,9 @@ export const metadata: Metadata = {
 export default async function CheckoutPage() {
   const session = await accountSession();
 
-  const [branches, staff] = session
-    ? await Promise.all([accountBranches(), accountStaff()])
-    : [[], []];
+  const [branches, staff, identity] = session
+    ? await Promise.all([accountBranches(), accountStaff(), accountIdentity()])
+    : [[], [], null];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -40,6 +45,8 @@ export default async function CheckoutPage() {
           isDefault: b.isDefault,
         }))}
         staff={staff.map((s) => ({ id: s.id, name: s.name }))}
+        company={identity?.organisationName ?? ""}
+        email={identity?.email ?? ""}
       />
     </div>
   );
