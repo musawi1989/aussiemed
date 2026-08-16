@@ -28,7 +28,7 @@ const GROUPS: OpsGroup[] = [
   {
     heading: null,
     icon: "dashboard",
-    links: [{ href: "/business-portal", label: "Dashboard", exact: true }],
+    links: [{ href: "/business-portal", label: "Purchase orders", exact: true }],
   },
 ];
 

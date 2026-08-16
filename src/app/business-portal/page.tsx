@@ -1,19 +1,29 @@
 import Link from "next/link";
-import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { formatAED } from "@/lib/money";
+import { getSessionUser } from "@/lib/auth";
+import { listPurchaseOrders } from "@/lib/supplier-portal";
+import { StatusPill } from "@/components/StatusPill";
+import { AcknowledgeButton } from "@/components/portal/PurchaseOrderActions";
 
-const aed = (fils: number) => formatAED(fils / 100);
+const dubai = (d: Date) =>
+  new Date(d.getTime() + 4 * 3_600_000).toISOString().slice(0, 16).replace("T", " ");
+
+const daysSince = (d: Date) =>
+  Math.floor((Date.now() - d.getTime()) / 86_400_000);
 
 /**
- * The supplier's dashboard.
+ * The supplier's own orders — BE-39.
  *
- * A supplier sees only their own products and only their own invoice lines —
- * never another supplier's, and never the whole order. Enforced by querying
- * through their supplier id rather than by filtering in the page.
+ * This screen used to show customer orders: order references, invoice lines,
+ * and the products of whoever had bought them. Under DEC-24 a supplier never
+ * learns who bought anything, so it now shows purchase orders and nothing else.
+ * That is not a filter over the old data, it is different data — a purchase
+ * order belongs to one supplier by construction, so there is no customer here
+ * to leak.
  *
- * The role gate and the identity block live in the layout, so every screen
- * added to this portal later inherits both rather than repeating them.
+ * Ageing is shown against the acknowledgement window and the promised lead
+ * time, framed as their own targets rather than as a comparison with anyone
+ * else. League tables belong in the admin panel and in a conversation.
  */
 export default async function BusinessPortalPage() {
   const user = await getSessionUser();
@@ -30,40 +40,56 @@ export default async function BusinessPortalPage() {
     );
   }
 
-  const [supplier, products, invoices] = await Promise.all([
-    db.supplier.findUnique({ where: { id: user.supplierId } }),
-    db.productMaster.findMany({
-      where: { supplierId: user.supplierId },
-      include: { skus: true, categories: { include: { category: true } } },
-      orderBy: { name: "asc" },
+  const [supplier, orders] = await Promise.all([
+    db.supplier.findUnique({
+      where: { id: user.supplierId },
+      select: {
+        companyName: true,
+        ackSlaHours: true,
+        promisedLeadTimeDays: true,
+        isAvailable: true,
+      },
     }),
-    db.orderSupplierInvoice.findMany({
-      where: { supplierId: user.supplierId },
-      include: { order: true, items: true },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
+    listPurchaseOrders(),
   ]);
 
-  const outOfStock = products.filter((p) => p.skus.every((s) => s.manualOutOfStock));
-  const revenue = invoices.reduce((n, i) => n + i.totalFils, 0);
+  const open = orders.filter((po) => po.status !== "Received" && po.status !== "Cancelled");
+  const awaitingAck = open.filter((po) => !po.acknowledgedAt);
 
   return (
     <>
-      <h1 className="text-xl font-bold tracking-tight text-text">
-        {supplier?.companyName}
-      </h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-text">
+            {supplier?.companyName}
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Your orders from AussieMed. Acknowledge within{" "}
+            {supplier?.ackSlaHours ?? 24} hours
+            {supplier?.promisedLeadTimeDays
+              ? `, deliver within ${supplier.promisedLeadTimeDays} days`
+              : ""}
+            .
+          </p>
+        </div>
+      </div>
 
-      <ul className="mt-5 grid gap-3 sm:grid-cols-4">
+      {supplier && !supplier.isAvailable && (
+        <p className="mt-4 rounded-card border-l-4 border-accent-border bg-accent-soft px-4 py-2.5 text-sm font-semibold text-text">
+          Your account is marked unavailable, so new orders are going to the
+          backup supplier. Contact AussieMed to turn this back on.
+        </p>
+      )}
+
+      <ul className="mt-5 grid gap-3 sm:grid-cols-3">
         {[
-          { label: "Products", value: String(products.length) },
-          { label: "Out of stock", value: String(outOfStock.length) },
-          { label: "Invoices", value: String(invoices.length) },
-          { label: "Invoiced", value: aed(revenue) },
+          { label: "Open orders", value: String(open.length) },
+          { label: "Awaiting your acknowledgement", value: String(awaitingAck.length) },
+          { label: "Orders in total", value: String(orders.length) },
         ].map((stat) => (
           <li
             key={stat.label}
-            className="rounded-card border-l-4 border-navy bg-surface p-4 shadow-card"
+            className="rounded-card border border-border-base bg-surface p-4 shadow-card"
           >
             <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">
               {stat.label}
@@ -73,118 +99,66 @@ export default async function BusinessPortalPage() {
         ))}
       </ul>
 
-      <section className="mt-10">
-        <h2 className="text-lg font-bold tracking-tight text-text">
-          Orders placed with you
-        </h2>
-        <p className="mt-1 text-sm text-text-muted">
-          Your invoice lines only. Other suppliers&rsquo; lines on the same
-          order are not shown.
-        </p>
+      <h2 className="mt-8 text-base font-bold tracking-tight text-text">
+        Purchase orders
+      </h2>
 
-        {invoices.length === 0 ? (
-          <p className="mt-4 rounded-card border border-border-base bg-surface p-8 text-center text-text-muted">
-            No orders yet.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {invoices.map((invoice) => (
+      {orders.length === 0 ? (
+        <p className="mt-3 rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
+          No orders yet. They arrive once a day, after the afternoon cutoff.
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {orders.map((po) => {
+            const units = po.lines.reduce((n, l) => n + l.qtyOrdered, 0);
+            const age = po.sentAt ? daysSince(po.sentAt) : 0;
+            const late =
+              !po.acknowledgedAt &&
+              po.sentAt &&
+              Date.now() - po.sentAt.getTime() >
+                (supplier?.ackSlaHours ?? 24) * 3_600_000;
+
+            return (
               <li
-                key={invoice.id}
-                className="rounded-card border border-border-base bg-surface p-4 shadow-card"
+                key={po.id}
+                className={`rounded-card border bg-surface p-4 shadow-card ${
+                  late ? "border-danger" : "border-border-base"
+                }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-bold tnum text-navy">
-                      {invoice.invoiceNumber}
-                    </p>
-                    <p className="mt-0.5 text-sm text-text-muted tnum">
-                      Order {invoice.order.reference} &middot;{" "}
-                      {invoice.order.placedAt.toISOString().slice(0, 10)} &middot;{" "}
-                      {invoice.items.length} lines
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/business-portal/orders/${po.poNumber}`}
+                        className="text-sm font-bold tnum text-navy hover:underline"
+                      >
+                        {po.poNumber}
+                      </Link>
+                      <StatusPill status={po.status} />
+                      {late && (
+                        <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
+                          acknowledgement overdue
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs tnum text-text-subtle">
+                      {po.lines.length} line{po.lines.length === 1 ? "" : "s"}{" "}
+                      &middot; {units} unit{units === 1 ? "" : "s"}
+                      {po.sentAt
+                        ? ` · sent ${dubai(po.sentAt)} (${age === 0 ? "today" : `${age} day${age === 1 ? "" : "s"} ago`})`
+                        : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent">
-                      {invoice.status}
-                    </span>
-                    <span className="font-bold tnum text-text">
-                      {aed(invoice.totalFils)}
-                    </span>
-                  </div>
+
+                  {!po.acknowledgedAt && (
+                    <AcknowledgeButton id={po.id} poNumber={po.poNumber} />
+                  )}
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-lg font-bold tracking-tight text-text">
-          Your products
-        </h2>
-        <p className="mt-1 text-sm text-text-muted">
-          Editing, adding and bulk upload arrive with the supplier portal
-          proper. A supplier will never be able to approve their own product.
-        </p>
-
-        <div className="mt-4 overflow-x-auto rounded-card border border-border-base bg-surface shadow-card">
-          <table className="w-full min-w-[40rem] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border-base bg-surface-sunken text-left text-xs uppercase tracking-wide text-text-subtle">
-                <th scope="col" className="px-4 py-2.5 font-bold">Product</th>
-                <th scope="col" className="px-4 py-2.5 font-bold">Category</th>
-                <th scope="col" className="px-4 py-2.5 text-right font-bold">SKUs</th>
-                <th scope="col" className="px-4 py-2.5 text-right font-bold">From</th>
-                <th scope="col" className="px-4 py-2.5 text-right font-bold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.slice(0, 40).map((product) => {
-                const cheapest = Math.min(...product.skus.map((s) => s.priceFils));
-                const unavailable = product.skus.every((s) => s.manualOutOfStock);
-                return (
-                  <tr key={product.id} className="border-b border-border-base last:border-0">
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/products/${product.slug}`}
-                        className="text-text hover:text-navy"
-                      >
-                        {product.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2.5 text-text-muted">
-                      {product.categories.at(-1)?.category.name ?? "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right tnum text-text">
-                      {product.skus.length}
-                    </td>
-                    <td className="px-4 py-2.5 text-right tnum text-text">
-                      {Number.isFinite(cheapest) ? aed(cheapest) : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <span
-                        className={`rounded px-2 py-0.5 text-xs font-bold ${
-                          unavailable
-                            ? "bg-danger-soft text-danger"
-                            : "bg-success-soft text-success"
-                        }`}
-                      >
-                        {unavailable ? "Out of stock" : product.status}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {products.length > 40 && (
-          <p className="mt-2 text-xs text-text-subtle tnum">
-            Showing 40 of {products.length}. Paging arrives with the full portal.
-          </p>
-        )}
-      </section>
+            );
+          })}
+        </ul>
+      )}
     </>
   );
 }

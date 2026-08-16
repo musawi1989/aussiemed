@@ -133,6 +133,82 @@ for (const path of PUBLIC_PATHS) {
   }
 }
 
+/* 5. The supplier portal — BE-39.
+ *
+ * Two separate risks: a supplier seeing a customer, and a supplier seeing
+ * another supplier. The second is checked by asking for someone else's
+ * purchase order by number, which should not resolve at all.
+ */
+{
+  const { default: Database } = await import("better-sqlite3");
+  const db = new Database("dev.db", { readonly: true });
+
+  const supplierUser = db
+    .prepare(
+      `select u."username", s."id" as supplierId
+       from "User" u join "Supplier" s on s."userId" = u."id" limit 1`
+    )
+    .get();
+
+  const identifiers = [
+    ...db.prepare(`select "name","email" from "User" where "role" = 'Customer'`).all()
+      .flatMap((u) => [u.name, u.email]),
+    ...db.prepare(`select "name" from "Organisation"`).all().map((o) => o.name),
+    ...db.prepare(`select "reference" from "Order"`).all().map((o) => o.reference),
+  ].filter(Boolean);
+
+  const someoneElses = supplierUser
+    ? db
+        .prepare(
+          `select "poNumber" from "PurchaseOrder"
+           where "supplierId" != ? and "status" != 'Draft' limit 1`
+        )
+        .get(supplierUser.supplierId)
+    : null;
+  db.close();
+
+  if (!supplierUser) {
+    console.log("\n  SKIP  no supplier login exists");
+  } else {
+    const auth = await fetch(`${BASE}/api/v1/auth`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        identifier: supplierUser.username,
+        password: "123456",
+        expectRole: "Supplier",
+      }),
+    });
+
+    if (!auth.ok) {
+      fail("could not sign in as a supplier");
+    } else {
+      const cookie = auth.headers.getSetCookie().join("; ").split(";")[0];
+
+      const portal = await (
+        await fetch(`${BASE}/business-portal`, { headers: { cookie } })
+      ).text();
+      const found = identifiers.filter((value) => portal.includes(value));
+      if (found.length === 0) pass("the supplier portal names no customer");
+      else fail(`the supplier portal names ${found.join(", ")}`);
+
+      if (someoneElses) {
+        const res = await fetch(
+          `${BASE}/business-portal/orders/${someoneElses.poNumber}`,
+          { headers: { cookie } }
+        );
+        if (res.status === 404) {
+          pass(`another supplier's ${someoneElses.poNumber} does not resolve`);
+        } else {
+          fail(
+            `another supplier's ${someoneElses.poNumber} answered ${res.status}, expected 404`
+          );
+        }
+      }
+    }
+  }
+}
+
 console.log(
   failures === 0
     ? "\nNeither side can see the other\n"

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**169 items** · 88 outstanding · **23 outstanding P1**
+**169 items** · 87 outstanding · **22 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -152,7 +152,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |
 | BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Open | Goods arrive pooled by item, not by customer. Without an allocation record there is no way to know whose units arrived, and no way to answer a recall. |
 | BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
-| BE-39 | The supplier portal still shows customer orders | Dev | P1 | Open | It lists order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
+| BE-39 | The supplier portal still shows customer orders | Dev | P1 | Done | It listed order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
 
 ## Infrastructure
 
