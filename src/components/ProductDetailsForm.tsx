@@ -13,7 +13,6 @@ import { AdminForm, Field, Panel, Select, TextArea } from "./AdminForm";
  */
 export function ProductDetailsForm({
   product,
-  suppliers,
   brands,
   taxClasses,
   departments,
@@ -24,12 +23,10 @@ export function ProductDetailsForm({
     name: string;
     description: string | null;
     brandId: string | null;
-    supplierId: string;
     taxClass: string;
     variantGroup: string | null;
     variantLabel: string | null;
   };
-  suppliers: { id: string; companyName: string; status: string }[];
   brands: { id: string; name: string }[];
   taxClasses: string[];
   departments: {
@@ -56,27 +53,17 @@ export function ProductDetailsForm({
             hint="Shown on the product page. Trade buyers read this to confirm they have the right item."
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Supplier"
-              name="supplierId"
-              defaultValue={product.supplierId}
-              options={suppliers.map((s) => ({
-                value: s.id,
-                label:
-                  s.status === "Active"
-                    ? s.companyName
-                    : `${s.companyName} (${s.status.toLowerCase()})`,
-              }))}
-            />
-            <Select
-              label="Brand"
-              name="brandId"
-              defaultValue={product.brandId}
-              allowEmpty="No brand"
-              options={brands.map((b) => ({ value: b.id, label: b.name }))}
-            />
-          </div>
+          {/* No supplier here. Supply is per pack and has two ranks with their
+              own costs and part numbers, so it belongs beside the SKU rather
+              than on the product — DEC-25, and it is loaded from the catalogue
+              template under BE-04. */}
+          <Select
+            label="Brand"
+            name="brandId"
+            defaultValue={product.brandId}
+            allowEmpty="No brand"
+            options={brands.map((b) => ({ value: b.id, label: b.name }))}
+          />
 
           <Select
             label="Tax class"

@@ -10,8 +10,13 @@ export default async function AdminSuppliersPage() {
   const suppliers = await db.supplier.findMany({
     orderBy: [{ status: "asc" }, { companyName: "asc" }],
     include: {
-      _count: { select: { products: true, invoices: true } },
-      invoices: { select: { totalFils: true } },
+      // What a supplier costs us and how much of the catalogue they cover,
+      // counted from what actually exists now: packs they can supply, and
+      // purchase orders we have raised. The old counts were products they
+      // "owned" and customer invoices in their name, neither of which is how
+      // this works any more.
+      _count: { select: { supplies: true, purchaseOrders: true } },
+      purchaseOrders: { select: { totalCostFils: true } },
       user: { select: { username: true, email: true } },
     },
   });
@@ -33,10 +38,10 @@ export default async function AdminSuppliersPage() {
                 <th className="px-4 py-2.5 font-bold text-text-subtle">Supplier</th>
                 <th className="px-4 py-2.5 font-bold text-text-subtle">Status</th>
                 <th className="px-4 py-2.5 text-right font-bold text-text-subtle">
-                  Products
+                  Packs supplied
                 </th>
                 <th className="px-4 py-2.5 text-right font-bold text-text-subtle">
-                  Invoiced
+                  Ordered from
                 </th>
               </tr>
             </thead>
@@ -64,11 +69,14 @@ export default async function AdminSuppliersPage() {
                     <StatusPill status={supplier.status} />
                   </td>
                   <td className="px-4 py-3 text-right tnum text-text-muted">
-                    {supplier._count.products}
+                    {supplier._count.supplies}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tnum text-text">
                     {aed(
-                      supplier.invoices.reduce((n, i) => n + i.totalFils, 0)
+                      supplier.purchaseOrders.reduce(
+                        (n, po) => n + po.totalCostFils,
+                        0
+                      )
                     )}
                   </td>
                 </tr>

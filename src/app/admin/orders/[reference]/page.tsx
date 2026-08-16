@@ -37,14 +37,27 @@ export default async function AdminOrderPage({
           emirate: true,
         },
       },
-      invoices: {
-        orderBy: { invoiceNumber: "asc" },
+      items: {
+        orderBy: { nameSnapshot: "asc" },
         include: {
-          supplier: { select: { id: true, companyName: true, primaryEmail: true } },
-          items: {
-            orderBy: { nameSnapshot: "asc" },
-            include: {
-              sku: { select: { product: { select: { id: true, name: true } } } },
+          sku: { select: { product: { select: { id: true, name: true } } } },
+          // Where each line's units actually came from, once received. This
+          // is the internal view of the supply chain, and the only place a
+          // supplier is named on an order at all.
+          allocations: {
+            select: {
+              qty: true,
+              batchCode: true,
+              purchaseOrderLine: {
+                select: {
+                  purchaseOrder: {
+                    select: {
+                      poNumber: true,
+                      supplier: { select: { companyName: true } },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -58,7 +71,7 @@ export default async function AdminOrderPage({
   const soon = new Date(now.getTime() + EXPIRY_WARNING_DAYS * 86_400_000);
   const shipping = parseShippingAddress(order.shippingSnapshot);
 
-  const allItems = order.invoices.flatMap((i) => i.items);
+  const allItems = order.items;
   const zeroRatedFils = allItems
     .filter((i) => i.taxClassSnapshot === "ZeroRated")
     .reduce((n, i) => n + i.lineTotalFils, 0);
@@ -198,35 +211,21 @@ export default async function AdminOrderPage({
             )}
           </section>
 
-          {order.invoices.map((invoice) => (
-            <section
-              key={invoice.id}
-              className="rounded-card border border-border-base bg-surface p-5 shadow-card"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-bold tracking-tight text-text">
-                    <Link
-                      href={`/admin/suppliers/${invoice.supplier.id}`}
-                      className="hover:text-navy hover:underline"
-                    >
-                      {invoice.supplier.companyName}
-                    </Link>
-                  </h2>
-                  <p className="mt-0.5 text-xs tnum text-text-subtle">
-                    {invoice.invoiceNumber} &middot; {invoice.supplier.primaryEmail}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <StatusPill status={invoice.status} />
-                  <span className="font-bold tnum text-text">
-                    {aed(invoice.totalFils)}
-                  </span>
-                </div>
-              </div>
+          {/* One list of lines.
+           *
+           * This was a card per supplier invoice. The order is no longer split
+           * that way — AussieMed sells, and buying happens afterwards through
+           * the daily purchase orders. Where a line's units came from is shown
+           * per line below, from its allocations, which is more precise than
+           * the old grouping: it knows the purchase order and the lot, not
+           * just the company. */}
+          <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+              <h2 className="text-base font-bold tracking-tight text-text">
+                {order.items.length} line{order.items.length === 1 ? "" : "s"}
+              </h2>
 
               <ul className="mt-3 space-y-2">
-                {invoice.items.map((item) => (
+                {order.items.map((item) => (
                   <OrderLineCard
                     key={item.id}
                     reference={order.reference}
@@ -244,7 +243,16 @@ export default async function AdminOrderPage({
                       status: item.status,
                       batchCode: item.batchCodeSnapshot,
                       expiresOn: day(item.expiresOnSnapshot),
-                      supplier: invoice.supplier.companyName,
+                      // Named from what was actually bought for this line, not
+                      // from the product record. Empty until goods are in.
+                      supplier:
+                        item.allocations
+                          .map(
+                            (a) =>
+                              a.purchaseOrderLine.purchaseOrder.supplier.companyName
+                          )
+                          .filter((name, i, all) => all.indexOf(name) === i)
+                          .join(", ") || "not yet purchased",
                       productHref: item.sku?.product
                         ? `/admin/products/${item.sku.product.id}`
                         : null,
@@ -260,14 +268,7 @@ export default async function AdminOrderPage({
                   />
                 ))}
               </ul>
-
-              <dl className="mt-3 flex flex-wrap justify-end gap-x-6 border-t border-border-base pt-3 text-sm">
-                <Money label="Subtotal" value={aed(invoice.subtotalFils)} />
-                <Money label="VAT" value={aed(invoice.vatFils)} />
-                <Money label="Total" value={aed(invoice.totalFils)} strong />
-              </dl>
-            </section>
-          ))}
+          </section>
         </div>
 
         <div className="space-y-5">

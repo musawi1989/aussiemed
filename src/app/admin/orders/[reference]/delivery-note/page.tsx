@@ -19,12 +19,9 @@ export default async function DeliveryNotePage({
   const { reference } = await params;
   const order = await loadOrderForDocs(reference);
 
-  const items = order.invoices.flatMap((invoice) =>
-    invoice.items.map((item) => ({ item, supplier: invoice.supplier.companyName }))
-  );
   // Cancelled lines are not in the box, so they are not on the note.
-  const shipped = items.filter(({ item }) => item.status !== "Cancelled");
-  const held = items.filter(({ item }) => item.status === "Backordered");
+  const shipped = order.items.filter((item) => item.status !== "Cancelled");
+  const held = order.items.filter((item) => item.status === "Backordered");
   const shipping = parseShippingAddress(order.shippingSnapshot);
 
   return (
@@ -79,7 +76,7 @@ export default async function DeliveryNotePage({
           </tr>
         }
       >
-        {shipped.map(({ item }) => (
+        {shipped.map((item) => (
           <tr key={item.id} className="border-b border-border-base">
             <td className="py-2 tnum font-semibold text-text">
               {item.skuCodeSnapshot}
@@ -100,7 +97,7 @@ export default async function DeliveryNotePage({
       {held.length > 0 && (
         <p className="mt-4 rounded-card bg-accent-soft px-3 py-2 text-sm text-text">
           <span className="font-bold">To follow:</span>{" "}
-          {held.map(({ item }) => `${item.skuCodeSnapshot} × ${item.qty}`).join(", ")}
+          {held.map((item) => `${item.skuCodeSnapshot} × ${item.qty}`).join(", ")}
           . These lines are on backorder and are not in this delivery.
         </p>
       )}

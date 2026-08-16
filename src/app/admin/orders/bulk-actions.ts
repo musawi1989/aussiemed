@@ -62,7 +62,6 @@ export async function exportOrdersCsv(references: string[]): Promise<string> {
     include: {
       user: { select: { name: true, email: true, phone: true } },
       organisation: { select: { name: true, trn: true, paymentTerms: true } },
-      invoices: { include: { supplier: { select: { companyName: true } } } },
       items: true,
     },
   });
@@ -81,7 +80,6 @@ export async function exportOrdersCsv(references: string[]): Promise<string> {
     "Terms",
     "Status",
     "Paid",
-    "Suppliers",
     "Lines",
     "Subtotal AED",
     "Zero rated AED",
@@ -114,7 +112,6 @@ export async function exportOrdersCsv(references: string[]): Promise<string> {
       order.organisation?.paymentTerms ?? "",
       order.status,
       order.paymentStatus ?? "",
-      order.invoices.map((i) => i.supplier.companyName).join(" / "),
       order.items.length,
       money(order.subtotalFils),
       money(zeroRated),

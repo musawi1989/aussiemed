@@ -45,7 +45,11 @@ export default async function AdminProductsPage({
     ...(PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])
       ? { status }
       : {}),
-    ...(supplierId ? { supplierId } : {}),
+    // Supply is per pack now, and a product can have a primary and a backup,
+    // so "products from this supplier" means any pack they can supply.
+    ...(supplierId
+      ? { skus: { some: { supplies: { some: { supplierId } } } } }
+      : {}),
     ...(stock === "out"
       ? { skus: { some: { manualOutOfStock: true, isActive: true } } }
       : {}),
@@ -56,13 +60,20 @@ export default async function AdminProductsPage({
     db.productMaster.findMany({
       where,
       include: {
-        supplier: { select: { companyName: true } },
         brand: { select: { name: true } },
         categories: { select: { categoryId: true } },
         skus: {
           where: { isActive: true },
           orderBy: { eachesPerPack: "asc" },
-          select: { priceFils: true, skuCode: true, manualOutOfStock: true },
+          select: {
+            priceFils: true,
+            skuCode: true,
+            manualOutOfStock: true,
+            supplies: {
+              where: { rank: "Primary" },
+              select: { supplier: { select: { companyName: true } } },
+            },
+          },
         },
       },
       orderBy: { name: "asc" },
@@ -170,7 +181,16 @@ export default async function AdminProductsPage({
                       </p>
                     </td>
                     <td className="px-4 py-3 text-text-muted">
-                      {product.supplier.companyName}
+                      {/* The primary supplier of its packs. Distinct packs can
+                        have different primaries, so this lists what is there
+                        rather than pretending there is one answer. */}
+                    {[
+                      ...new Set(
+                        product.skus.flatMap((sku) =>
+                          sku.supplies.map((s) => s.supplier.companyName)
+                        )
+                      ),
+                    ].join(", ") || "no supplier set"}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={product.status} />

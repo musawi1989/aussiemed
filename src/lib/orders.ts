@@ -233,7 +233,6 @@ export type CheckoutInput = {
 
 export type CheckoutResult = {
   reference: string;
-  invoiceCount: number;
   totalFils: number;
 };
 
@@ -278,41 +277,14 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
 
     const reference = formatReference(year, sequence);
 
-    /* --- group by supplier ---
+    /* An order is no longer split between suppliers.
      *
-     * Resolved here from the database rather than carried on the cart. The
-     * cart is handed to the browser, and under DEC-24 a customer never learns
-     * who supplied their goods, so the supplier cannot travel with it — see
-     * BE-38.
-     *
-     * This grouping is itself on borrowed time. Under the cross-dock model an
-     * order is not split between suppliers at checkout at all: it becomes one
-     * AussieMed invoice (DEC-22), and buying happens later through the daily
-     * consolidated purchase orders (BE-36). Kept working for now so the split
-     * is removed deliberately with that work rather than half-dismantled here.
-     */
-    const supplyBySku = new Map(
-      (
-        await tx.productSku.findMany({
-          where: { id: { in: cart.lines.map((l) => l.skuId) } },
-          select: { id: true, product: { select: { supplierId: true } } },
-        })
-      ).map((s) => [s.id, s.product.supplierId])
-    );
-
-    const bySupplier = new Map<string, typeof cart.lines>();
-    for (const line of cart.lines) {
-      const supplierId = supplyBySku.get(line.skuId);
-      if (!supplierId) {
-        throw new CartError(
-          `No supplier is recorded for ${line.skuCode}.`,
-          "bad_request"
-        );
-      }
-      const list = bySupplier.get(supplierId) ?? [];
-      list.push(line);
-      bySupplier.set(supplierId, list);
-    }
+     * AussieMed is the seller of record (DEC-22), so the customer gets one
+     * order and one invoice from AussieMed. Which supplier each line will be
+     * bought from is not decided here at all — under cross-dock nothing is
+     * bought until the cutoff, and the primary or backup is chosen then, from
+     * whoever can actually supply on the day (DEC-25, DEC-26). Deciding it at
+     * checkout would have been deciding it with the wrong information. */
 
     const priced = cart.lines.map((l) => ({
       lineTotalFils: l.lineTotalFils,
@@ -375,49 +347,25 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
       },
     });
 
-    /* --- one invoice per supplier --- */
+    /* --- the lines --- */
 
-    let index = 0;
-    for (const [supplierId, lines] of [...bySupplier.entries()].sort()) {
-      index += 1;
-      const totals = sumLines(
-        lines.map((l) => ({
-          lineTotalFils: l.lineTotalFils,
-          vatFils: l.vatFils,
-        })) as PricedLine[]
-      );
-
-      const invoice = await tx.orderSupplierInvoice.create({
+    for (const line of cart.lines) {
+      await tx.orderItem.create({
         data: {
           orderId: order.id,
-          supplierId,
-          invoiceNumber: formatInvoiceNumber(reference, index),
-          status: "Pending",
-          subtotalFils: totals.subtotalFils,
-          vatFils: totals.vatFils,
-          totalFils: totals.totalFils,
+          skuId: line.skuId,
+          // Snapshots: a later price change or rename must never alter a
+          // historical order line.
+          nameSnapshot: line.productName,
+          skuCodeSnapshot: line.skuCode,
+          unitLabelSnapshot: line.unitLabel,
+          taxClassSnapshot: line.taxClass,
+          qty: line.qty,
+          unitPriceFils: line.unitPriceFils,
+          lineTotalFils: line.lineTotalFils,
+          vatFils: line.vatFils,
         },
       });
-
-      for (const line of lines) {
-        await tx.orderItem.create({
-          data: {
-            orderId: order.id,
-            invoiceId: invoice.id,
-            skuId: line.skuId,
-            // Snapshots: a later price change or rename must never alter a
-            // historical order line.
-            nameSnapshot: line.productName,
-            skuCodeSnapshot: line.skuCode,
-            unitLabelSnapshot: line.unitLabel,
-            taxClassSnapshot: line.taxClass,
-            qty: line.qty,
-            unitPriceFils: line.unitPriceFils,
-            lineTotalFils: line.lineTotalFils,
-            vatFils: line.vatFils,
-          },
-        });
-      }
     }
 
     /* --- empty the cart --- */
@@ -427,7 +375,6 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
 
     return {
       reference,
-      invoiceCount: index,
       totalFils: orderTotals.totalFils,
     };
   });
@@ -441,12 +388,9 @@ export async function getOrderByReference(reference: string) {
   return db.order.findUnique({
     where: { reference },
     include: {
-      invoices: {
-        orderBy: { invoiceNumber: "asc" },
-        include: {
-          supplier: true,
-          items: { include: { sku: { include: { product: true } } } },
-        },
+      items: {
+        orderBy: { nameSnapshot: "asc" },
+        include: { sku: { include: { product: true } } },
       },
     },
   });

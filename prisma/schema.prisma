@@ -150,8 +150,6 @@ model Supplier {
   /// How quickly they should acknowledge a purchase order, in hours.
   ackSlaHours          Int  @default(24)
 
-  products       ProductMaster[]
-  invoices       OrderSupplierInvoice[]
   uploads        BulkUploadJob[]
   supplies       ProductSupply[]
   purchaseOrders PurchaseOrder[]
@@ -212,11 +210,14 @@ model ProductMaster {
   slug        String  @unique
   description String?
 
-  brandId    String?
-  brand      Brand?   @relation(fields: [brandId], references: [id])
-  supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id])
 
+  /// No supplierId. A product is not owned by a supplier — it has a primary
+  /// and a backup, held per pack in ProductSupply with their own costs, lead
+  /// times and part numbers (DEC-25). This field was also how supplier
+  /// identity reached the browser in the first place, since it travelled into
+  /// the catalogue with every product — see BE-38.
   status String @default("Draft")
 
   /// Variants are separate products that belong to one family — the same line
@@ -253,8 +254,6 @@ model ProductMaster {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([supplierId])
   @@index([status])
   @@index([brandId])
   @@index([variantGroup])
@@ -643,8 +642,7 @@ model Order {
   /// 5%). Stored so a future rate change cannot rewrite historical orders.
   vatRateBasisPoints Int @default(500)
 
-  invoices OrderSupplierInvoice[]
-  items    OrderItem[]
+  items OrderItem[]
 
   /// Staff-only. Customer-visible notes belong to the user and organisation;
   /// this is what the warehouse and accounts write to each other.
@@ -663,42 +661,25 @@ model Order {
   @@index([status])
 }
 
-/// One invoice per supplier per order.
+/// OrderSupplierInvoice was removed on 16 Aug 2026.
 ///
-/// The unique constraint below is the structural fix for the historical
-/// duplicate-invoice bug on multi-supplier orders. It is not a convention —
-/// the database refuses a second invoice for the same supplier on one order.
-model OrderSupplierInvoice {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
-
-  invoiceNumber String @unique
-  /// status: Pending | Issued | Paid | Cancelled
-  status        String @default("Pending")
-
-  subtotalFils Int
-  vatFils      Int
-  totalFils    Int
-
-  items OrderItem[]
-
-  createdAt DateTime @default(now())
-
-  @@unique([orderId, supplierId])
-  @@index([supplierId])
-}
+/// It split a customer's order into one invoice per supplier, which was right
+/// for a marketplace and is wrong for what AussieMed turned out to be. Under
+/// DEC-22 AussieMed is the seller of record and issues one invoice; under
+/// DEC-24 the customer never learns a supplier was involved at all.
+///
+/// The split has not been lost, it has moved to where it belongs: buying now
+/// happens after the order, through the daily consolidated purchase orders,
+/// and PurchaseAllocation links what arrived back to the customers waiting.
+/// That is a better record than the old one — it knows which units, from which
+/// delivery, in which lot, rather than only which supplier.
 
 model OrderItem {
-  id        String               @id @default(cuid())
-  orderId   String
-  order     Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  invoiceId String
-  invoice   OrderSupplierInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  skuId     String
-  sku       ProductSku           @relation(fields: [skuId], references: [id])
+  id      String     @id @default(cuid())
+  orderId String
+  order   Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  skuId   String
+  sku     ProductSku @relation(fields: [skuId], references: [id])
 
   /// Copied at order time. A later price change or rename must never alter a
   /// historical order line.
@@ -734,7 +715,6 @@ model OrderItem {
   allocations PurchaseAllocation[]
 
   @@index([orderId])
-  @@index([invoiceId])
   @@index([batchCodeSnapshot])
   @@index([skuId])
 }

@@ -40,18 +40,15 @@ export default async function PickingListPage({
         <div className="text-right tnum">
           <p>Ship by {day(order.estimatedShipmentOn)}</p>
           <p>Placed {day(order.placedAt)}</p>
-          <p>
-            {order.invoices.reduce((n, i) => n + i.items.length, 0)} lines
-          </p>
+          <p>{order.items.length} lines</p>
         </div>
       </div>
 
-      {order.invoices.map((invoice) => (
-        <section key={invoice.id} className="mt-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-text">
-            {invoice.supplier.companyName}
-          </h2>
-
+      {/* One list, not one per supplier. Picking happens at the sorting
+          facility from stock that has already arrived, so which supplier each
+          line came from is a question about a purchase order, not about this
+          document — and the picker does not need it to fill a box. */}
+      <section className="mt-6">
           <DocTable
             head={
               <tr>
@@ -65,7 +62,7 @@ export default async function PickingListPage({
               </tr>
             }
           >
-            {invoice.items.map((item) => (
+            {order.items.map((item) => (
               <tr key={item.id} className="border-b border-border-base">
                 <td className="py-2 tnum font-semibold text-text">
                   {item.skuCodeSnapshot}
@@ -97,8 +94,7 @@ export default async function PickingListPage({
               </tr>
             ))}
           </DocTable>
-        </section>
-      ))}
+      </section>
 
       <p className="mt-8 text-xs leading-relaxed text-text-subtle">
         No prices appear on this document by design. Record the batch and expiry

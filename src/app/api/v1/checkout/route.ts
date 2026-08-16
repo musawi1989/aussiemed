@@ -56,7 +56,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       // "Reference number" is the customer-facing wording, never "order number".
       reference: result.reference,
-      invoiceCount: result.invoiceCount,
       totalAED: result.totalFils / 100,
       currency: "AED",
     });

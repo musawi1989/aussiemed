@@ -66,16 +66,19 @@ check(
 );
 
 /**
- * Suppliers that actually appear in the catalogue, not every active supplier.
+ * Suppliers who can actually supply something live.
  *
- * The catalogue is built from live products, so it only ever names a supplier
- * that has one. Comparing it against every Active supplier made this fail the
- * moment a supplier was onboarded before their products were approved — which
- * is the normal order of events, not a fault. A retired supplier stays in the
- * table regardless, because its invoices still name it.
+ * Counted through ProductSupply now that a product is not owned by a supplier.
+ * Comparing against every Active supplier made this fail the moment one was
+ * onboarded before their products were approved, which is the normal order of
+ * events rather than a fault. A retired supplier stays in the table regardless,
+ * because purchase orders raised with them still name them.
  */
 const suppliersInCatalogue = await prisma.supplier.count({
-  where: { status: "Active", products: { some: { status: "Active" } } },
+  where: {
+    status: "Active",
+    supplies: { some: { sku: { product: { status: "Active" } } } },
+  },
 });
 
 check(
@@ -206,37 +209,36 @@ check(
 
 // Orders are the point of no return: once written they are a document the
 // customer keeps, so the invariants matter more here than anywhere.
-const orders = await prisma.order.findMany({
-  include: { invoices: { include: { items: true } } },
-});
+const orders = await prisma.order.findMany({ include: { items: true } });
 
 if (orders.length === 0) {
   console.log("  SKIP  no orders placed yet");
 } else {
-  const badSplit = orders.find((o) => {
-    const suppliers = new Set(o.invoices.map((i) => i.supplierId));
-    return suppliers.size !== o.invoices.length;
-  });
-  check(
-    "each order has exactly one invoice per supplier",
-    badSplit === undefined,
-    badSplit?.reference
-  );
-
+  /*
+   * The invoice-split assertions were removed on 16 Aug 2026 along with
+   * OrderSupplierInvoice. They checked that an order carried exactly one
+   * invoice per supplier and that those invoices summed to the order — real
+   * invariants for a marketplace, and meaningless now that AussieMed sells and
+   * invoices in its own name (DEC-22).
+   *
+   * What replaced them is stricter, not weaker: the money now has to add up
+   * from the lines themselves, with no intermediate document to hide a
+   * rounding difference in.
+   */
   const badSubtotal = orders.find(
-    (o) => o.invoices.reduce((n, i) => n + i.subtotalFils, 0) !== o.subtotalFils
+    (o) => o.items.reduce((n, i) => n + i.lineTotalFils, 0) !== o.subtotalFils
   );
   check(
-    "invoice subtotals sum to the order subtotal",
+    "order lines sum to the order subtotal",
     badSubtotal === undefined,
     badSubtotal?.reference
   );
 
   const badVat = orders.find(
-    (o) => o.invoices.reduce((n, i) => n + i.vatFils, 0) !== o.vatFils
+    (o) => o.items.reduce((n, i) => n + i.vatFils, 0) !== o.vatFils
   );
   check(
-    "invoice VAT sums to the order VAT, with no rounding drift",
+    "line VAT sums to the order VAT, with no rounding drift",
     badVat === undefined,
     badVat?.reference
   );
@@ -247,13 +249,11 @@ if (orders.length === 0) {
   check("order total equals subtotal plus VAT", badTotal === undefined, badTotal?.reference);
 
   const badLines = orders.find((o) =>
-    o.invoices.some((i) =>
-      i.items.some(
-        (it) =>
-          it.qty < 1 ||
-          it.lineTotalFils !== it.unitPriceFils * it.qty ||
-          !Number.isInteger(it.vatFils)
-      )
+    o.items.some(
+      (it) =>
+        it.qty < 1 ||
+        it.lineTotalFils !== it.unitPriceFils * it.qty ||
+        !Number.isInteger(it.vatFils)
     )
   );
   check(
@@ -264,9 +264,7 @@ if (orders.length === 0) {
 
   // A zero-rated line must carry no VAT, however the rate later changes.
   const badZeroRated = orders.find((o) =>
-    o.invoices.some((i) =>
-      i.items.some((it) => it.taxClassSnapshot === "ZeroRated" && it.vatFils !== 0)
-    )
+    o.items.some((it) => it.taxClassSnapshot === "ZeroRated" && it.vatFils !== 0)
   );
   check(
     "zero-rated lines carry no VAT",
@@ -275,14 +273,28 @@ if (orders.length === 0) {
   );
 
   const missingSnapshot = orders.find((o) =>
-    o.invoices.some((i) =>
-      i.items.some((it) => !it.nameSnapshot || !it.skuCodeSnapshot || !it.taxClassSnapshot)
+    o.items.some(
+      (it) => !it.nameSnapshot || !it.skuCodeSnapshot || !it.taxClassSnapshot
     )
   );
   check(
     "every order line snapshots its name, SKU and tax class",
     missingSnapshot === undefined,
     missingSnapshot?.reference
+  );
+
+  /* Allocations must never promise more of a line than was ordered — the
+     guard on the cross-dock model's central record. */
+  const overAllocated = await prisma.orderItem.findMany({
+    include: { allocations: { select: { qty: true } } },
+  });
+  const badAllocation = overAllocated.find(
+    (item) => item.allocations.reduce((n, a) => n + a.qty, 0) > item.qty
+  );
+  check(
+    "no order line is allocated more units than were ordered",
+    badAllocation === undefined,
+    badAllocation?.skuCodeSnapshot
   );
 
   const noRate = orders.find((o) => !o.vatRateBasisPoints);

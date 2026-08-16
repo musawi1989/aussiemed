@@ -94,12 +94,10 @@ export default async function AdminProductPage({
               name: product.name,
               description: product.description,
               brandId: product.brandId,
-              supplierId: product.supplierId,
               taxClass: product.taxClass,
               variantGroup: product.variantGroup,
               variantLabel: product.variantLabel,
             }}
-            suppliers={suppliers}
             brands={brands}
             taxClasses={[...TAX_CLASSES]}
             departments={grouped}

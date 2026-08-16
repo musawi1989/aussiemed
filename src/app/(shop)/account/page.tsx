@@ -30,7 +30,6 @@ export default async function AccountPage() {
       where: { userId: user.id },
       orderBy: { placedAt: "desc" },
       include: {
-        invoices: { select: { id: true } },
         items: {
           include: { sku: { include: { product: true } } },
         },
@@ -152,8 +151,8 @@ export default async function AccountPage() {
                     <p className="font-bold tnum text-navy">{order.reference}</p>
                     <p className="mt-0.5 text-sm text-text-muted tnum">
                       {order.placedAt.toISOString().slice(0, 10)} &middot;{" "}
-                      {order.items.length} lines &middot; {order.invoices.length}{" "}
-                      {order.invoices.length === 1 ? "invoice" : "invoices"}
+                      {order.items.length}{" "}
+                      {order.items.length === 1 ? "line" : "lines"}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">

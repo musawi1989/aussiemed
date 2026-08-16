@@ -22,15 +22,10 @@ export async function loadOrderForDocs(reference: string) {
       organisation: {
         select: { name: true, trn: true, emirate: true, paymentTerms: true },
       },
-      invoices: {
-        orderBy: { invoiceNumber: "asc" },
-        include: {
-          supplier: {
-            select: { companyName: true, trn: true, primaryEmail: true, address: true },
-          },
-          items: { orderBy: { nameSnapshot: "asc" } },
-        },
-      },
+      // Flat. An order is no longer split by supplier — AussieMed is the
+      // seller of record (DEC-22) and the customer never learns a supplier
+      // was involved (DEC-24), so these three documents describe one order.
+      items: { orderBy: { nameSnapshot: "asc" } },
     },
   });
 

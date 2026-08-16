@@ -107,9 +107,7 @@ export default async function OrderPage({ params }: { params: Params }) {
                 </tr>
               </thead>
               <tbody>
-                {order.invoices
-                  .flatMap((invoice) => invoice.items)
-                  .map((item) => (
+                {order.items.map((item) => (
                     <tr key={item.id} className="border-b border-border-base last:border-0">
                       <td className="px-4 py-2.5">
                         <Link

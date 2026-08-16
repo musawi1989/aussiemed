@@ -60,7 +60,6 @@ export type ColumnKey =
   | "paid"
   | "terms"
   | "trn"
-  | "suppliers"
   | "lines"
   | "zeroRated"
   | "vat"
@@ -101,7 +100,6 @@ export const COLUMNS: ColumnDef[] = [
   { key: "paid", label: "Paid", nowrap: true },
   { key: "terms", label: "Terms", hint: "Prepaid, Net 7, Net 30, Net 60", nowrap: true },
   { key: "trn", label: "TRN", hint: "Missing means the tax invoice is not compliant", nowrap: true },
-  { key: "suppliers", label: "Suppliers", numeric: true, nowrap: true, hint: "How many invoices this order splits into" },
   { key: "lines", label: "Lines", numeric: true, nowrap: true },
   { key: "zeroRated", label: "Zero rated", numeric: true, nowrap: true, hint: "Portion of the order carrying no VAT" },
   { key: "vat", label: "VAT", numeric: true, nowrap: true },
@@ -123,7 +121,7 @@ export const DEFAULT_COLUMNS: ColumnKey[] = [
   "total",
   "status",
   "paid",
-  "suppliers",
+  "lines",
   "customerNotes",
 ];
 

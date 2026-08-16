@@ -40,10 +40,10 @@ export default async function AdminOrdersPage({
   const q = (one("q") ?? "").trim();
   const statuses = parseMulti(params.status, ORDER_STATUSES);
   const payments = parseMulti(params.payment, PAYMENT_STATUSES);
-  const supplierIds = parseMulti(
-    params.supplier,
-    (await db.supplier.findMany({ select: { id: true } })).map((s) => s.id)
-  );
+  /* No supplier filter. An order is not associated with a supplier any more —
+     what was bought for it, and from whom, is decided later on a purchase
+     order. Filtering orders by supplier would answer a question about buying
+     using the wrong list; /admin/purchasing is where that lives. */
   const created = parseDateRange(one("createdFrom"), one("createdTo"));
   const placed = parseDateRange(one("placedFrom"), one("placedTo"));
   const ship = parseDateRange(one("shipFrom"), one("shipTo"));
@@ -72,9 +72,6 @@ export default async function AdminOrdersPage({
       : {}),
     ...(statuses.length ? { status: { in: statuses } } : {}),
     ...(payments.length ? { paymentStatus: { in: payments } } : {}),
-    ...(supplierIds.length
-      ? { invoices: { some: { supplierId: { in: supplierIds } } } }
-      : {}),
     ...(created.from || created.to
       ? { placedAt: { ...(created.from && { gte: created.from }), ...(created.to && { lte: created.to }) } }
       : {}),
@@ -110,7 +107,7 @@ export default async function AdminOrdersPage({
             ? { updatedAt: sortDir }
             : { placedAt: sortDir };
 
-  const [total, orders, suppliers] = await Promise.all([
+  const [total, orders] = await Promise.all([
     db.order.count({ where }),
     db.order.findMany({
       where,
@@ -120,7 +117,6 @@ export default async function AdminOrdersPage({
       include: {
         user: { select: { name: true, email: true, phone: true } },
         organisation: { select: { name: true, trn: true, paymentTerms: true } },
-        invoices: { select: { supplier: { select: { companyName: true } } } },
         items: {
           select: {
             status: true,
@@ -129,10 +125,6 @@ export default async function AdminOrdersPage({
           },
         },
       },
-    }),
-    db.supplier.findMany({
-      orderBy: { companyName: "asc" },
-      select: { id: true, companyName: true },
     }),
   ]);
 
@@ -162,7 +154,6 @@ export default async function AdminOrdersPage({
         paid: order.paidAt ? day(order.paidAt) : "",
         terms: order.organisation?.paymentTerms ?? "",
         trn: order.organisation?.trn ?? "",
-        suppliers: String(order.invoices.length),
         lines: String(order.items.length),
         zeroRated: zeroRated > 0 ? aed(zeroRated) : "",
         vat: aed(order.vatFils),
@@ -189,12 +180,6 @@ export default async function AdminOrdersPage({
         value: s,
         label: s === "PartiallyPaid" ? "Partially paid" : s,
       })),
-    },
-    {
-      kind: "multi",
-      key: "supplier",
-      label: "Supplier",
-      options: suppliers.map((s) => ({ value: s.id, label: s.companyName })),
     },
     { kind: "dateRange", keyFrom: "createdFrom", keyTo: "createdTo", label: "Date created" },
     { kind: "dateRange", keyFrom: "shipFrom", keyTo: "shipTo", label: "Ship by" },

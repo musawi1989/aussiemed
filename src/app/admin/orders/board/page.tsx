@@ -28,7 +28,6 @@ export default async function AdminOrdersBoardPage() {
     include: {
       user: { select: { name: true } },
       organisation: { select: { name: true, trn: true, paymentTerms: true } },
-      invoices: { select: { supplier: { select: { companyName: true } } } },
       items: { select: { status: true } },
     },
   });
@@ -109,11 +108,6 @@ export default async function AdminOrdersBoardPage() {
                             : ""}
                         </p>
 
-                        <p className="mt-0.5 truncate text-xs text-text-subtle">
-                          {order.invoices
-                            .map((i) => i.supplier.companyName)
-                            .join(", ")}
-                        </p>
 
                         {flags.length > 0 && (
                           <ul className="mt-2 flex flex-wrap gap-1">

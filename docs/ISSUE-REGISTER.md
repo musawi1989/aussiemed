@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**169 items** · 85 outstanding · **21 outstanding P1**
+**170 items** · 84 outstanding · **20 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -148,11 +148,12 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
 | BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
 | BE-34 | No cost price, so no margin is known | Dev | P2 | Open | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
-| BE-35 | Products are hard-tied to one supplier | Dev | P1 | Open | ProductMaster.supplierId is a required field, so every product belongs to exactly one supplier and cannot have a backup. It also means supplier identity is carried on the product record itself, which is how it leaks to customers. |
+| BE-35 | Products are hard-tied to one supplier | Dev | P1 | Done | ProductMaster.supplierId was a required field, so every product belonged to exactly one supplier and could not have a backup. It also meant supplier identity was carried on the product record itself, which is how it reached the browser. |
 | BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |
 | BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Done | Goods arrive pooled by item, not by customer. Without an allocation record there was no way to know whose units arrived, and no way to answer a recall. |
 | BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
 | BE-39 | The supplier portal still shows customer orders | Dev | P1 | Done | It listed order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
+| BE-40 | Remove OrderSupplierInvoice, the last of the marketplace model | Dev | P1 | Done | A customer's order was split into one invoice per supplier at checkout. That was right for a marketplace and wrong for what AussieMed is: under DEC-22 AussieMed is the seller of record and issues one invoice, and under DEC-24 the customer never learns a supplier was involved. |
 
 ## Infrastructure
 

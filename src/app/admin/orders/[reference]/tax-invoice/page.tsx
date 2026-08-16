@@ -23,6 +23,15 @@ export default async function TaxInvoicePage({
   const order = await loadOrderForDocs(reference);
   const rate = order.vatRateBasisPoints / 100;
 
+  // The two bases, shown separately so a reader can check the VAT against the
+  // standard-rated portion rather than against the whole invoice.
+  const standardNet = order.items
+    .filter((i) => i.taxClassSnapshot !== "ZeroRated")
+    .reduce((n, i) => n + i.lineTotalFils, 0);
+  const zeroNet = order.items
+    .filter((i) => i.taxClassSnapshot === "ZeroRated")
+    .reduce((n, i) => n + i.lineTotalFils, 0);
+
   return (
     <PrintableDoc
       title={`Tax invoice · ${order.reference}`}
@@ -60,28 +69,15 @@ export default async function TaxInvoicePage({
         </div>
       </div>
 
-      {order.invoices.map((invoice) => {
-        const standard = invoice.items.filter(
-          (i) => i.taxClassSnapshot !== "ZeroRated"
-        );
-        const zero = invoice.items.filter(
-          (i) => i.taxClassSnapshot === "ZeroRated"
-        );
-        const standardNet = standard.reduce((n, i) => n + i.lineTotalFils, 0);
-        const zeroNet = zero.reduce((n, i) => n + i.lineTotalFils, 0);
-
-        return (
-          <section key={invoice.id} className="mt-8">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-text">
-                {invoice.supplier.companyName}
-              </h2>
-              <p className="text-xs tnum text-text-subtle">
-                Invoice {invoice.invoiceNumber}
-                {invoice.supplier.trn ? ` · TRN ${invoice.supplier.trn}` : ""}
-              </p>
-            </div>
-
+      {/* One invoice, from AussieMed.
+       *
+       * This used to be a section per supplier, each with its own invoice
+       * number and the supplier's TRN — which was the marketplace model. Under
+       * DEC-22 AussieMed is the seller of record, so there is one document
+       * with one TRN on it, and under DEC-24 the customer never learns which
+       * companies the goods were bought from.
+       */}
+      <section className="mt-8">
             <DocTable
               head={
                 <tr>
@@ -95,7 +91,7 @@ export default async function TaxInvoicePage({
                 </tr>
               }
             >
-              {invoice.items.map((item) => (
+              {order.items.map((item) => (
                 <tr key={item.id} className="border-b border-border-base">
                   <td className="py-2 tnum font-semibold text-text">
                     {item.skuCodeSnapshot}
@@ -126,19 +122,12 @@ export default async function TaxInvoicePage({
               ))}
             </DocTable>
 
-            <dl className="mt-3 ml-auto max-w-xs space-y-1 text-sm">
-              <Line label={`Standard rated at ${rate}%`} value={aed(standardNet)} />
-              <Line label="Zero rated" value={aed(zeroNet)} />
-              <Line label="Subtotal" value={aed(invoice.subtotalFils)} />
-              <Line label="VAT" value={aed(invoice.vatFils)} />
-              <Line label="Invoice total" value={aed(invoice.totalFils)} strong />
-            </dl>
-          </section>
-        );
-      })}
+      </section>
 
       <dl className="mt-8 ml-auto max-w-xs space-y-1 border-t-2 border-border-strong pt-3 text-sm">
-        <Line label="Order subtotal" value={aed(order.subtotalFils)} />
+        <Line label={`Standard rated at ${rate}%`} value={aed(standardNet)} />
+        <Line label="Zero rated" value={aed(zeroNet)} />
+        <Line label="Subtotal" value={aed(order.subtotalFils)} />
         <Line label={`VAT at ${rate}%`} value={aed(order.vatFils)} />
         <Line label="Delivery" value={aed(order.deliveryPriceFils)} />
         <Line label="Total due" value={aed(order.totalFils)} strong />

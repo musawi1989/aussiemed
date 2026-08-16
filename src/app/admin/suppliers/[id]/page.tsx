@@ -18,14 +18,33 @@ export default async function AdminSupplierPage({
     where: { id },
     include: {
       user: { select: { username: true, email: true, name: true } },
-      products: {
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, status: true },
+      // What they can supply, and what we have bought. A supplier no longer
+      // owns products or appears on a customer's invoice.
+      supplies: {
+        orderBy: { rank: "asc" },
+        select: {
+          rank: true,
+          costFils: true,
+          isAvailable: true,
+          sku: {
+            select: {
+              skuCode: true,
+              unitLabel: true,
+              product: { select: { id: true, name: true, status: true } },
+            },
+          },
+        },
       },
-      invoices: {
+      purchaseOrders: {
         orderBy: { createdAt: "desc" },
         take: 10,
-        include: { order: { select: { reference: true } } },
+        select: {
+          id: true,
+          poNumber: true,
+          status: true,
+          totalCostFils: true,
+          createdAt: true,
+        },
       },
     },
   });
@@ -69,23 +88,45 @@ export default async function AdminSupplierPage({
         <div className="space-y-5">
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
             <h2 className="text-base font-bold tracking-tight text-text">
-              Products ({supplier.products.length})
+              Packs they supply ({supplier.supplies.length})
             </h2>
-            {supplier.products.length === 0 ? (
+            {supplier.supplies.length === 0 ? (
               <p className="mt-3 text-sm text-text-muted">
-                Nothing in the catalogue from this supplier.
+                Nothing is sourced from this supplier yet.
               </p>
             ) : (
-              <ul className="mt-3 max-h-80 space-y-1 overflow-y-auto pr-1">
-                {supplier.products.map((product) => (
-                  <li key={product.id} className="flex items-center gap-2">
+              <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
+                {supplier.supplies.map((supply) => (
+                  <li
+                    key={`${supply.sku.skuCode}-${supply.rank}`}
+                    className="flex items-center gap-2"
+                  >
                     <Link
-                      href={`/admin/products/${product.id}`}
+                      href={`/admin/products/${supply.sku.product.id}`}
                       className="flex-1 truncate text-sm text-navy hover:underline"
                     >
-                      {product.name}
+                      {supply.sku.product.name}
+                      <span className="ml-1 text-xs text-text-subtle tnum">
+                        {supply.sku.unitLabel}
+                      </span>
                     </Link>
-                    <StatusPill status={product.status} />
+                    <span className="shrink-0 text-xs tnum text-text-muted">
+                      {supply.costFils === null ? "no cost" : aed(supply.costFils)}
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        supply.rank === "Primary"
+                          ? "bg-navy-soft text-navy"
+                          : "bg-surface-sunken text-text-muted"
+                      }`}
+                    >
+                      {supply.rank}
+                    </span>
+                    {!supply.isAvailable && (
+                      <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
+                        unavailable
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -94,29 +135,29 @@ export default async function AdminSupplierPage({
 
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
             <h2 className="text-base font-bold tracking-tight text-text">
-              Recent invoices
+              Recent purchase orders
             </h2>
-            {supplier.invoices.length === 0 ? (
+            {supplier.purchaseOrders.length === 0 ? (
               <p className="mt-3 text-sm text-text-muted">
-                No orders have been raised against this supplier.
+                Nothing has been ordered from this supplier yet.
               </p>
             ) : (
               <ul className="mt-3 space-y-1.5">
-                {supplier.invoices.map((invoice) => (
+                {supplier.purchaseOrders.map((po) => (
                   <li
-                    key={invoice.id}
+                    key={po.id}
                     className="flex flex-wrap items-center justify-between gap-2 text-sm"
                   >
                     <Link
-                      href={`/admin/orders/${invoice.order.reference}`}
+                      href={`/admin/purchasing/${po.poNumber}`}
                       className="font-semibold tnum text-navy hover:underline"
                     >
-                      {invoice.invoiceNumber}
+                      {po.poNumber}
                     </Link>
                     <span className="flex items-center gap-2">
-                      <StatusPill status={invoice.status} />
+                      <StatusPill status={po.status} />
                       <span className="font-semibold tnum text-text">
-                        {aed(invoice.totalFils)}
+                        {po.totalCostFils > 0 ? aed(po.totalCostFils) : "—"}
                       </span>
                     </span>
                   </li>

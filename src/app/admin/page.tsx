@@ -42,7 +42,7 @@ export default async function AdminPage() {
     db.order.findMany({
       orderBy: { placedAt: "desc" },
       take: 10,
-      include: { invoices: { select: { id: true } }, user: true },
+      include: { items: { select: { id: true } }, user: true },
     }),
   ]);
 
@@ -168,8 +168,8 @@ export default async function AdminPage() {
                     <p className="font-bold tnum text-navy">{order.reference}</p>
                     <p className="mt-0.5 text-sm text-text-muted tnum">
                       {order.placedAt.toISOString().slice(0, 10)} &middot;{" "}
-                      {order.invoices.length}{" "}
-                      {order.invoices.length === 1 ? "invoice" : "invoices"}{" "}
+                      {order.items.length}{" "}
+                      {order.items.length === 1 ? "line" : "lines"}{" "}
                       &middot; {order.user?.email ?? "guest"}
                     </p>
                   </div>
