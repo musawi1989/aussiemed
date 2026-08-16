@@ -19,13 +19,20 @@ export type AccountTab = {
   /** Shown beside the label — how many orders, how many saved products. */
   count?: number;
   exact?: boolean;
+  /**
+   * Other paths this tab owns. Reordering starts from an order and lives at
+   * /account/reorder, so leaving the rail with nothing highlighted would make
+   * a buyer look lost at exactly the point they are mid-task.
+   */
+  also?: string[];
 };
 
 export function AccountTabs({ tabs }: { tabs: AccountTab[] }) {
   const pathname = usePathname();
 
   const isActive = (tab: AccountTab) =>
-    tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
+    (tab.also ?? []).some((prefix) => pathname.startsWith(prefix)) ||
+    (tab.exact ? pathname === tab.href : pathname.startsWith(tab.href));
 
   return (
     <nav aria-label="Your account" className="lg:w-56 lg:shrink-0">

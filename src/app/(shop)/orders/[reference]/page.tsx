@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrderProgress } from "@/components/OrderProgress";
 import { getOrderByReference } from "@/lib/orders";
 import { getSessionUser } from "@/lib/auth";
 import { readCartKey } from "@/lib/cart-cookie";
 import { formatAED } from "@/lib/money";
+import { orderProgress, splitDeliveryNote } from "@/lib/order-progress";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 type Params = Promise<{ reference: string }>;
@@ -48,6 +50,8 @@ export default async function OrderPage({ params }: { params: Params }) {
   // an older checkout no longer throws JSON.parse on the page a customer opens
   // to find out where their order is going.
   const shipping = parseShippingAddress(order.shippingSnapshot);
+  const progress = orderProgress(order.status);
+  const split = splitDeliveryNote(order.items.map((item) => item.status));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -63,10 +67,64 @@ export default async function OrderPage({ params }: { params: Params }) {
             {order.poReference ? ` · PO ${order.poReference}` : ""}
           </p>
         </div>
-        <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">
-          {order.status}
+        {/* The customer's word for it, not the warehouse's — "Pending" reads
+            as "we might not do this" to the person waiting on the box. */}
+        <span
+          className={`rounded-full px-3 py-1 text-sm font-bold ${
+            progress.cancelled
+              ? "bg-danger-soft text-danger"
+              : progress.closed
+                ? "bg-success-soft text-success"
+                : "bg-accent-soft text-accent"
+          }`}
+        >
+          {progress.headline}
         </span>
       </div>
+
+      <section className="mt-6 rounded-card border border-border-base bg-surface p-5 shadow-card">
+        <h2 className="text-base font-bold text-text">Where it has got to</h2>
+        <div className="mt-4">
+          <OrderProgress status={order.status} />
+        </div>
+
+        {split && (
+          <p className="mt-3 rounded-card border-l-4 border-accent-border bg-accent-soft px-3 py-2 text-sm text-text">
+            {split}
+          </p>
+        )}
+
+        {(order.estimatedShipmentOn || order.courier || order.trackingNumber) && (
+          <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 border-t border-border-base pt-4 text-sm">
+            {order.estimatedShipmentOn && (
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wide text-text-subtle">
+                  Expected to leave us
+                </dt>
+                <dd className="tnum text-text">
+                  {order.estimatedShipmentOn.toISOString().slice(0, 10)}
+                </dd>
+              </div>
+            )}
+            {order.courier && (
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wide text-text-subtle">
+                  Courier
+                </dt>
+                <dd className="text-text">{order.courier}</dd>
+              </div>
+            )}
+            {order.trackingNumber && (
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wide text-text-subtle">
+                  Tracking
+                </dt>
+                <dd className="tnum text-text">{order.trackingNumber}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </section>
 
       {shipping && (
         <section className="mt-6 rounded-card border border-border-base bg-surface p-5 shadow-card">

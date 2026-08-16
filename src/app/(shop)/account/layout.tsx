@@ -49,7 +49,17 @@ export default async function AccountLayout({
       ];
 
   const tabs: AccountTab[] = [
-    { href: "/account", label: "Overview", exact: true, count: orderCount },
+    { href: "/account", label: "Overview", exact: true },
+    ...(session
+      ? [
+          {
+            href: "/account/orders",
+            label: "Orders",
+            count: orderCount,
+            also: ["/account/reorder"],
+          },
+        ]
+      : []),
     { href: "/account/products", label: "My products", count: savedCount },
     ...(session
       ? [

@@ -122,7 +122,10 @@ export async function accountOrders(branchId?: string) {
     include: {
       address: { select: { id: true, label: true, city: true } },
       staff: { select: { name: true } },
-      items: { select: { id: true } },
+      // Line status as well as the count: the order-level status has to pick
+      // one word, and "On the way" is only true of the lines that went. See
+      // splitDeliveryNote.
+      items: { select: { id: true, status: true } },
     },
   });
 }
