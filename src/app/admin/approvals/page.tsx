@@ -42,6 +42,19 @@ export default async function ApprovalsPage() {
 
   const live = queues.filter((q) => q.count > 0);
 
+  /**
+   * One of these queues is this page.
+   *
+   * Its card pointed at /admin/approvals, which is where the reader already
+   * is, so clicking it did nothing at all — it looked like a broken link
+   * because it behaved like one. It jumps to the section below instead, and
+   * says so, rather than pretending to go somewhere.
+   */
+  const HERE = "/admin/approvals";
+  const hrefFor = (href: string) =>
+    href.startsWith(HERE) ? "#account-changes" : href;
+  const isOnThisPage = (href: string) => href.startsWith(HERE);
+
   return (
     <div className="px-4 py-6 lg:px-8">
       <h1 className="text-xl font-bold tracking-tight text-text">
@@ -66,7 +79,7 @@ export default async function ApprovalsPage() {
             {live.map((queue) => (
               <li key={queue.key}>
                 <Link
-                  href={queue.href}
+                  href={hrefFor(queue.href)}
                   className={`flex h-full flex-col rounded-card border bg-surface p-4 shadow-card transition-colors hover:border-navy ${
                     queue.urgent ? "border-accent-border" : "border-border-base"
                   }`}
@@ -74,6 +87,11 @@ export default async function ApprovalsPage() {
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="text-sm font-bold text-text">
                       {queue.label}
+                      {isOnThisPage(queue.href) && (
+                        <span className="ml-1.5 text-xs font-normal text-text-subtle">
+                          &darr; below
+                        </span>
+                      )}
                     </span>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-bold tnum ${
@@ -95,7 +113,9 @@ export default async function ApprovalsPage() {
         )}
       </section>
 
-      <section className="mt-8">
+      {/* scroll-mt keeps the heading clear of the top of the window when the
+          card above jumps to it. */}
+      <section id="account-changes" className="mt-8 scroll-mt-6">
         <h2 className="text-sm font-bold uppercase tracking-wide text-text-subtle">
           Account changes to approve{" "}
           <span className="tnum text-text-muted">({changes.length})</span>

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**183 items** · 73 outstanding · **15 outstanding P1**
+**184 items** · 73 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -167,6 +167,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-47 | The whole catalogue shipped with every admin and supplier page | Dev | P2 | Done | The layout split was meant to stop the storefront's data loading behind the back office, and it did not. The root not-found wraps ShopChrome, which loads every product and hands it to a browser-side provider, and Next includes the root not-found boundary in the payload of every page — so around 150KB of catalogue JSON went out with every /admin and /business-portal response. Visible markup was clean; the data sat in the flight payload where View Source finds it. |
 | BE-48 | The daily cutoff could not be changed, and no buyer was told what it was | Dev | P2 | Done | The buying run has always closed at an hour held in a settings row, but nothing could write that row — the value could only be read, so 5pm was effectively hard-coded. Worse, the deadline was invisible on the storefront. A trade buyer deciding whether to order now or in the morning had no way to know which side of the cutoff they were on, and the whole cross-dock model turns on that one time. |
 | BE-49 | Reports had nowhere to live in the back office | Dev | P3 | Done | Customers and Suppliers were each a single list. There was no place to ask the other question a section raises — what did they buy, what did we spend, who is slow — so the answers either did not exist or were buried in a screen built for a different purpose. |
+| BE-50 | The first card on Needs attention did nothing when clicked | Dev | P2 | Done | Account changes are the one queue that lives on the Needs attention page itself, but its card was built from the same list as the others and linked to /admin/approvals — the page the reader was already on. Clicking it changed nothing and moved nothing, so it read as a broken feature. The queue underneath was working the whole time. |
 
 ## Infrastructure
 
