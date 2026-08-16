@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**182 items** · 75 outstanding · **15 outstanding P1**
+**183 items** · 73 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -144,8 +144,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-24 | Supplier data is scoped by query, not by filtering | Dev | P3 | Open | OUR DECISION: a supplier's products and invoice lines are fetched through their supplier id, so another supplier's rows are never loaded rather than loaded and hidden. |
 | BE-25 | Invalidate the catalogue cache after a seed or an edit | Dev | P1 | Done | The data layer caches the catalogue for the life of the process, so a running server keeps serving whatever it read first. This is not theoretical: on 15 Aug 2026 the dev server was still showing a retired carton SKU as a purchasable unit chip on the product page, hours after the database had deactivated it. |
 | BE-26 | Seed now upserts instead of wiping | Dev | P3 | Done | Once orders existed, re-seeding failed on a foreign key: order lines reference SKU rows. The database was correctly refusing to let a re-seed destroy order history. |
-| BE-27 | No marketing screens: wishlists and abandoned carts | Dev | P3 | Open | Both are already recorded in the database and nobody can see either. An abandoned cart is the cheapest sale to recover, and a wishlist says what a buyer wants before they buy it. |
-| BE-28 | No reports: sales by supplier, category or period | Dev | P3 | Open | The dashboard totals every order ever placed and nothing else. There is no way to answer which supplier sells most, what a month looked like, or which categories are dead. |
+| BE-27 | No marketing screens: wishlists and abandoned carts | Dev | P3 | Done | Both are already recorded in the database and nobody can see either. An abandoned cart is the cheapest sale to recover, and a wishlist says what a buyer wants before they buy it. |
+| BE-28 | No reports: sales by supplier, category or period | Dev | P3 | Done | The dashboard totals every order ever placed and nothing else. There is no way to answer which supplier sells most, what a month looked like, or which categories are dead. |
 | BE-29 | Product images cannot be uploaded | Dev | P1 | Done | The admin product screen listed the image files a product references but could not add or replace one, so the only way to give a product a photograph was to put a file on disk and re-seed. That blocked DA-03 and DA-24 from ever being closed by the client rather than by us. |
 | BE-30 | Capture supplier sub-order lifecycle timestamps and an immutable status log | Dev | P1 | Done | Nothing records when a supplier acknowledged, dispatched or delivered a sub-order, so no fulfilment or lead-time question can be answered about any supplier. Unlike most gaps this one cannot be repaired later: a timestamp not captured at the moment it happened is gone, and the same reasoning already applied to SkuBatch under FN-09. |
 | BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Done | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
@@ -166,6 +166,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-46 | Nothing recorded that an email had not been sent | Dev | P2 | Done | Quote requests, restock requests and enquiries were stored and never sent, and nothing anywhere said so. A silent failure is the only kind that lasts: an empty inbox looks exactly like a quiet week. |
 | BE-47 | The whole catalogue shipped with every admin and supplier page | Dev | P2 | Done | The layout split was meant to stop the storefront's data loading behind the back office, and it did not. The root not-found wraps ShopChrome, which loads every product and hands it to a browser-side provider, and Next includes the root not-found boundary in the payload of every page — so around 150KB of catalogue JSON went out with every /admin and /business-portal response. Visible markup was clean; the data sat in the flight payload where View Source finds it. |
 | BE-48 | The daily cutoff could not be changed, and no buyer was told what it was | Dev | P2 | Done | The buying run has always closed at an hour held in a settings row, but nothing could write that row — the value could only be read, so 5pm was effectively hard-coded. Worse, the deadline was invisible on the storefront. A trade buyer deciding whether to order now or in the morning had no way to know which side of the cutoff they were on, and the whole cross-dock model turns on that one time. |
+| BE-49 | Reports had nowhere to live in the back office | Dev | P3 | Done | Customers and Suppliers were each a single list. There was no place to ask the other question a section raises — what did they buy, what did we spend, who is slow — so the answers either did not exist or were buried in a screen built for a different purpose. |
 
 ## Infrastructure
 

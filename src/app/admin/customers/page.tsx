@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { AdminFilters } from "@/components/AdminFilters";
 import { StatusPill } from "@/components/StatusPill";
+import { SectionTabs } from "@/components/admin/SectionTabs";
+import { CUSTOMER_TABS } from "./tabs";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
@@ -45,6 +47,8 @@ export default async function AdminCustomersPage({
           {customers.length} {customers.length === 1 ? "account" : "accounts"}
         </p>
       </div>
+
+      <SectionTabs tabs={CUSTOMER_TABS} />
 
       <AdminFilters
         basePath="/admin/customers"

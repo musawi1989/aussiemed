@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { SupplierForm } from "@/components/SupplierForm";
+import { SectionTabs } from "@/components/admin/SectionTabs";
+import { SUPPLIER_TABS } from "./tabs";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
@@ -29,6 +31,8 @@ export default async function AdminSuppliersPage() {
           {suppliers.length} {suppliers.length === 1 ? "supplier" : "suppliers"}
         </p>
       </div>
+
+      <SectionTabs tabs={SUPPLIER_TABS} />
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[2fr_1fr]">
         <div className="overflow-x-auto rounded-card border border-border-base bg-surface shadow-card">
