@@ -7,6 +7,8 @@ import { ProductStatusActions } from "@/components/ProductStatusActions";
 import { SkuEditor } from "@/components/SkuEditor";
 import { ProductDetailsForm } from "@/components/ProductDetailsForm";
 import { ProductImages } from "@/components/admin/ProductImages";
+import { ProductMargins } from "@/components/admin/ProductMargins";
+import { productMargins } from "@/lib/margin-data";
 import { MAX_IMAGE_BYTES } from "@/lib/storage";
 
 /**
@@ -47,6 +49,10 @@ export default async function AdminProductPage({
   ]);
 
   if (!product) notFound();
+
+  // Admin-guarded and fetched separately on purpose: cost never rides along
+  // inside a query that anything else might come to reuse.
+  const margins = await productMargins(product.id);
 
   // Departments first, each followed by its own children, so the picker reads
   // as the tree rather than an alphabetical soup of 146 names.
@@ -134,6 +140,8 @@ export default async function AdminProductPage({
               made active until one exists.
             </p>
           )}
+
+          {margins.length > 0 && <ProductMargins margins={margins} />}
         </div>
 
         <div className="space-y-5">

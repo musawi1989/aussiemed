@@ -44,7 +44,9 @@ export default async function PurchaseOrderPage({
   if (!po) notFound();
 
   const units = po.lines.reduce((n, l) => n + l.qtyOrdered, 0);
-  const costsKnown = po.lines.every((l) => l.unitCostFilsSnapshot > 0);
+  // Null, not zero: a line with no recorded cost used to be stored as costing
+  // nothing, which read as a real price everywhere downstream.
+  const costsKnown = po.lines.every((l) => l.unitCostFilsSnapshot !== null);
 
   return (
     <>
@@ -125,12 +127,12 @@ export default async function PurchaseOrderPage({
                       {line.qtyOrdered}
                     </td>
                     <td className="py-2 text-right tnum text-text-muted">
-                      {line.unitCostFilsSnapshot > 0
-                        ? aed(line.unitCostFilsSnapshot)
-                        : "—"}
+                      {line.unitCostFilsSnapshot === null
+                        ? "—"
+                        : aed(line.unitCostFilsSnapshot)}
                     </td>
                     <td className="py-2 text-right tnum text-text">
-                      {line.lineCostFils > 0 ? aed(line.lineCostFils) : "—"}
+                      {line.lineCostFils === null ? "—" : aed(line.lineCostFils)}
                     </td>
                   </tr>
                 ))}
@@ -141,7 +143,7 @@ export default async function PurchaseOrderPage({
                     Total
                   </td>
                   <td className="pt-3 text-right font-bold tnum text-text">
-                    {po.totalCostFils > 0 ? aed(po.totalCostFils) : "—"}
+                    {po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
                   </td>
                 </tr>
               </tfoot>

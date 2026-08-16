@@ -7,6 +7,8 @@ import { ORDER_STATUSES } from "@/lib/order-views";
 import { StatusPill } from "@/components/StatusPill";
 import { OrderLineCard } from "@/components/admin/OrderLineCard";
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
+import { OrderMarginPanel } from "@/components/admin/OrderMarginPanel";
+import { orderMargin } from "@/lib/margin-data";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 const aed = (fils: number) => formatAED(fils / 100);
@@ -66,6 +68,10 @@ export default async function AdminOrderPage({
   });
 
   if (!order) notFound();
+
+  // Fetched on its own, admin-guarded. Cost is never carried by a query that
+  // something customer-facing might come to reuse.
+  const margin = await orderMargin(order.reference);
 
   const now = new Date();
   const soon = new Date(now.getTime() + EXPIRY_WARNING_DAYS * 86_400_000);
@@ -269,6 +275,8 @@ export default async function AdminOrderPage({
                 ))}
               </ul>
           </section>
+
+          <OrderMarginPanel margin={margin} />
         </div>
 
         <div className="space-y-5">

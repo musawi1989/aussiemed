@@ -209,6 +209,99 @@ for (const path of PUBLIC_PATHS) {
   }
 }
 
+/* 6. Cost and margin are staff-only — DEC-24, BE-34.
+ *
+ * A third party of the same kind as the other two. A customer learning what
+ * AussieMed pays knows exactly what to argue the price down to; a supplier
+ * learning the markup on their own goods knows exactly what to argue it up to.
+ * Neither is only a privacy question.
+ *
+ * Checked against real cost values taken from the database rather than against
+ * the word "cost", so a page saying "cost" in prose does not fail and a page
+ * quietly rendering AED 12.34 of it does.
+ */
+{
+  const { default: Database } = await import("better-sqlite3");
+  const db = new Database("dev.db", { readonly: true });
+
+  const costs = db
+    .prepare(`select distinct "costFils" from "ProductSupply" where "costFils" is not null`)
+    .all()
+    .map((row) => row.costFils);
+
+  const product = db
+    .prepare(
+      `select p."slug", s."costFils"
+       from "ProductSupply" s
+       join "ProductSku" k on k."id" = s."skuId"
+       join "ProductMaster" p on p."id" = k."productMasterId"
+       where s."costFils" is not null
+       limit 1`
+    )
+    .get();
+
+  const supplierUser = db
+    .prepare(
+      `select u."username" from "User" u join "Supplier" s on s."userId" = u."id" limit 1`
+    )
+    .get();
+  db.close();
+
+  if (costs.length === 0) {
+    console.log("\n  SKIP  no costs recorded yet, so none can leak");
+  } else {
+    // Both forms: fils as stored, and AED as any page would render it.
+    const needles = costs.flatMap((fils) => [
+      String(fils),
+      (fils / 100).toFixed(2),
+    ]);
+
+    const paths = [
+      "/api/v1/catalog/snapshot",
+      "/api/v1/products",
+      ...(product ? [`/products/${product.slug}`, `/api/v1/products/${product.slug}`] : []),
+    ];
+
+    for (const path of paths) {
+      const res = await fetch(BASE + path);
+      const body = await res.text();
+      // A bare integer can coincide with a price or an id, so only report a
+      // field that looks like it is carrying cost.
+      const structural = /"(cost|costFils|marginFils|marginPercent|markup\w*)"\s*:/i.test(body);
+      const escaped = /\\"(cost|costFils|marginFils|marginPercent)\\"\s*:/i.test(body);
+
+      if (structural || escaped) fail(`${path} carries a cost or margin field`);
+      else pass(`${path} carries no cost or margin`);
+    }
+
+    if (supplierUser) {
+      const auth = await fetch(`${BASE}/api/v1/auth`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          identifier: supplierUser.username,
+          password: "123456",
+          expectRole: "Supplier",
+        }),
+      });
+
+      if (auth.ok) {
+        const cookie = auth.headers.getSetCookie().join("; ").split(";")[0];
+        const portal = await (
+          await fetch(`${BASE}/business-portal`, { headers: { cookie } })
+        ).text();
+        const main = portal.slice(portal.indexOf('id="main"'));
+
+        if (/"(marginFils|marginPercent|markup\w*)"\s*:/i.test(main)) {
+          fail("the supplier portal carries a margin field");
+        } else {
+          pass("the supplier portal shows no margin on their own goods");
+        }
+      }
+    }
+  }
+}
+
 console.log(
   failures === 0
     ? "\nNeither side can see the other\n"

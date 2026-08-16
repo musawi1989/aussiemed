@@ -219,7 +219,11 @@ export async function buildPurchaseOrders(
           supplierId: order.supplierId,
           status: "Draft",
           cutoffAt,
-          totalCostFils: order.totalCostFils ?? 0,
+          // Null travels through rather than collapsing to zero — the plan
+          // already returns null when any line's cost is unknown, and
+          // flattening it here is what made an order of uncosted lines read
+          // as free.
+          totalCostFils: order.totalCostFils,
         },
       });
 
@@ -231,10 +235,13 @@ export async function buildPurchaseOrders(
             supplierPartNumberSnapshot: line.supplierPartNumber,
             nameSnapshot: line.name,
             skuCodeSnapshot: line.skuCode,
-            unitCostFilsSnapshot: line.unitCostFils ?? 0,
+            unitCostFilsSnapshot: line.unitCostFils,
             qtyOrdered: line.qtyOrdered,
             wasFallback: line.wasFallback,
-            lineCostFils: (line.unitCostFils ?? 0) * line.qtyOrdered,
+            lineCostFils:
+              line.unitCostFils === null
+                ? null
+                : line.unitCostFils * line.qtyOrdered,
           },
         });
 

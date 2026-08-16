@@ -217,7 +217,7 @@ export default async function PurchasingPage() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold tnum text-text">
-                      {po.totalCostFils > 0 ? aed(po.totalCostFils) : "—"}
+                      {po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
                     </span>
                     {po.status === "Draft" && (
                       <>

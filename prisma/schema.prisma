@@ -209,7 +209,6 @@ model OrganisationStaff {
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   name  String
-  email String?
   /// Removed from the picker without touching the orders they placed.
   isActive Boolean @default(true)
 
@@ -996,7 +995,11 @@ model PurchaseOrder {
   trackingNumber String?
 
   /// What AussieMed expects to pay, in fils. Sell prices never appear here.
-  totalCostFils Int @default(0)
+  ///
+  /// Null when any line on the order has no recorded cost. A total that
+  /// silently counted those lines as free would be wrong in the direction that
+  /// looks good, which is the direction nobody checks.
+  totalCostFils Int?
 
   /// Staff-only. Never sent to the supplier.
   internalNotes String?
@@ -1027,7 +1030,12 @@ model PurchaseOrderLine {
   supplierPartNumberSnapshot String?
   nameSnapshot               String
   skuCodeSnapshot            String
-  unitCostFilsSnapshot       Int
+  ///
+  /// Nullable for the same reason ProductSupply.costFils is: a cost that has
+  /// not been recorded must not arrive here as a zero. It used to, and the
+  /// margin on the order it fulfilled then read as 100% — confidently, and
+  /// wrongly. Unknown has to survive the snapshot or it stops being unknown.
+  unitCostFilsSnapshot       Int?
 
   qtyOrdered  Int
   qtyReceived Int @default(0)
@@ -1036,7 +1044,8 @@ model PurchaseOrderLine {
   /// see at a glance which lines were not the first choice.
   wasFallback Boolean @default(false)
 
-  lineCostFils Int
+  /// Null whenever the unit cost is. See above.
+  lineCostFils Int?
 
   allocations PurchaseAllocation[]
 

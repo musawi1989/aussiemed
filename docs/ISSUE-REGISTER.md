@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**178 items** · 82 outstanding · **17 outstanding P1**
+**179 items** · 81 outstanding · **17 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -151,7 +151,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-31 | Log every out-of-stock toggle instead of only the current flag | Dev | P2 | Open | The manual out-of-stock checkbox stores current state only. How long a product has been unavailable, and how quickly a supplier restocks, are unanswerable — and both are conversations the admin has with suppliers. |
 | BE-32 | Log storefront searches, especially the ones that return nothing | Dev | P2 | Open | A search that returns no results is a customer telling you what to stock, and it is currently discarded. For a distributor deciding what to source next, the list of terms that found nothing is one of the most valuable things the site can produce. |
 | BE-33 | Record what each supplier has promised: lead time and acknowledgement SLA | Dev | P2 | Open | On-time means nothing without a promise to measure against. These are numbers agreed personally with each supplier during onboarding, and there is nowhere to put them. |
-| BE-34 | No cost price, so no margin is known | Dev | P2 | Open | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
+| BE-34 | No cost price, so no margin is known | Dev | P2 | Done | The system records what a product sells for but not what it costs to buy, so nothing can say whether a line, an order or a supplier is profitable. Requested by the client 16 Aug 2026. |
 | BE-35 | Products are hard-tied to one supplier | Dev | P1 | Done | ProductMaster.supplierId was a required field, so every product belonged to exactly one supplier and could not have a backup. It also meant supplier identity was carried on the product record itself, which is how it reached the browser. |
 | BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |
 | BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Done | Goods arrive pooled by item, not by customer. Without an allocation record there was no way to know whose units arrived, and no way to answer a recall. |
@@ -162,6 +162,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-42 | OrganisationStaff.email is no longer collected | Dev | P3 | Open | The Who orders list records who at a practice placed an order. Nobody on it signs in, so an email address was never used for anything — it was asked for, stored, and read by nothing. Client asked for the field to go on 16 Aug 2026. |
 | BE-43 | Account changes were made silently and with no reason attached | Dev | P2 | Done | A customer could add or remove a person from Who orders, add a branch, or remove one, and nothing recorded who did it or why. Six months later the account would show a delivery address nobody could account for. Worse, a branch is where medical supplies get sent: an address added by a customer went live immediately, so the next order could ship to somewhere nobody at AussieMed had ever checked. |
 | BE-44 | A refused form deleted everything the person had typed | Dev | P2 | Done | React clears an uncontrolled form as soon as its action returns, success or failure alike. Now that every account change needs a reason, being told the reason is too short also silently deleted the name, the address and everything else just typed — so correcting a small mistake cost more than the original entry did. |
+| BE-45 | A purchase order line with no recorded cost was stored as costing zero | Dev | P1 | Done | buildPurchaseOrders wrote unitCostFils ?? 0, so every line drawn from a supply whose cost had not been loaded was saved as free. Downstream that is indistinguishable from a genuine zero, and the realised margin on the customer order it fulfilled came out at 100% — stated confidently on the screen whose entire purpose is deciding whether a trade is worth doing. The pure planner already modelled the cost as nullable and got it right; the flattening happened only at the database write. |
 
 ## Infrastructure
 

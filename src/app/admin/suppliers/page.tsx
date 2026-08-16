@@ -72,12 +72,33 @@ export default async function AdminSuppliersPage() {
                     {supplier._count.supplies}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tnum text-text">
-                    {aed(
-                      supplier.purchaseOrders.reduce(
-                        (n, po) => n + po.totalCostFils,
+                    {/* Totalling only the orders whose cost is known, and
+                        saying so, rather than counting the rest as free. */}
+                    {(() => {
+                      const known = supplier.purchaseOrders.filter(
+                        (po) => po.totalCostFils !== null
+                      );
+                      if (known.length === 0) return "—";
+                      const total = known.reduce(
+                        (n, po) => n + (po.totalCostFils ?? 0),
                         0
-                      )
-                    )}
+                      );
+                      const missing =
+                        supplier.purchaseOrders.length - known.length;
+                      return (
+                        <>
+                          {aed(total)}
+                          {missing > 0 && (
+                            <span
+                              className="ml-1 text-xs font-normal text-text-subtle"
+                              title={`${missing} order(s) have no recorded cost and are not counted`}
+                            >
+                              +{missing}?
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

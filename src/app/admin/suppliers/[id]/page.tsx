@@ -157,7 +157,7 @@ export default async function AdminSupplierPage({
                     <span className="flex items-center gap-2">
                       <StatusPill status={po.status} />
                       <span className="font-semibold tnum text-text">
-                        {po.totalCostFils > 0 ? aed(po.totalCostFils) : "—"}
+                        {po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
                       </span>
                     </span>
                   </li>
