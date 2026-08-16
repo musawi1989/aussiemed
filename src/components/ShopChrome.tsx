@@ -20,12 +20,32 @@ import { StoreProvider } from "@/lib/store";
  * used to be fetched and pushed into a browser-side provider on every request
  * in the app, including a page showing a table of orders.
  */
-export async function ShopChrome({ children }: { children: React.ReactNode }) {
+export async function ShopChrome({
+  children,
+  withCatalogue = true,
+}: {
+  children: React.ReactNode;
+  /**
+   * Whether to send the catalogue snapshot down with the first render.
+   *
+   * On for the storefront, where the search box should suggest immediately.
+   * Off for the root not-found, and that is not a micro-optimisation: Next
+   * includes the root not-found boundary in the payload of *every* page, so
+   * a chrome that loads the catalogue puts the whole catalogue — around
+   * 150KB of it — into every /admin and /business-portal response. The
+   * layout split was supposed to have stopped exactly that.
+   *
+   * Nothing breaks when it is off. CatalogProvider refetches the snapshot on
+   * mount anyway, so the only cost is that a search on a 404 page suggests
+   * nothing for the first moment, and nobody is mid-search on a 404.
+   */
+  withCatalogue?: boolean;
+}) {
   const [departments, products, user, savedSlugs] = await Promise.all([
     getDepartments(),
-    getAllProducts(),
+    withCatalogue ? getAllProducts() : Promise.resolve([]),
     getSessionUser(),
-    savedProductSlugs(),
+    withCatalogue ? savedProductSlugs() : Promise.resolve([]),
   ]);
 
   // Translated here because the browser works in catalogue ids and the

@@ -205,6 +205,89 @@ for (const path of PUBLIC_PATHS) {
           );
         }
       }
+
+      /* The supplies screen — BE-21.
+       *
+       * A supplier setting their own prices is the screen most likely to grow
+       * a column it should not have: our selling price is one join away, and
+       * so is the other supplier's cost. Checked against real values from the
+       * database rather than against the word "price".
+       */
+      {
+        const db2 = new Database("dev.db", { readonly: true });
+
+        const sellPrices = db2
+          .prepare(
+            `select distinct k."priceFils" from "ProductSku" k
+             join "ProductSupply" p on p."skuId" = k."id"
+             where p."supplierId" = ?`
+          )
+          .all(supplierUser.supplierId)
+          .map((row) => (row.priceFils / 100).toFixed(2));
+
+        const ownCosts = new Set(
+          db2
+            .prepare(
+              `select distinct "costFils" from "ProductSupply"
+               where "supplierId" = ? and "costFils" is not null`
+            )
+            .all(supplierUser.supplierId)
+            .map((row) => (row.costFils / 100).toFixed(2))
+        );
+        const rivalCosts = db2
+          .prepare(
+            `select distinct "costFils" from "ProductSupply"
+             where "supplierId" != ? and "costFils" is not null`
+          )
+          .all(supplierUser.supplierId)
+          .map((row) => (row.costFils / 100).toFixed(2))
+          .filter((value) => !ownCosts.has(value));
+
+        // Packs they do not supply at all — not merely ones somebody else
+        // also supplies, which would flag a shared item as a leak.
+        const notTheirs = db2
+          .prepare(
+            `select k."skuCode" from "ProductSku" k
+             where exists (select 1 from "ProductSupply" p where p."skuId" = k."id" and p."supplierId" != ?)
+               and not exists (select 1 from "ProductSupply" p where p."skuId" = k."id" and p."supplierId" = ?)`
+          )
+          .all(supplierUser.supplierId, supplierUser.supplierId)
+          .map((row) => row.skuCode);
+
+        const rivals = db2
+          .prepare(`select "companyName" from "Supplier" where "id" != ?`)
+          .all(supplierUser.supplierId)
+          .map((row) => row.companyName);
+        db2.close();
+
+        const html = await (
+          await fetch(`${BASE}/business-portal/supplies`, { headers: { cookie } })
+        ).text();
+        const main = html.slice(html.indexOf('id="main"'));
+
+        const problems = [];
+        if (sellPrices.some((value) => main.includes(`AED ${value}`))) {
+          problems.push("our selling price");
+        }
+        if (rivalCosts.some((value) => main.includes(`AED ${value}`))) {
+          problems.push("another supplier's cost");
+        }
+        if (notTheirs.some((code) => main.includes(code))) {
+          problems.push("a pack they do not supply");
+        }
+        if (rivals.some((name) => main.includes(name))) {
+          problems.push("another supplier's name");
+        }
+        if (identifiers.some((value) => main.includes(value))) {
+          problems.push("a customer");
+        }
+
+        if (problems.length === 0) {
+          pass("the supplies screen shows only their own terms");
+        } else {
+          fail(`the supplies screen shows ${problems.join(" and ")}`);
+        }
+      }
     }
   }
 }

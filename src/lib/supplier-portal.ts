@@ -3,6 +3,13 @@ import "server-only";
 import { db } from "./db";
 import { audit, type Result } from "./admin";
 import { getSessionUser, type SessionUser } from "./auth";
+import {
+  checkSupplyTerms,
+  parseSupplyRows,
+  splitByKnownSkus,
+  type RowProblem,
+  type SupplyTermsInput,
+} from "./supply-terms";
 
 /**
  * What a supplier can see and do — BE-39.
@@ -133,4 +140,235 @@ export async function markDispatched(
   }, { status: "Dispatched", courier: trim(input.courier) });
 
   return ok(undefined);
+}
+
+/* ------------------------------------------------------------------ *
+ * The packs they supply — BE-21
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a supplier sees about the items they supply.
+ *
+ * Deliberately narrow. They get our item code and the product name, because
+ * without those they cannot tell which pack a row is about, and their own
+ * terms, because those are theirs to set. They do not get our selling price,
+ * our margin, or the other supplier's cost — a supplier who can see the markup
+ * on their own goods is a commercial problem, and one who can see their
+ * competitor's price is a worse one. The select below is the guarantee: those
+ * columns are not filtered out afterwards, they are never read.
+ */
+export async function listMySupplies() {
+  const { supplierId } = await requireSupplier();
+
+  const supplies = await db.productSupply.findMany({
+    where: { supplierId },
+    orderBy: [{ isAvailable: "asc" }, { sku: { skuCode: "asc" } }],
+    select: {
+      id: true,
+      rank: true,
+      costFils: true,
+      supplierPartNumber: true,
+      leadTimeDays: true,
+      isAvailable: true,
+      sku: {
+        select: {
+          skuCode: true,
+          unitLabel: true,
+          isActive: true,
+          product: { select: { name: true, status: true } },
+        },
+      },
+    },
+  });
+
+  return supplies.map((supply) => ({
+    id: supply.id,
+    // Their standing with us on this item. Shown because it changes what a
+    // supplier should expect: a backup only receives orders when the primary
+    // cannot supply, so a quiet month is not necessarily a lost customer.
+    rank: supply.rank,
+    skuCode: supply.sku.skuCode,
+    productName: supply.sku.product.name,
+    unitLabel: supply.sku.unitLabel,
+    /** Ours, not theirs: a retired pack explains why nothing is ordered. */
+    listed: supply.sku.isActive && supply.sku.product.status === "Active",
+    costFils: supply.costFils,
+    supplierPartNumber: supply.supplierPartNumber,
+    leadTimeDays: supply.leadTimeDays,
+    isAvailable: supply.isAvailable,
+  }));
+}
+
+export type MySupply = Awaited<ReturnType<typeof listMySupplies>>[number];
+
+/**
+ * Updates one line's terms.
+ *
+ * Takes the supply row's id and checks it belongs to the session's supplier as
+ * part of the lookup, not afterwards — someone else's id simply does not
+ * resolve. Nothing here can create a supply row: which suppliers can supply
+ * what is an admin decision, and a portal that could create the pairing would
+ * let a supplier appoint themselves to a competitor's line.
+ */
+export async function updateMySupply(
+  supplyId: string,
+  input: SupplyTermsInput
+): Promise<Result> {
+  const actor = await requireSupplier();
+
+  const existing = await db.productSupply.findFirst({
+    where: { id: supplyId, supplierId: actor.supplierId },
+    select: {
+      id: true,
+      costFils: true,
+      supplierPartNumber: true,
+      leadTimeDays: true,
+      isAvailable: true,
+      sku: { select: { skuCode: true } },
+    },
+  });
+  if (!existing) return fail("That item is not one you supply.");
+
+  const checked = checkSupplyTerms(input);
+  if (!checked.ok) return fail(checked.error);
+
+  await db.productSupply.update({
+    where: { id: supplyId },
+    data: checked.terms,
+  });
+
+  await audit(
+    actor,
+    "supply.update",
+    "ProductSupply",
+    existing.sku.skuCode,
+    {
+      costFils: existing.costFils,
+      supplierPartNumber: existing.supplierPartNumber,
+      leadTimeDays: existing.leadTimeDays,
+      isAvailable: existing.isAvailable,
+    },
+    checked.terms
+  );
+
+  return ok(undefined);
+}
+
+/**
+ * The whole company in or out.
+ *
+ * Distinct from a single item being unavailable, and much blunter: while this
+ * is off, every line where they are primary reverts to the backup. See DEC-25.
+ */
+export async function setMyAvailability(available: boolean): Promise<Result> {
+  const actor = await requireSupplier();
+
+  const before = await db.supplier.findUnique({
+    where: { id: actor.supplierId },
+    select: { isAvailable: true },
+  });
+
+  await db.supplier.update({
+    where: { id: actor.supplierId },
+    data: { isAvailable: available },
+  });
+
+  await audit(
+    actor,
+    "supplier.availability",
+    "Supplier",
+    actor.supplierId,
+    { isAvailable: before?.isAvailable },
+    { isAvailable: available }
+  );
+
+  return ok(undefined);
+}
+
+export async function myCompany() {
+  const { supplierId } = await requireSupplier();
+
+  return db.supplier.findUnique({
+    where: { id: supplierId },
+    select: {
+      companyName: true,
+      isAvailable: true,
+      promisedLeadTimeDays: true,
+      ackSlaHours: true,
+      primaryEmail: true,
+      secondaryEmail: true,
+    },
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Bulk update — BE-21
+ * ------------------------------------------------------------------ */
+
+export type UploadOutcome = {
+  updated: number;
+  problems: RowProblem[];
+  /** Rows about packs this supplier is not set up for. */
+  notSupplied: string[];
+};
+
+/**
+ * Applies a parsed price list.
+ *
+ * Rows are matched on our item code against the packs this supplier already
+ * supplies. Anything else is reported back rather than created — the pairing
+ * is not theirs to make. A blank availability column means no change, so a
+ * supplier sending a price update does not silently mark discontinued lines
+ * back in stock.
+ */
+export async function applySupplyUpload(
+  cells: (string | number | boolean | null | undefined)[][]
+): Promise<Result<UploadOutcome>> {
+  const actor = await requireSupplier();
+
+  const parsed = parseSupplyRows(cells);
+
+  const mine = await db.productSupply.findMany({
+    where: { supplierId: actor.supplierId },
+    select: { id: true, sku: { select: { skuCode: true } } },
+  });
+  const byCode = new Map(
+    mine.map((supply) => [supply.sku.skuCode.toLowerCase(), supply.id])
+  );
+
+  const { applicable, notSupplied } = splitByKnownSkus(
+    parsed.rows,
+    mine.map((supply) => supply.sku.skuCode)
+  );
+
+  let updated = 0;
+  for (const row of applicable) {
+    const id = byCode.get(row.skuCode.toLowerCase());
+    if (!id) continue;
+
+    await db.productSupply.update({
+      where: { id },
+      data: {
+        supplierPartNumber: row.supplierPartNumber,
+        costFils: row.costFils,
+        leadTimeDays: row.leadTimeDays,
+        // Blank means no change, so the current value is kept rather than
+        // being defaulted to available.
+        ...(row.isAvailable === null ? {} : { isAvailable: row.isAvailable }),
+      },
+    });
+    updated++;
+  }
+
+  await audit(actor, "supply.bulkUpdate", "Supplier", actor.supplierId, null, {
+    updated,
+    rejected: parsed.problems.length,
+    notSupplied: notSupplied.length,
+  });
+
+  return ok({
+    updated,
+    problems: parsed.problems,
+    notSupplied: notSupplied.map((row) => row.skuCode),
+  });
 }

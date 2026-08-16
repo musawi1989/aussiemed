@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**180 items** · 80 outstanding · **17 outstanding P1**
+**181 items** · 79 outstanding · **16 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -138,7 +138,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-18 | Password hashing uses scrypt, not bcrypt | Dev | P3 | Open | OUR DECISION: scrypt from Node's own crypto module, so there is no dependency to keep patched. The spec names bcrypt. Both are appropriate; only src/lib/auth.ts knows the format. |
 | BE-19 | Guest checkout is allowed | Client | P2 | Open | OUR DECISION: an order can be placed without signing in, and is then tied to the cart cookie. Signing in simply attaches the order to the account. |
 | BE-20 | Build the admin screens behind the dashboard | Dev | P1 | Done | /admin authenticates and shows live figures, but every management screen is still missing: products, categories, suppliers, customers, orders, bulk upload, marketing, reports, settings. |
-| BE-21 | Build the supplier portal behind its dashboard | Dev | P1 | Open | The business portal authenticates and shows a supplier their own products and invoice lines, read-only. Creating and editing products, toggling stock and bulk upload are not built. |
+| BE-21 | Build the supplier portal behind its dashboard | Dev | P1 | Done | The business portal authenticates and shows a supplier their own products and invoice lines, read-only. Creating and editing products, toggling stock and bulk upload are not built. |
 | BE-22 | Confirm one supplier account per company | Client | P2 | Open | OUR DECISION: each supplier company links to a single user. Real suppliers usually need several people with their own logins. |
 | BE-23 | Admin figures are counted live, never cached | Dev | P3 | Open | OUR DECISION: every number on the admin dashboard is counted from the database on each request. Caching them is how the old platform let admin counts and storefront counts disagree. |
 | BE-24 | Supplier data is scoped by query, not by filtering | Dev | P3 | Open | OUR DECISION: a supplier's products and invoice lines are fetched through their supplier id, so another supplier's rows are never loaded rather than loaded and hidden. |
@@ -164,6 +164,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-44 | A refused form deleted everything the person had typed | Dev | P2 | Done | React clears an uncontrolled form as soon as its action returns, success or failure alike. Now that every account change needs a reason, being told the reason is too short also silently deleted the name, the address and everything else just typed — so correcting a small mistake cost more than the original entry did. |
 | BE-45 | A purchase order line with no recorded cost was stored as costing zero | Dev | P1 | Done | buildPurchaseOrders wrote unitCostFils ?? 0, so every line drawn from a supply whose cost had not been loaded was saved as free. Downstream that is indistinguishable from a genuine zero, and the realised margin on the customer order it fulfilled came out at 100% — stated confidently on the screen whose entire purpose is deciding whether a trade is worth doing. The pure planner already modelled the cost as nullable and got it right; the flattening happened only at the database write. |
 | BE-46 | Nothing recorded that an email had not been sent | Dev | P2 | Done | Quote requests, restock requests and enquiries were stored and never sent, and nothing anywhere said so. A silent failure is the only kind that lasts: an empty inbox looks exactly like a quiet week. |
+| BE-47 | The whole catalogue shipped with every admin and supplier page | Dev | P2 | Done | The layout split was meant to stop the storefront's data loading behind the back office, and it did not. The root not-found wraps ShopChrome, which loads every product and hands it to a browser-side provider, and Next includes the root not-found boundary in the payload of every page — so around 150KB of catalogue JSON went out with every /admin and /business-portal response. Visible markup was clean; the data sat in the flight payload where View Source finds it. |
 
 ## Infrastructure
 

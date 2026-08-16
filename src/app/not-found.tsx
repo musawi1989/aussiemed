@@ -14,7 +14,10 @@ import { NotFoundContent } from "@/components/NotFoundContent";
  */
 export default function NotFound() {
   return (
-    <ShopChrome>
+    // Without the catalogue snapshot. This boundary is included in the payload
+    // of every page in the application, so loading the catalogue here shipped
+    // it to every admin and supplier screen too — see ShopChrome.
+    <ShopChrome withCatalogue={false}>
       <NotFoundContent />
     </ShopChrome>
   );
