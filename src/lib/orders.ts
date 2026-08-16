@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "./db";
 import { orderConfirmation } from "./email-message";
 import { sendQuietly } from "./mailer";
+import { notify } from "./notifications";
 import {
   DEFAULT_VAT_BASIS_POINTS,
   formatInvoiceNumber,
@@ -453,6 +454,23 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
       dedupeKey: `OrderConfirmation:${placed.reference}`,
     }
   );
+
+  await notify({
+    kind: "OrderPlaced",
+    subject: `New order ${placed.reference}`,
+    body: [
+      `${input.company || input.contact} placed order ${placed.reference}.`,
+      `${cart.lines.length} line${cart.lines.length === 1 ? "" : "s"}, ` +
+        `AED ${(placed.totalFils / 100).toFixed(2)} including VAT.`,
+      placed.branchLabel ? `Delivering to ${placed.branchLabel}.` : null,
+      placed.staffName ? `Ordered by ${placed.staffName}.` : null,
+    ]
+      .filter((line) => line !== null)
+      .join("\n"),
+    href: `/admin/orders/${placed.reference}`,
+    entity: "Order",
+    entityId: placed.orderId,
+  });
 
   return { reference: placed.reference, totalFils: placed.totalFils };
 }

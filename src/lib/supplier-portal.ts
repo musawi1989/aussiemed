@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "./db";
 import { audit, type Result } from "./admin";
 import { recordStatus } from "./status-events";
+import { notify } from "./notifications";
 import { getSessionUser, type SessionUser } from "./auth";
 import {
   checkSupplyTerms,
@@ -108,6 +109,15 @@ export async function acknowledgePurchaseOrder(id: string): Promise<Result> {
     fromStatus: po.status,
     toStatus: "Acknowledged",
     actor: { id: actor.id, name: actor.name, role: "Supplier" },
+  });
+
+  await notify({
+    kind: "PurchaseOrderAcknowledged",
+    subject: `${po.poNumber} acknowledged`,
+    body: `${actor.name} confirmed they can supply purchase order ${po.poNumber}.`,
+    href: `/admin/purchasing/${po.poNumber}`,
+    entity: "PurchaseOrder",
+    entityId: po.id,
   });
 
   return ok(undefined);

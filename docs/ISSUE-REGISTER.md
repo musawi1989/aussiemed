@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**184 items** · 73 outstanding · **15 outstanding P1**
+**185 items** · 73 outstanding · **15 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -168,6 +168,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-48 | The daily cutoff could not be changed, and no buyer was told what it was | Dev | P2 | Done | The buying run has always closed at an hour held in a settings row, but nothing could write that row — the value could only be read, so 5pm was effectively hard-coded. Worse, the deadline was invisible on the storefront. A trade buyer deciding whether to order now or in the morning had no way to know which side of the cutoff they were on, and the whole cross-dock model turns on that one time. |
 | BE-49 | Reports had nowhere to live in the back office | Dev | P3 | Done | Customers and Suppliers were each a single list. There was no place to ask the other question a section raises — what did they buy, what did we spend, who is slow — so the answers either did not exist or were buried in a screen built for a different purpose. |
 | BE-50 | The first card on Needs attention did nothing when clicked | Dev | P2 | Done | Account changes are the one queue that lives on the Needs attention page itself, but its card was built from the same list as the others and linked to /admin/approvals — the page the reader was already on. Clicking it changed nothing and moved nothing, so it read as a broken feature. The queue underneath was working the whole time. |
+| BE-51 | No in-site inbox, and no way to send anything on by email | Dev | P2 | Done | Needs attention counts what is outstanding right now and returns to zero when the work is done, so anything worth knowing but not doing had nowhere to live — an order arriving, a supplier confirming. There was also no way to put any of it, or an invoice, in front of somebody by email without retyping it. |
 
 ## Infrastructure
 

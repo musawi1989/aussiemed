@@ -22,6 +22,8 @@ export const EMAIL_KINDS = [
   "AccountChangeDecided",
   "PurchaseOrderSent",
   "StaffAlert",
+  "TaxInvoice",
+  "Forwarded",
 ] as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[number];
@@ -35,6 +37,11 @@ export const AUDIENCE: Record<EmailKind, Recipient> = {
   AccountChangeDecided: "Customer",
   PurchaseOrderSent: "Supplier",
   StaffAlert: "Staff",
+  TaxInvoice: "Customer",
+  // Whoever an admin chose to forward it to. Treated as staff for the leak
+  // checks, because it is written by us and addressed by hand rather than
+  // generated for one side.
+  Forwarded: "Staff",
 };
 
 export type EmailMessage = {
@@ -408,3 +415,150 @@ export function staffAlert(input: StaffAlertInput): EmailMessage {
  * decision, not a code one) an html field joins EmailMessage and the drivers
  * pass it through; nothing else here changes.
  */
+
+/* ------------------------------------------------------------------ *
+ * Customer: the tax invoice, as an email
+ * ------------------------------------------------------------------ */
+
+export type InvoiceLineForEmail = {
+  name: string;
+  skuCode: string;
+  qty: number;
+  unitPriceFils: number;
+  vatFils: number;
+  lineTotalFils: number;
+  zeroRated: boolean;
+};
+
+export type TaxInvoiceInput = {
+  to: string;
+  contactName: string;
+  organisationName: string;
+  reference: string;
+  placedAt: Date;
+  lines: InvoiceLineForEmail[];
+  standardNetFils: number;
+  zeroRatedNetFils: number;
+  vatFils: number;
+  totalFils: number;
+  vatRatePercent: number;
+  poReference?: string | null;
+  /** Ours. Null until AC-03 is settled. */
+  sellerTrn?: string | null;
+  /** Theirs. Null when we never captured it. */
+  buyerTrn?: string | null;
+  /** Where the printable version lives. */
+  documentUrl: string;
+};
+
+/**
+ * The invoice a customer can read in their inbox.
+ *
+ * Two bases are subtotalled separately, as on the printed document: on a UAE
+ * tax invoice the split between standard-rated and zero-rated supply is the
+ * part an auditor reads, and one combined VAT figure hides it.
+ *
+ * When a TRN is missing the email says so rather than looking compliant. A
+ * document that presents itself as a tax invoice and is not one is worse than
+ * one that admits the gap — the customer may file it and find out at audit.
+ * See AC-03.
+ */
+export function taxInvoice(input: TaxInvoiceInput): EmailMessage {
+  const lines = input.lines.map(
+    (line) =>
+      `  ${line.qty} x ${line.name}\n` +
+      `      ${line.skuCode} · ${aed(line.unitPriceFils)} each · ` +
+      `VAT ${aed(line.vatFils)}${line.zeroRated ? " (zero rated)" : ""} · ` +
+      `${aed(line.lineTotalFils)}`
+  );
+
+  const compliant = Boolean(input.sellerTrn && input.buyerTrn);
+
+  const body = [
+    `Hello ${input.contactName || "there"},`,
+    "",
+    `Your invoice for order ${input.reference}.`,
+    "",
+    `Reference number: ${input.reference}`,
+    `Placed: ${dubaiDate(input.placedAt)}`,
+    `Account: ${input.organisationName}`,
+    input.poReference ? `Your PO: ${input.poReference}` : null,
+    `Our TRN: ${input.sellerTrn ?? "not yet issued"}`,
+    `Your TRN: ${input.buyerTrn ?? "not on file"}`,
+    "",
+    rule,
+    ...lines,
+    rule,
+    // Padded to a fixed column so the figures line up in a monospaced client.
+    // The VAT label carries a rate, so its width varies and it cannot be a
+    // hand-counted run of spaces like the others.
+    ...[
+      ["Standard rated", input.standardNetFils],
+      ["Zero rated", input.zeroRatedNetFils],
+      [`VAT at ${input.vatRatePercent}%`, input.vatFils],
+      ["Total", input.totalFils],
+    ].map(([label, amount]) => `  ${String(label).padEnd(20)}${aed(Number(amount))}`),
+    "",
+    compliant
+      ? null
+      : "Please note: this is a record of what you were charged, not a compliant\n" +
+        "UAE tax invoice — we do not yet hold both TRNs. A compliant document\n" +
+        "will follow once that is in place.",
+    compliant ? null : "",
+    "The printable version is here:",
+    input.documentUrl,
+    signOff(),
+  ]
+    .filter((part) => part !== null)
+    .join("\n");
+
+  return {
+    kind: "TaxInvoice",
+    to: input.to,
+    subject: `AussieMed invoice ${input.reference}`,
+    text: body,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Forwarding something from the inbox
+ * ------------------------------------------------------------------ */
+
+export type ForwardInput = {
+  to: string;
+  subject: string;
+  body: string;
+  /** Added by the person sending it, above the original. */
+  note?: string | null;
+  /** Where the thing lives, if it has a page. */
+  link?: string | null;
+};
+
+/**
+ * An inbox item sent on to somebody, as written.
+ *
+ * The original wording is passed through unchanged rather than regenerated,
+ * because the person forwarding it has read that text and is vouching for it.
+ * Rewriting it into something else would mean they sent one thing and the
+ * recipient received another.
+ */
+export function forwarded(input: ForwardInput): EmailMessage {
+  const body = [
+    input.note?.trim() ? input.note.trim() : null,
+    input.note?.trim() ? "" : null,
+    input.note?.trim() ? rule : null,
+    input.body,
+    input.link ? "" : null,
+    input.link ? input.link : null,
+    signOff({ money: false }),
+  ]
+    .filter((part) => part !== null)
+    .join("\n");
+
+  return {
+    kind: "Forwarded",
+    to: input.to,
+    subject: input.subject,
+    text: body,
+  };
+}

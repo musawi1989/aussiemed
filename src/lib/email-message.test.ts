@@ -10,8 +10,10 @@ import {
   isSendableAddress,
   orderConfirmation,
   purchaseOrderSent,
+  forwarded,
   restockAlert,
   staffAlert,
+  taxInvoice,
 } from "./email-message.ts";
 import { formatAED } from "./money.ts";
 
@@ -330,5 +332,154 @@ describe("every kind", () => {
 
   it("never leaves an empty subject, which reads as spam", () => {
     assert.ok(orderConfirmation(ORDER).subject.trim().length > 5);
+  });
+});
+
+describe("tax invoice", () => {
+  const base = {
+    to: "accounts@albarshaclinic.example",
+    contactName: "Musawi",
+    organisationName: "Al Barsha Family Clinic",
+    reference: "AM-2026-000004",
+    placedAt: new Date("2026-08-15T06:00:00Z"),
+    lines: [
+      {
+        name: "Nitrile Gloves, Large",
+        skuCode: "GLV-NIT-L",
+        qty: 4,
+        unitPriceFils: 2_848,
+        vatFils: 570,
+        lineTotalFils: 11_392,
+        zeroRated: false,
+      },
+      {
+        name: "BD Insulin Syringes",
+        skuCode: "BD326103",
+        qty: 1,
+        unitPriceFils: 8_458,
+        vatFils: 0,
+        lineTotalFils: 8_458,
+        zeroRated: true,
+      },
+    ],
+    standardNetFils: 11_392,
+    zeroRatedNetFils: 8_458,
+    vatFils: 570,
+    totalFils: 20_420,
+    vatRatePercent: 5,
+    documentUrl: "https://aussiemed.com/admin/orders/AM-2026-000004/tax-invoice",
+  };
+
+  it("subtotals the two bases separately", () => {
+    // On a UAE tax invoice the split between standard-rated and zero-rated
+    // supply is the part an auditor reads; one combined VAT figure hides it.
+    const message = taxInvoice(base);
+    assert.match(message.text, /Standard rated\s+AED 113\.92/);
+    assert.match(message.text, /Zero rated\s+AED 84\.58/);
+    assert.match(message.text, /VAT at 5%\s+AED 5\.70/);
+    assert.match(message.text, /Total\s+AED 204\.20/);
+  });
+
+  it("marks the zero-rated line as such", () => {
+    assert.match(taxInvoice(base).text, /BD326103[\s\S]*zero rated/);
+  });
+
+  it("admits it is not compliant when a TRN is missing", () => {
+    // A document that presents itself as a tax invoice and is not one is worse
+    // than one that admits the gap — the customer may file it. AC-03.
+    const neither = taxInvoice(base);
+    assert.match(neither.text, /not a compliant/i);
+    assert.match(neither.text, /Our TRN: not yet issued/);
+    assert.match(neither.text, /Your TRN: not on file/);
+
+    const onlyOurs = taxInvoice({ ...base, sellerTrn: "100123456700003" });
+    assert.match(onlyOurs.text, /not a compliant/i);
+  });
+
+  it("drops the warning once both TRNs are held", () => {
+    const compliant = taxInvoice({
+      ...base,
+      sellerTrn: "100123456700003",
+      buyerTrn: "100999888700003",
+    });
+    assert.ok(!/not a compliant/i.test(compliant.text));
+    assert.match(compliant.text, /Our TRN: 100123456700003/);
+    assert.match(compliant.text, /Your TRN: 100999888700003/);
+  });
+
+  it("says reference number and never order number", () => {
+    assert.match(taxInvoice(base).text, /Reference number: AM-2026-000004/);
+    assert.ok(!/order number/i.test(taxInvoice(base).text));
+  });
+
+  it("names no supplier", () => {
+    for (const forbidden of ["Livingstone", "Chemist Warehouse", "supplier"]) {
+      assert.ok(!new RegExp(forbidden, "i").test(taxInvoice(base).text), forbidden);
+    }
+  });
+
+  it("links to the printable version", () => {
+    assert.match(taxInvoice(base).text, /tax-invoice/);
+  });
+});
+
+describe("forwarded", () => {
+  const item = {
+    to: "someone@example.com",
+    subject: "Account change waiting",
+    body: "Al Barsha Family Clinic asked to remove a branch.",
+  };
+
+  it("passes the original wording through unchanged", () => {
+    // The person forwarding has read that text and is vouching for it.
+    // Rewriting it means they sent one thing and the recipient got another.
+    assert.match(forwarded(item).text, /Al Barsha Family Clinic asked to remove a branch\./);
+    assert.equal(forwarded(item).subject, "Account change waiting");
+  });
+
+  it("puts their note above the original, not mixed into it", () => {
+    const message = forwarded({ ...item, note: "Can you call them?" });
+    const noteAt = message.text.indexOf("Can you call them?");
+    const bodyAt = message.text.indexOf("Al Barsha");
+    assert.ok(noteAt >= 0 && noteAt < bodyAt);
+  });
+
+  it("leaves no empty note block when there is no note", () => {
+    assert.ok(!/^\s*\n\s*-{10,}\s*\n\s*Al Barsha/.test(forwarded(item).text));
+  });
+
+  it("adds the link when there is one", () => {
+    const message = forwarded({ ...item, link: "https://aussiemed.com/admin/approvals" });
+    assert.match(message.text, /admin\/approvals/);
+  });
+});
+
+describe("invoice column alignment", () => {
+  it("lines the figures up whatever the VAT rate is called", () => {
+    // A monospaced client shows these as a column; a hand-counted run of
+    // spaces breaks the moment the rate changes from 5% to 15%.
+    const at = (rate: number) =>
+      taxInvoice({
+        to: "a@b.com",
+        contactName: "X",
+        organisationName: "Y",
+        reference: "AM-1",
+        placedAt: new Date("2026-08-15T06:00:00Z"),
+        lines: [],
+        standardNetFils: 10_000,
+        zeroRatedNetFils: 0,
+        vatFils: 500,
+        totalFils: 10_500,
+        vatRatePercent: rate,
+        documentUrl: "https://x",
+      }).text;
+
+    for (const rate of [5, 15, 12.5]) {
+      const columns = at(rate)
+        .split("\n")
+        .filter((l) => /^ {2}(Standard rated|Zero rated|VAT at|Total)/.test(l))
+        .map((l) => l.indexOf("AED"));
+      assert.equal(new Set(columns).size, 1, `rate ${rate} misaligned: ${columns}`);
+    }
   });
 });

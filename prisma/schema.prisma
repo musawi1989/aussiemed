@@ -1088,6 +1088,60 @@ model PurchaseAllocation {
   @@index([batchCode])
 }
 
+/// Something that happened which a person should see — the in-site inbox.
+///
+/// Distinct from the Needs attention panel, which counts what is currently
+/// outstanding and forgets everything else. This is a stream: an order arrived,
+/// a supplier acknowledged, an email bounced. Some of it needs doing and some
+/// is only worth knowing, and both are lost if the only record is a count that
+/// goes back to zero.
+///
+/// Deliberately not a copy of AuditLog or StatusEvent. Those record everything
+/// for accountability and measurement; this records the few things worth
+/// interrupting somebody about, in words written for a person.
+model Notification {
+  id String @id @default(cuid())
+
+  /// audience: Admin — the only inbox today. A customer-facing one would be a
+  /// different surface with different rules, so the column exists rather than
+  /// the assumption being baked in.
+  audience String @default("Admin")
+
+  /// kind: OrderPlaced | AccountChangeRequested | EnquiryReceived |
+  ///       QuoteRequested | PurchaseOrderAcknowledged | EmailFailed
+  kind String
+
+  subject String
+  /// The body, in plain words, because it may be sent to somebody as an email
+  /// exactly as written.
+  body    String
+
+  /// Where to go to act on it.
+  href String?
+
+  /// What it is about, so the inbox can link back and so duplicates can be
+  /// avoided.
+  entity   String?
+  entityId String?
+
+  /// Read is a fact about a person, not about the event. One inbox today, so
+  /// one stamp; a per-user read state would need its own table and there is
+  /// only one admin.
+  readAt DateTime?
+
+  /// Set when this notification has been turned into an email, so nobody
+  /// sends the same thing twice without meaning to.
+  emailedAt      DateTime?
+  emailedTo      String?
+  outboundEmailId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([audience, readAt, createdAt])
+  @@index([entity, entityId])
+  @@index([kind])
+}
+
 /// Every change of state, kept forever — BE-30, BE-31.
 ///
 /// This is the one kind of gap that cannot be repaired later. A timestamp not

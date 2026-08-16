@@ -5,6 +5,7 @@ import { OpsShell, initialsOf } from "@/components/ops/OpsShell";
 import type { OpsGroup } from "@/components/ops/OpsSidebar";
 import { getSessionUser } from "@/lib/auth";
 import { attentionCount } from "@/lib/attention";
+import { unreadCount } from "@/lib/notifications";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -28,12 +29,15 @@ export const metadata: Metadata = {
  * Grouped the way the work is, not the way the database is: what is on sale,
  * what has been sold, who is involved, and the machinery underneath.
  */
-const groupsFor = (waiting: number): OpsGroup[] => [
+const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
   {
     heading: null,
     icon: "dashboard",
     links: [
       { href: "/admin", label: "Dashboard", exact: true },
+      // Above Needs attention: the inbox is what happened, and the panel is
+      // what is still to do. People look at the first one first.
+      { href: "/admin/inbox", label: "Inbox", count: unread },
       // Second, not buried under System: it is the answer to "what needs me
       // today", and a queue nobody can find is a queue nobody works.
       { href: "/admin/approvals", label: "Needs attention", count: waiting },
@@ -112,12 +116,12 @@ export default async function AdminLayout({
     );
   }
 
-  const waiting = await attentionCount();
+  const [waiting, unread] = await Promise.all([attentionCount(), unreadCount()]);
 
   return (
     <OpsShell
       brand={{ label: "Admin", href: "/admin" }}
-      groups={groupsFor(waiting)}
+      groups={groupsFor(waiting, unread)}
       user={{
         name: user.name,
         email: user.email,

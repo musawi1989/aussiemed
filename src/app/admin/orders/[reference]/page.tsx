@@ -8,6 +8,8 @@ import { StatusPill } from "@/components/StatusPill";
 import { OrderLineCard } from "@/components/admin/OrderLineCard";
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
 import { OrderMarginPanel } from "@/components/admin/OrderMarginPanel";
+import { EmailInvoiceForm } from "@/components/admin/EmailInvoiceForm";
+import { invoiceRecipient } from "@/lib/invoice-email";
 import { orderMargin } from "@/lib/margin-data";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
@@ -72,6 +74,8 @@ export default async function AdminOrderPage({
   // Fetched on its own, admin-guarded. Cost is never carried by a query that
   // something customer-facing might come to reuse.
   const margin = await orderMargin(order.reference);
+  // Who the invoice would go to, and whether it can call itself compliant.
+  const invoice = await invoiceRecipient(order.reference);
 
   const now = new Date();
   const soon = new Date(now.getTime() + EXPIRY_WARNING_DAYS * 86_400_000);
@@ -144,6 +148,16 @@ export default async function AdminOrderPage({
           <DocLink href={`/admin/orders/${reference}/delivery-note`} label="Delivery note" />
           <DocLink href={`/admin/orders/${reference}/tax-invoice`} label="Tax invoice" />
         </div>
+      </div>
+
+      {/* Emailing it is next to the document it sends, not on another screen. */}
+      <div className="mt-4">
+        <EmailInvoiceForm
+          reference={order.reference}
+          defaultTo={invoice?.to ?? null}
+          alreadySentTo={invoice?.alreadySentTo ?? null}
+          compliant={invoice?.compliant ?? false}
+        />
       </div>
 
       {alerts.length > 0 && (

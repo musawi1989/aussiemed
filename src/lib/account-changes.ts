@@ -2,6 +2,7 @@ import { db } from "./db";
 import { getSessionUser } from "./auth";
 import { accountChangeDecided } from "./email-message";
 import { sendQuietly } from "./mailer";
+import { notify } from "./notifications";
 import {
   branchDiff,
   checkReason,
@@ -98,7 +99,26 @@ export async function submitChange(input: {
   // the log itself untrustworthy.
   if (!held && input.apply) await input.apply();
 
-  await write({ ...input, reason: reason.reason });
+  const row = await write({ ...input, reason: reason.reason });
+
+  // Only the held ones. A staff change that has already taken effect is not
+  // something anybody needs to be interrupted about.
+  if (held) {
+    await notify({
+      kind: "AccountChangeRequested",
+      subject: `Approval needed: ${row.summary}`,
+      body: [
+        `${input.actor.name} asked for this on behalf of their account.`,
+        "",
+        `Their reason: ${reason.reason}`,
+        "",
+        "Nothing changes until it is approved or turned down.",
+      ].join("\n"),
+      href: "/admin/approvals",
+      entity: "AccountChange",
+      entityId: row.id,
+    });
+  }
 
   return ok({ applied: !held });
 }
