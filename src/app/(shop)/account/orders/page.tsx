@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OrderProgress } from "@/components/OrderProgress";
+import { StatusPill } from "@/components/StatusPill";
 import { formatAED } from "@/lib/money";
 import {
   isOpenOrder,
   orderProgress,
   splitDeliveryNote,
 } from "@/lib/order-progress";
+import { deliveryStatusOf, paymentStatusOf } from "@/lib/status-tone";
 import { accountBranches, accountOrders, accountSession } from "@/lib/account";
 
 export const metadata: Metadata = {
@@ -160,7 +162,17 @@ function OpenOrderCard({ order }: { order: OrderRow }) {
             <Meta order={order} />
           </p>
         </div>
-        <span className="font-bold tnum text-text">{aed(order.totalFils)}</span>
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="font-bold tnum text-text">{aed(order.totalFils)}</span>
+          {/* Money and goods travel separately on credit terms, and a customer
+              who cannot see an invoice has gone overdue only finds out when we
+              ring them. */}
+          <StatusPill
+            status={paymentStatusOf(order, new Date())}
+            axis="payment"
+            size="small"
+          />
+        </div>
       </div>
 
       <div className="mt-4">
@@ -208,8 +220,6 @@ function OpenOrderCard({ order }: { order: OrderRow }) {
 }
 
 function PastOrderRow({ order }: { order: OrderRow }) {
-  const progress = orderProgress(order.status);
-
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border-base bg-surface p-4 shadow-card">
       <div className="min-w-0">
@@ -224,15 +234,18 @@ function PastOrderRow({ order }: { order: OrderRow }) {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-            progress.cancelled
-              ? "bg-danger-soft text-danger"
-              : "bg-success-soft text-success"
-          }`}
-        >
-          {progress.headline}
-        </span>
+        {/* Both questions, because a delivered order can still be unpaid — and
+            on a list of past orders that is the only one left worth asking. */}
+        <StatusPill
+          status={deliveryStatusOf(order)}
+          axis="delivery"
+          size="small"
+        />
+        <StatusPill
+          status={paymentStatusOf(order, new Date())}
+          axis="payment"
+          size="small"
+        />
         <span className="font-bold tnum text-text">{aed(order.totalFils)}</span>
         <Link
           href={`/account/reorder/${order.reference}`}

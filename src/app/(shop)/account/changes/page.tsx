@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { WithdrawChangeButton } from "@/components/AccountLists";
-import { statusLabel } from "@/lib/account-change-plan";
+import { StatusPill } from "@/components/StatusPill";
 import { accountChangeLog, accountSession } from "@/lib/account";
 
 export const metadata: Metadata = {
@@ -70,7 +70,7 @@ export default async function AccountChangesPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <StatusPill status={change.status} />
+                  <StatusPill axis="record" status={change.status} />
                   {change.status === "Pending" && (
                     <WithdrawChangeButton id={change.id} />
                   )}
@@ -105,19 +105,3 @@ export default async function AccountChangesPage() {
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const tone =
-    status === "Pending"
-      ? "bg-accent-soft text-accent"
-      : status === "Rejected"
-        ? "bg-danger-soft text-danger"
-        : "bg-success-soft text-success";
-
-  return (
-    <span
-      className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${tone}`}
-    >
-      {statusLabel(status)}
-    </span>
-  );
-}

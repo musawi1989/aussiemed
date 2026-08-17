@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { mailDriverName } from "@/lib/mailer";
 import { EmailRetryButton } from "@/components/admin/EmailRetryButton";
+import { StatusPill } from "@/components/StatusPill";
 import { ComposeEmail } from "@/components/admin/ComposeEmail";
 import { recentOrders, recentPurchaseOrders, recipients } from "@/lib/compose";
 import { EMAIL_TEMPLATES } from "@/lib/email-templates";
@@ -152,7 +153,7 @@ export default async function AdminEmailsPage({
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <StatusPill status={email.status} />
+                  <StatusPill axis="record" status={email.status} />
                   {(email.status === "Failed" || email.status === "Queued") && (
                     <EmailRetryButton id={email.id} />
                   )}
@@ -181,22 +182,6 @@ export default async function AdminEmailsPage({
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const tone =
-    status === "Sent"
-      ? "bg-success-soft text-success"
-      : status === "Failed"
-        ? "bg-danger-soft text-danger"
-        : status === "Suppressed"
-          ? "bg-accent-soft text-accent"
-          : "bg-surface-sunken text-text-muted";
-
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone}`}>
-      {status}
-    </span>
-  );
-}
 
 function Chip({
   href,

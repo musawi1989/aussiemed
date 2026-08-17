@@ -83,7 +83,7 @@ export function OrderLineCard({
         </div>
 
         <div className="flex items-center gap-2">
-          <StatusPill status={item.status} />
+          <StatusPill axis="fulfilment" status={item.status} />
           <select
             value={item.status}
             disabled={pending}

@@ -34,7 +34,7 @@ export function ProductStatusActions({
     <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
       <h2 className="text-base font-bold tracking-tight text-text">Status</h2>
       <p className="mt-2">
-        <StatusPill status={status} />
+        <StatusPill axis="record" status={status} />
       </p>
 
       {blockers.length > 0 && (

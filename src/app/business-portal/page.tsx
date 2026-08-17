@@ -134,7 +134,7 @@ export default async function BusinessPortalPage() {
                       >
                         {po.poNumber}
                       </Link>
-                      <StatusPill status={po.status} />
+                      <StatusPill axis="fulfilment" status={po.status} />
                       {late && (
                         <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
                           acknowledgement overdue

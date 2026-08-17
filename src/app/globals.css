@@ -365,3 +365,157 @@ input[type="number"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==================================================================
+   Paper
+   ==================================================================
+
+   Until this block existed the project had no print rules at all — just a
+   scattering of `print:hidden` utilities — so an invoice sent to a printer
+   was quite literally a screenshot of a web page: screen margins, the
+   browser's own URL-and-date header, backgrounds dropped, tables split
+   through the middle of a row, and, if the reader's machine was in dark
+   mode, white text on a dark ground wasting a cartridge.
+
+   Everything here is about one idea: on paper this is a document, not a
+   page. It has a page size, it is always light, its colours survive, and it
+   breaks where a person would break it.
+   ================================================================== */
+
+@media print {
+  /* A4 is the paper in every UAE office. The margin leaves room for a
+     window envelope without the address wandering out of the window. */
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm;
+  }
+
+  /* Paper is white, whatever the reader's machine was set to. Without this
+     a customer in dark mode prints an invoice in white-on-navy. The tokens
+     are redefined rather than the elements, so every component that reads
+     them comes right at once. */
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --surface: #ffffff;
+    --surface-sunken: #f6f7f9;
+    --surface-hover: #ffffff;
+    --border: #d7dbe4;
+    --border-strong: #9aa2b4;
+    --text: #101014;
+    --text-muted: #3f4552;
+    --text-subtle: #5f6675;
+    --navy: #1f2c64;
+    --navy-soft: #eef0f8;
+    --navy-border: #b9c1de;
+    --accent: #7a4708;
+    --accent-soft: #fdf4e6;
+    --accent-border: #e0c193;
+    --success: #0f5733;
+    --success-soft: #e7f3ec;
+    --danger: #a51216;
+    --danger-soft: #fdeaeb;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #101014;
+    /* Printers add their own margin; ours comes from @page. */
+    margin: 0;
+    padding: 0;
+    /* Hairlines and small type survive better at full size than scaled. */
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  /* Status pills are meaning, not decoration: an invoice that does not say
+     whether it is paid is half a document. Browsers drop backgrounds by
+     default to save ink, so these are opted back in by name — and the glyph
+     inside each one carries the same meaning when the printer is mono. */
+  .print-tone {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Nothing interactive belongs on paper. */
+  nav,
+  aside,
+  button,
+  [role="navigation"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* When a page marks itself as a document, that document is the only thing
+     printed.
+
+     Hiding the chrome piece by piece was the obvious approach and it does not
+     hold: the invoice came out with the site header, the search box, the
+     cutoff banner and the whole dark footer wrapped around it, because those
+     live in a layout this page never sees and a new one can be added at any
+     time. Naming what to keep survives that; naming what to drop does not.
+
+     Reads as: hide everything except the document, its ancestors, and its
+     contents. Ancestors have to stay visible or the document is inside
+     something hidden and goes with it. */
+  body:has(.print-document)
+    *:not(:has(.print-document)):not(.print-document):not(.print-document *) {
+    display: none !important;
+  }
+
+  /* The layout wrappers that survive as ancestors were sized for a screen. */
+  body:has(.print-document) *:has(.print-document) {
+    display: block !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* A link's usefulness does not survive printing, but its blue does, and it
+     reads as an error next to black text. */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* Rows and totals must not be sawn in half by a page break, and a heading
+     stranded at the foot of a page belongs to the wrong section. */
+  tr,
+  img,
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* On a two-page invoice the second page of line items needs its column
+     headings, and the footer note needs to sit under both. */
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Screen chrome that reads as clutter on paper. */
+  .print-flat {
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Widow control on the long paragraphs at the foot of a document. */
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+}

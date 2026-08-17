@@ -68,7 +68,7 @@ export default async function PurchaseOrderPage({
           </Link>
           <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
             {po.poNumber}
-            <StatusPill status={po.status} />
+            <StatusPill axis="fulfilment" status={po.status} />
           </h1>
           <p className="mt-1 text-sm text-text-muted">
             {po.supplier.companyName} &middot; {po.supplier.primaryEmail}

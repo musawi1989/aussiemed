@@ -78,7 +78,7 @@ export default async function AdminProductPage({
             {product.name}
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-text-muted">
-            <StatusPill status={product.status} />
+            <StatusPill axis="record" status={product.status} />
             <span className="tnum">/{product.slug}</span>
             {product.status === "Active" && (
               <Link

@@ -137,7 +137,7 @@ export default async function EnquiriesPage() {
                       <span className="font-bold tnum text-navy">
                         {quote.reference}
                       </span>
-                      <StatusPill status={quote.status} />
+                      <StatusPill axis="record" status={quote.status} />
                       {quote.status === "New" && age >= 2 && (
                         <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
                           {age} days unanswered
@@ -214,7 +214,7 @@ export default async function EnquiriesPage() {
                   <span className="font-bold text-text">
                     {enquiry.company ?? enquiry.contactName}
                   </span>
-                  <StatusPill status={enquiry.status} />
+                  <StatusPill axis="record" status={enquiry.status} />
                   {enquiry.status === "New" && age >= 2 && (
                     <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
                       {age} days unanswered

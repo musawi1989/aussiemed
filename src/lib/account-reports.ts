@@ -231,7 +231,15 @@ export async function invoiceForAccount(reference: string) {
       status: true,
       paymentStatus: true,
       paymentDueOn: true,
+      // What has actually come in, so the invoice can show a balance rather
+      // than only a total. On credit terms a part payment is normal, and a
+      // document that shows the full total next to the word "Part paid"
+      // leaves the reader to do the subtraction we already know the answer to.
+      paidFils: true,
       poReference: true,
+      deliveryType: true,
+      courier: true,
+      trackingNumber: true,
       subtotalFils: true,
       vatFils: true,
       totalFils: true,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { StatusPill } from "@/components/StatusPill";
+import { paymentStatusOf } from "@/lib/status-tone";
 import { COLUMNS, type ColumnKey } from "@/lib/order-views";
 import { bulkSetOrderStatus, exportOrdersCsv } from "@/app/admin/orders/bulk-actions";
 
@@ -337,12 +338,15 @@ function Cell({ row, column }: { row: OrderRow; column: ColumnKey }) {
     );
   }
 
-  if (column === "status") return <StatusPill status={row.status} />;
+  if (column === "status") return <StatusPill axis="fulfilment" status={row.status} />;
 
   if (column === "paid") {
     return (
       <div>
-        <StatusPill status={row.paymentStatus} />
+        <StatusPill
+          axis="payment"
+          status={paymentStatusOf(row, new Date())}
+        />
         {value && <p className="mt-0.5 text-xs tnum text-text-subtle">{value}</p>}
       </div>
     );

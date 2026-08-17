@@ -5,6 +5,7 @@ import { formatAED } from "@/lib/money";
 import { ORDER_LINE_STATUSES, PAYMENT_STATUSES } from "@/lib/admin";
 import { ORDER_STATUSES } from "@/lib/order-views";
 import { StatusPill } from "@/components/StatusPill";
+import { deliveryStatusOf, paymentStatusOf } from "@/lib/status-tone";
 import { OrderLineCard } from "@/components/admin/OrderLineCard";
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
 import { OrderMarginPanel } from "@/components/admin/OrderMarginPanel";
@@ -138,8 +139,12 @@ export default async function AdminOrderPage({
           </Link>
           <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
             {order.reference}
-            <StatusPill status={order.status} />
-            <StatusPill status={order.paymentStatus} />
+            <StatusPill axis="fulfilment" status={order.status} />
+            <StatusPill axis="delivery" status={deliveryStatusOf(order)} />
+            {/* Worked out rather than read: the column still says "Unpaid" on
+                an invoice that fell due a month ago, and nothing rewrites it at
+                midnight. */}
+            <StatusPill axis="payment" status={paymentStatusOf(order, new Date())} />
           </h1>
         </div>
 

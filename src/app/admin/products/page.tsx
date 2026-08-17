@@ -193,7 +193,7 @@ export default async function AdminProductsPage({
                     ].join(", ") || "no supplier set"}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusPill status={product.status} />
+                      <StatusPill axis="record" status={product.status} />
                     </td>
                     <td className="px-4 py-3 text-right font-semibold tnum text-text">
                       {cheapest === null ? "—" : aed(cheapest)}

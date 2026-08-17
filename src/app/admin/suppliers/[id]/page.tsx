@@ -62,7 +62,7 @@ export default async function AdminSupplierPage({
         </Link>
         <h1 className="mt-1 flex flex-wrap items-center gap-2 text-xl font-bold tracking-tight text-text">
           {supplier.companyName}
-          <StatusPill status={supplier.status} />
+          <StatusPill axis="record" status={supplier.status} />
         </h1>
         <p className="mt-1 text-sm text-text-muted">
           {supplier.user
@@ -157,7 +157,7 @@ export default async function AdminSupplierPage({
                       {po.poNumber}
                     </Link>
                     <span className="flex items-center gap-2">
-                      <StatusPill status={po.status} />
+                      <StatusPill axis="fulfilment" status={po.status} />
                       <span className="font-semibold tnum text-text">
                         {po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
                       </span>

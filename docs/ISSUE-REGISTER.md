@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**187 items** · 69 outstanding · **12 outstanding P1**
+**190 items** · 69 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -53,6 +53,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-23 | Two suppliers were asked for; four exist | Client | P2 | Done | The brief was Chemist Warehouse and Livingstone for testing, with the products that made no sense removed. Northline Uniforms and AussieMed Distribution survived that clean-up and still own 11 of the 71 products between them, so a third of the supplier list and a seventh of the catalogue is left over from the old extraction. |
 | DA-24 | 13 of 60 products have no image | Client | P2 | Open | Those products render as a monogram tile rather than a photograph. It is a deliberate stand-in and reads acceptably in a grid, but on a trade catalogue an image is often how a buyer confirms they have the right item. |
 | DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image â€” visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
+| DA-26 | Test orders only ever exercised one state | Dev | P3 | Done | A colour system, a report or an alert cannot be checked against data that only shows one colour. Local data that is uniformly healthy hides every defect in the handling of the unhealthy cases. |
 
 ## Legal
 
@@ -171,6 +172,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-50 | The first card on Needs attention did nothing when clicked | Dev | P2 | Done | Account changes are the one queue that lives on the Needs attention page itself, but its card was built from the same list as the others and linked to /admin/approvals — the page the reader was already on. Clicking it changed nothing and moved nothing, so it read as a broken feature. The queue underneath was working the whole time. |
 | BE-51 | No in-site inbox, and no way to send anything on by email | Dev | P2 | Done | Needs attention counts what is outstanding right now and returns to zero when the work is done, so anything worth knowing but not doing had nowhere to live — an order arriving, a supplier confirming. There was also no way to put any of it, or an invoice, in front of somebody by email without retyping it. |
 | BE-52 | An admin could see every email but could not write one | Dev | P2 | Done | The Email screen recorded everything the system sent and gave no way to send anything. Any message about an order — it is running late, an item cannot be supplied, the payment is overdue — had to be written from a personal mailbox, which meant it was not recorded anywhere and nobody else could see it had gone. |
+| BE-53 | One colour system for every status | Dev | P2 | Done | Colour is how a person reads a list of forty orders without reading it. If the same colour means different things on different screens, or the alarming states are not coloured at all, the list stops being scannable and every row has to be read. |
 
 ## Infrastructure
 
@@ -252,3 +254,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
 | DN-22 | The dashboard metrics spec is an idea source, not a plan | Dev | P3 | Done | A specification document generated on 16 Aug 2026 proposes roughly sixty metrics across three dashboards. It was written without sight of this codebase, so it assumes work that is already done and priorities that are not ours. |
+
+## Front end
+
+| ID | Item | Owner | Priority | Status | Why it matters |
+| --- | --- | --- | --- | --- | --- |
+| FE-37 | The printable invoice was a printed web page | Dev | P2 | Done | An invoice is the document a customer files, forwards to their accountant and pays against. One that arrives with a search box and a navigation menu across the top reads as amateur, and reflects on every figure printed underneath it. |

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { VatRateForm } from "@/components/VatRateForm";
 import { CutoffForm } from "@/components/CutoffForm";
+import { StatusLegend } from "@/components/admin/StatusLegend";
 import { getCutoffHour } from "@/lib/purchasing";
 
 /**
@@ -41,6 +42,7 @@ export default async function AdminSettingsPage() {
         <div className="space-y-5">
           <VatRateForm percent={percent} />
           <CutoffForm hour={cutoffHour} />
+          <StatusLegend />
         </div>
 
         <div className="space-y-5">

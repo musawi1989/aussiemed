@@ -70,7 +70,7 @@ export default async function AdminSuppliersPage() {
                     </p>
                   </td>
                   <td className="px-4 py-3">
-                    <StatusPill status={supplier.status} />
+                    <StatusPill axis="record" status={supplier.status} />
                   </td>
                   <td className="px-4 py-3 text-right tnum text-text-muted">
                     {supplier._count.supplies}

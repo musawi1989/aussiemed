@@ -198,7 +198,7 @@ export default async function PurchasingPage() {
                       >
                         {po.poNumber}
                       </Link>
-                      <StatusPill status={po.status} />
+                      <StatusPill axis="fulfilment" status={po.status} />
                       {fallbacks > 0 && (
                         <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent">
                           {fallbacks} fallback{fallbacks === 1 ? "" : "s"}

@@ -46,7 +46,7 @@ export default async function SupplierPurchaseOrderPage({
         <div>
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
             {po.poNumber}
-            <StatusPill status={po.status} />
+            <StatusPill axis="fulfilment" status={po.status} />
           </h1>
           <p className="mt-1 text-sm text-text-muted tnum">
             {po.lines.length} line{po.lines.length === 1 ? "" : "s"} &middot;{" "}

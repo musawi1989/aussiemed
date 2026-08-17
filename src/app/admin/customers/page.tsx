@@ -91,7 +91,7 @@ export default async function AdminCustomersPage({
                     </span>
                     {customer.isDisabled && (
                       <span className="ml-2">
-                        <StatusPill status="Disabled" />
+                        <StatusPill axis="record" status="Disabled" />
                       </span>
                     )}
                     <p className="mt-0.5 text-xs text-text-subtle">

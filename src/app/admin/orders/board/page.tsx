@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { ViewTabs } from "@/components/admin/ViewTabs";
 import { StatusPill } from "@/components/StatusPill";
+import { paymentStatusOf } from "@/lib/status-tone";
 import { ORDER_STATUSES } from "@/lib/order-views";
 
 const aed = (fils: number) => formatAED(fils / 100);
@@ -123,7 +124,10 @@ export default async function AdminOrdersBoardPage() {
                         )}
 
                         <p className="mt-2">
-                          <StatusPill status={order.paymentStatus} />
+                          <StatusPill
+                            axis="payment"
+                            status={paymentStatusOf(order, new Date())}
+                          />
                         </p>
                       </Link>
                     </li>

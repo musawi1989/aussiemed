@@ -17,7 +17,8 @@
     "register": "node scripts/register.mjs --md && node scripts/build-spreadsheet.mjs",
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
     "db:check": "node --experimental-strip-types scripts/check-db.ts",
-    "db:seed:accounts": "node --experimental-strip-types prisma/seed-accounts.ts"
+    "db:seed:accounts": "node --experimental-strip-types prisma/seed-accounts.ts",
+    "db:seed:orders": "node --experimental-strip-types prisma/seed-order-states.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
