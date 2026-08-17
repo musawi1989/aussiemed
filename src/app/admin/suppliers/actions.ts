@@ -1,17 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { addressPartsFrom } from "@/lib/geo";
 import { createSupplier, updateSupplier, type SupplierEdit } from "@/lib/admin";
 import type { FormState } from "@/components/AdminForm";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
 
 function read(data: FormData): SupplierEdit {
+  const where = addressPartsFrom(data);
   return {
     companyName: text(data, "companyName"),
     primaryEmail: text(data, "primaryEmail"),
     secondaryEmail: text(data, "secondaryEmail"),
-    phone: text(data, "phone") || null,
+    phone: where.phone || null,
+    countryCode: where.countryCode,
+    emirate: where.emirate || null,
     address: text(data, "address") || null,
     trn: text(data, "trn") || null,
     status: text(data, "status") || "Active",

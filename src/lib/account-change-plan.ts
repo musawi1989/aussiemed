@@ -166,7 +166,18 @@ export type BranchPayload = {
   line1: string;
   line2: string;
   city: string;
+  /** The subdivision. Called Emirate here for the column it is stored in. */
   emirate: string;
+  /**
+   * Two fields for one fact, on purpose.
+   *
+   * `country` is the printable name and is what a reviewer approving a change
+   * reads — "Country: United Arab Emirates → Oman" means something, where
+   * "AE → OM" is a puzzle. `countryCode` is what gets stored and grouped by.
+   * Only the name appears in the diff below; the code travels with it.
+   */
+  country: string;
+  countryCode: string;
 };
 
 const BRANCH_FIELDS: { key: keyof BranchPayload; label: string; required: boolean }[] = [
@@ -176,7 +187,12 @@ const BRANCH_FIELDS: { key: keyof BranchPayload; label: string; required: boolea
   { key: "line1", label: "Address", required: true },
   { key: "line2", label: "Unit or floor", required: false },
   { key: "city", label: "City", required: true },
-  { key: "emirate", label: "Emirate", required: false },
+  // "Region" rather than "Emirate": this label goes into the sentence a
+  // reviewer reads on an approval, and a branch in Muscat changing its
+  // "Emirate" reads as a mistake in our software rather than a change to
+  // theirs. The form above the box still says the right word per country.
+  { key: "emirate", label: "Region", required: false },
+  { key: "country", label: "Country", required: false },
 ];
 
 export type BranchCheck =

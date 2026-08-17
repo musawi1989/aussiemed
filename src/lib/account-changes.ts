@@ -223,6 +223,8 @@ export async function changeDetail(changeId: string): Promise<{
             line2: before.line2 ?? "",
             city: before.city,
             emirate: before.emirate,
+            country: before.country,
+            countryCode: before.countryCode,
           }
         : null,
       payload
@@ -281,6 +283,8 @@ export async function approveChange(
             line2: payload.line2 || null,
             city: payload.city,
             emirate: payload.emirate,
+            country: payload.country,
+            countryCode: payload.countryCode,
             // The first address an account has is where its orders go.
             isDefault: existing === 0,
           },
@@ -300,6 +304,8 @@ export async function approveChange(
             line2: payload.line2 || null,
             city: payload.city,
             emirate: payload.emirate,
+            country: payload.country,
+            countryCode: payload.countryCode,
           },
         });
         break;

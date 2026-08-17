@@ -730,6 +730,9 @@ export type SupplierEdit = {
   primaryEmail: string;
   secondaryEmail: string;
   phone: string | null;
+  /** ISO 3166-1 alpha-2. Suppliers are the likeliest to be outside the UAE. */
+  countryCode: string;
+  emirate: string | null;
   address: string | null;
   trn: string | null;
   status: string;

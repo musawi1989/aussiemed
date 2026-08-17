@@ -42,6 +42,7 @@ export default async function CheckoutPage() {
           contact: b.contact,
           phone: b.phone,
           emirate: b.emirate,
+          countryCode: b.countryCode,
           isDefault: b.isDefault,
         }))}
         staff={staff.map((s) => ({ id: s.id, name: s.name }))}

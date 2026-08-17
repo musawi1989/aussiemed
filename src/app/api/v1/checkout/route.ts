@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readAddressParts } from "@/lib/geo";
 import { ensureCartKey } from "@/lib/cart-cookie";
 import { CartError, checkout } from "@/lib/orders";
 import { getSessionUser } from "@/lib/auth";
@@ -10,11 +11,15 @@ import { getSessionUser } from "@/lib/auth";
  * allocated by the server — the browser never invents one.
  */
 
+/**
+ * The phone is not here: it arrives as a country and a local number, and is
+ * joined server-side by readAddressParts. Requiring "phone" would reject every
+ * order the current form sends.
+ */
 const REQUIRED = [
   "company",
   "contact",
   "email",
-  "phone",
   "line1",
   "emirate",
 ] as const;
@@ -36,6 +41,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const where = readAddressParts({
+      countryCode: body.countryCode ? String(body.countryCode) : null,
+      emirate: String(body.emirate ?? ""),
+      phoneNational: body.phoneNational ? String(body.phoneNational) : null,
+      phone: body.phone ? String(body.phone) : null,
+    });
+
+    if (!where.phone) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "bad_request",
+            message: "Missing required field(s): phone",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const cartKey = await ensureCartKey();
     // Guest checkout stays allowed; signing in simply attaches the order.
     const user = await getSessionUser();
@@ -47,9 +71,13 @@ export async function POST(request: Request) {
       company: String(body.company).trim(),
       contact: String(body.contact).trim(),
       email: String(body.email).trim(),
-      phone: String(body.phone).trim(),
+      // Country, region and the dialling prefix read the same way here as on
+      // every other form that asks — one place, so an order placed through the
+      // API and one placed through the site cannot disagree about an address.
+      phone: where.phone,
       line1: String(body.line1).trim(),
-      emirate: String(body.emirate).trim(),
+      emirate: where.emirate,
+      countryCode: where.countryCode,
       poReference: body.poReference ? String(body.poReference).trim() : null,
       notes: body.notes ? String(body.notes).trim() : null,
       // Both are verified against the buyer's own organisation inside

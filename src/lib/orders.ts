@@ -1,4 +1,5 @@
 import "server-only";
+import { DEFAULT_COUNTRY, countryName } from "./geo";
 
 import { db } from "./db";
 import { orderConfirmation } from "./email-message";
@@ -224,6 +225,8 @@ export type CheckoutInput = {
   phone: string;
   line1: string;
   emirate: string;
+  /** ISO 3166-1 alpha-2. Defaults to the UAE when a caller omits it. */
+  countryCode?: string | null;
   poReference?: string | null;
   /** INVENTED DEFAULT: v1 ships offline / purchase order only — see IN-04. */
   paymentMethod?: string;
@@ -383,6 +386,10 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
           phone: input.phone,
           line1: input.line1,
           emirate: input.emirate,
+          // Snapshotted like everything else on this object: where an order
+          // was sent must not move when an address book entry is edited.
+          countryCode: input.countryCode ?? DEFAULT_COUNTRY,
+          country: countryName(input.countryCode ?? DEFAULT_COUNTRY),
         }),
       },
     });

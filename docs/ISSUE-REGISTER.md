@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**197 items** · 70 outstanding · **12 outstanding P1**
+**200 items** · 71 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -57,6 +57,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-26 | Test orders only ever exercised one state | Dev | P3 | Done | A colour system, a report or an alert cannot be checked against data that only shows one colour. Local data that is uniformly healthy hides every defect in the handling of the unhealthy cases. |
 | DA-27 | Deleting a category puts the database out of step with the catalogue | Dev | P3 | Open | An admin who tidies the taxonomy will see db:check fail afterwards and have no way to tell whether they broke something. A check that cries wolf after a legitimate edit stops being read. |
 | DA-28 | Placeholder TRNs so the tax-invoice path can be tested | Dev | P3 | Done | Without a TRN on either side, every invoice took the unregistered branch and half the tax-invoice code was never exercised. Testing it required inventing numbers, and invented tax numbers are dangerous if they can pass for real. |
+| DA-29 | Country stored as a code as well as a name | Dev | P3 | Done | Grouping or filtering by a display name means UAE, U.A.E. and United Arab Emirates are three places. Printing a code means a delivery note that reads AE. |
 
 ## Legal
 
@@ -90,6 +91,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-16 | Orders did not say who placed them or which site they were for | Dev | P2 | Done | A practice with several sites and several people ordering had one undifferentiated history, so "who ordered this and where did it go" could not be answered. |
 | FN-17 | Saved products were an undifferentiated list | Dev | P2 | Done | A buyer who has saved forty things needs them grouped to find anything. |
 | FN-18 | A customer could see their orders but never their spending | Dev | P2 | Done | The account showed a list of orders and a few headline figures on the overview, and nothing else. There was no way to ask what a practice had spent over a quarter, where it went, who was ordering it, or to get the invoices out in a form a bookkeeper could use — all questions a trade buyer asks at budget time and at year end. |
+| FN-19 | No admin form to add or edit a customer account | Dev | P2 | Open | Customer organisations can only be created directly in the database. The country and region dropdowns cannot reach a customer record because there is no screen on which to set them. |
 
 ## Done
 
@@ -267,3 +269,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | --- | --- | --- | --- | --- | --- |
 | FE-37 | The printable invoice was a printed web page | Dev | P2 | Done | An invoice is the document a customer files, forwards to their accountant and pays against. One that arrives with a search box and a navigation menu across the top reads as amateur, and reflects on every figure printed underneath it. |
 | FE-38 | A refused form threw away everything that had been typed | Dev | P2 | Done | Being told what is wrong and losing the work in the same instant makes the correction cost more than the original entry. On a long form it is the difference between a usable screen and one people avoid. |
+| FE-39 | Addresses were free text, with no country at all | Dev | P2 | Done | Free text means Dubai, dubai, DXB and Dubaie are four places, and that is discovered later by whoever tries to group orders by region. No country field at all means a supplier in Guangzhou and a branch in Muscat cannot be recorded correctly. |

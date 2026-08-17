@@ -85,6 +85,8 @@ model Organisation {
   trn     String?
   phone   String?
   emirate String?
+  /// ISO 3166-1 alpha-2. See Address.countryCode.
+  countryCode String @default("AE")
 
   /// paymentTerms: Prepaid | Net7 | Net30 | Net60
   paymentTerms    String  @default("Prepaid")
@@ -183,7 +185,16 @@ model Address {
   line1     String
   line2     String?
   city      String
+  /// The subdivision under the country. Named for the UAE because that is
+  /// where it started and every row still holds one; what a person is shown
+  /// above the box follows the country now — Emirate, Governorate, State. The
+  /// column keeps its name because renaming it would touch fifteen files and a
+  /// migration for nothing a customer could see.
   emirate   String
+  /// ISO 3166-1 alpha-2. The display name in `country` is for printing on a
+  /// document; this is what anything grouping or filtering should read, since
+  /// "UAE", "U.A.E." and "United Arab Emirates" are one place.
+  countryCode String @default("AE")
   country   String  @default("United Arab Emirates")
   isDefault Boolean @default(false)
 
@@ -236,6 +247,11 @@ model Supplier {
   secondaryEmail String
   phone          String?
   address        String?
+  /// Where they are. Suppliers are the part of this business most likely to be
+  /// outside the UAE, so the default is not assumed for them the way it is for
+  /// a customer — it is asked.
+  countryCode    String  @default("AE")
+  emirate        String?
   /// Suppliers may invoice in their own name, so they need their own TRN.
   trn            String?
   status         String  @default("Active")

@@ -19,6 +19,10 @@ export type ShippingAddress = {
   phone: string | null;
   line1: string | null;
   emirate: string | null;
+  /** ISO 3166-1 alpha-2, on orders placed since countries were asked for. */
+  countryCode: string | null;
+  /** The printable name, snapshotted alongside the code. */
+  country: string | null;
 };
 
 function text(value: unknown): string | null {
@@ -48,6 +52,8 @@ export function parseShippingAddress(
     phone: text(record.phone),
     line1: text(record.line1),
     emirate: text(record.emirate),
+    countryCode: text(record.countryCode),
+    country: text(record.country),
   };
 
   // An object that parsed but held nothing useful is the same as no address.
@@ -64,9 +70,26 @@ export function addressLines(address: ShippingAddress): string[] {
     .filter(Boolean)
     .join(", ");
 
-  return [address.company, address.contact, place, address.phone].filter(
-    (line): line is string => Boolean(line)
-  );
+  // The country goes on its own line, and only when it is not ours. Printing
+  // "United Arab Emirates" on a delivery note going three streets away is
+  // noise; leaving it off one going to Muscat is a parcel in the wrong
+  // country. Older orders carry no country at all and are UAE by definition,
+  // since that is all the site accepted when they were placed.
+  //
+  // The code is compared against a literal and the name is read from the
+  // snapshot, rather than importing the country tables: this module is pure
+  // and imports nothing, which is what lets the delivery note, the invoice and
+  // the admin order screen all share one idea of an address.
+  const abroad =
+    address.countryCode !== null && address.countryCode.toUpperCase() !== "AE";
+
+  return [
+    address.company,
+    address.contact,
+    place,
+    abroad ? address.country : null,
+    address.phone,
+  ].filter((line): line is string => Boolean(line));
 }
 
 function titleCase(value: string | null): string | null {

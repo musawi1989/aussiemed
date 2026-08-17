@@ -5,6 +5,7 @@ import {
   updateSupplierAction,
 } from "@/app/admin/suppliers/actions";
 import { AdminForm, Field, Panel, Select } from "./AdminForm";
+import { CountryFields } from "@/components/CountryFields";
 
 /**
  * One form for creating and editing, because the rules are identical and two
@@ -23,6 +24,8 @@ export function SupplierForm({
     primaryEmail: string;
     secondaryEmail: string;
     phone: string | null;
+    countryCode: string | null;
+    emirate: string | null;
     address: string | null;
     trn: string | null;
     status: string;
@@ -67,17 +70,26 @@ export function SupplierForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Phone" name="phone" defaultValue={supplier?.phone} />
-            <Field
-              label="TRN"
-              name="trn"
-              defaultValue={supplier?.trn}
-              hint="Tax Registration Number. Suppliers may invoice in their own name."
-            />
-          </div>
+          <Field
+            label="TRN"
+            name="trn"
+            defaultValue={supplier?.trn}
+            hint="Tax Registration Number. Suppliers may invoice in their own name."
+          />
 
           <Field label="Address" name="address" defaultValue={supplier?.address} />
+
+          {/* Suppliers are the part of this business most likely to be outside
+              the UAE, so where they are is asked rather than assumed. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <CountryFields
+              countryCode={supplier?.countryCode}
+              subdivision={supplier?.emirate}
+              phone={supplier?.phone}
+              inputClassName="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
+              labelClassName="block text-xs font-bold uppercase tracking-wide text-text-subtle"
+            />
+          </div>
 
           {/* What they have promised, agreed at onboarding — BE-33. Blank is
               allowed and means not agreed: an on-time rate measured against a

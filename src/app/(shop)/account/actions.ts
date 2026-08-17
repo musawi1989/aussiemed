@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
+import { addressPartsFrom } from "@/lib/geo";
 import { redirect } from "next/navigation";
 import {
   addStaff,
@@ -47,15 +48,22 @@ function refresh() {
   revalidatePath("/account/changes");
 }
 
-const branchFrom = (data: FormData) => ({
-  label: text(data, "label"),
-  contact: text(data, "contact"),
-  phone: text(data, "phone"),
-  line1: text(data, "line1"),
-  line2: text(data, "line2"),
-  city: text(data, "city"),
-  emirate: text(data, "emirate"),
-});
+const branchFrom = (data: FormData) => {
+  // Country, region and the dialling prefix are read in one place for all four
+  // forms that ask, so they cannot drift into four ideas of an address.
+  const where = addressPartsFrom(data);
+  return {
+    label: text(data, "label"),
+    contact: text(data, "contact"),
+    phone: where.phone,
+    line1: text(data, "line1"),
+    line2: text(data, "line2"),
+    city: text(data, "city"),
+    emirate: where.emirate,
+    country: where.country,
+    countryCode: where.countryCode,
+  };
+};
 
 /**
  * One sentence for both outcomes, because a change that took effect and one

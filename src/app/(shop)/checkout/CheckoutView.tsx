@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CountryFields } from "@/components/CountryFields";
 import { useState } from "react";
 import { aed, useCart } from "@/lib/cart-client";
 import { formatAED } from "@/lib/money";
@@ -19,6 +20,7 @@ export type CheckoutBranch = {
   contact: string;
   phone: string;
   emirate: string;
+  countryCode: string;
   isDefault: boolean;
 };
 
@@ -238,14 +240,6 @@ export function CheckoutView({
               defaultValue={email}
             />
             <Field
-              label="Phone"
-              name="phone"
-              type="tel"
-              required
-              defaultValue={branch?.phone}
-              key={`phone-${branchId}`}
-            />
-            <Field
               label="Delivery address"
               name="line1"
               required
@@ -253,12 +247,18 @@ export function CheckoutView({
               defaultValue={branch?.line1}
               key={`line1-${branchId}`}
             />
-            <Field
-              label="Emirate"
-              name="emirate"
+            {/* Keyed on the branch like the fields above it: choosing a
+                different branch must reload the country and the number with
+                it, or the address belongs to one site and the phone to
+                another. */}
+            <CountryFields
+              key={`where-${branchId}`}
+              countryCode={branch?.countryCode}
+              subdivision={branch?.emirate}
+              phone={branch?.phone}
               required
-              defaultValue={branch?.emirate}
-              key={`emirate-${branchId}`}
+              inputClassName="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
+              labelClassName="block text-xs font-bold uppercase tracking-wide text-text-subtle"
             />
             <Field label="Purchase order reference" name="poReference" />
           </div>

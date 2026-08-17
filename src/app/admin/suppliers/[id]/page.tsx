@@ -79,6 +79,8 @@ export default async function AdminSupplierPage({
             primaryEmail: supplier.primaryEmail,
             secondaryEmail: supplier.secondaryEmail,
             phone: supplier.phone,
+            countryCode: supplier.countryCode,
+            emirate: supplier.emirate,
             address: supplier.address,
             trn: supplier.trn,
             status: supplier.status,

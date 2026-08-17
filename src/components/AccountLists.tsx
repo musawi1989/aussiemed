@@ -12,6 +12,7 @@ import {
 } from "@/app/(shop)/account/actions";
 import { REASON_MIN } from "@/lib/account-change-plan";
 import type { FormState } from "@/components/AdminForm";
+import { CountryFields } from "@/components/CountryFields";
 
 function Feedback({ state }: { state: FormState }) {
   if (state?.ok === false && state.error) {
@@ -172,6 +173,7 @@ type BranchValues = {
   line2?: string | null;
   city?: string;
   emirate?: string;
+  countryCode?: string | null;
 };
 
 /**
@@ -215,15 +217,6 @@ function BranchFields({
         />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm font-bold text-text">Phone</span>
-        <input
-          name="phone"
-          type="tel"
-          defaultValue={back("phone")}
-          className={field}
-        />
-      </label>
-      <label className="block">
         <span className="mb-1 block text-sm font-bold text-text">City</span>
         <input
           name="city"
@@ -253,15 +246,14 @@ function BranchFields({
           className={field}
         />
       </label>
-      <label className="block">
-        <span className="mb-1 block text-sm font-bold text-text">Emirate</span>
-        <input
-          name="emirate"
-          defaultValue={back("emirate")}
-          placeholder="Dubai"
-          className={field}
-        />
-      </label>
+      <CountryFields
+        countryCode={back("countryCode") || values?.countryCode}
+        subdivision={back("emirate")}
+        phone={back("phone")}
+        inputClassName={field}
+        labelClassName="mb-1 block text-sm font-bold text-text"
+        phoneLabel="Phone"
+      />
     </div>
   );
 }

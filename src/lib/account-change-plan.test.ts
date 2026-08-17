@@ -24,6 +24,8 @@ const BRANCH: BranchPayload = {
   line2: "Level 2",
   city: "Dubai",
   emirate: "Dubai",
+  country: "United Arab Emirates",
+  countryCode: "AE",
 };
 
 describe("what needs approval", () => {
@@ -165,14 +167,28 @@ describe("branchDiff", () => {
 
   it("treats every filled field of a new branch as new", () => {
     const diff = branchDiff(null, BRANCH);
-    assert.equal(diff.length, 7);
+    assert.equal(diff.length, 8);
     assert.ok(diff.every((d) => d.from === ""));
   });
 
   it("omits the blank fields of a new branch rather than listing empties", () => {
     const diff = branchDiff(null, { ...BRANCH, phone: "", line2: "", emirate: "" });
-    assert.equal(diff.length, 4);
+    assert.equal(diff.length, 5);
     assert.ok(!diff.some((d) => d.label === "Phone"));
+  });
+
+  it("shows a reviewer the country's name, never its code", () => {
+    // "Country: United Arab Emirates -> Oman" means something to the person
+    // approving it. "AE -> OM" is a puzzle, and the code is not what they are
+    // being asked to agree to.
+    const diff = branchDiff(BRANCH, {
+      ...BRANCH,
+      country: "Oman",
+      countryCode: "OM",
+    });
+    assert.deepEqual(diff, [
+      { label: "Country", from: "United Arab Emirates", to: "Oman" },
+    ]);
   });
 
   it("reports a field being cleared, which is a change like any other", () => {
