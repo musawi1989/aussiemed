@@ -162,6 +162,7 @@ export default async function AdminOrderPage({
           defaultTo={invoice?.to ?? null}
           alreadySentTo={invoice?.alreadySentTo ?? null}
           compliant={invoice?.compliant ?? false}
+          reasons={invoice?.reasons ?? []}
         />
       </div>
 

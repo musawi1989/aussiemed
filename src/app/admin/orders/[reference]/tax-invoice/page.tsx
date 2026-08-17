@@ -1,4 +1,6 @@
 import { PrintableDoc } from "@/components/admin/PrintableDoc";
+import { sellerIdentity } from "@/lib/seller-identity";
+import { PLACEHOLDER_NOTICE, formatTrn, invoiceCompliance } from "@/lib/trn";
 import { DocTable, SellerBlock, aed, day, loadOrderForDocs } from "@/lib/order-docs";
 
 /**
@@ -20,8 +22,16 @@ export default async function TaxInvoicePage({
   params: Promise<{ reference: string }>;
 }) {
   const { reference } = await params;
-  const order = await loadOrderForDocs(reference);
+  const [order, seller] = await Promise.all([
+    loadOrderForDocs(reference),
+    sellerIdentity(),
+  ]);
   const rate = order.vatRateBasisPoints / 100;
+
+  const tax = invoiceCompliance({
+    sellerTrn: seller.trn,
+    buyerTrn: order.organisation?.trn,
+  });
 
   // The two bases, shown separately so a reader can check the VAT against the
   // standard-rated portion rather than against the whole invoice.
@@ -37,15 +47,25 @@ export default async function TaxInvoicePage({
       title={`Tax invoice · ${order.reference}`}
       backHref={`/admin/orders/${reference}`}
     >
-      {!order.organisation?.trn && (
-        <p className="mt-3 rounded-card border-l-4 border-danger bg-danger-soft px-4 py-2.5 text-sm font-bold text-danger">
-          No TRN was captured for this customer, so this document is not a
-          compliant UAE tax invoice — AC-03.
-        </p>
+      {/* Every reason this is not yet a compliant document, from both sides.
+          It listed only the customer's missing TRN, so once a customer had one
+          the document fell silent regardless of AussieMed's own position. */}
+      {(!tax.compliant || tax.usesPlaceholder) && (
+        <div className="mt-3 rounded-card border-l-4 border-danger bg-danger-soft px-4 py-2.5 text-sm font-bold text-danger">
+          {tax.usesPlaceholder && <p>{PLACEHOLDER_NOTICE}</p>}
+          <ul className={tax.usesPlaceholder ? "mt-1 list-disc pl-4 font-semibold" : "list-disc pl-4"}>
+            {tax.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+            {!order.organisation?.trn && (
+              <li>No TRN was captured for this customer — AC-03.</li>
+            )}
+          </ul>
+        </div>
       )}
 
       <div className="mt-4 flex flex-wrap justify-between gap-6">
-        <SellerBlock />
+        <SellerBlock seller={seller} />
         <div className="text-sm leading-relaxed">
           <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">
             Bill to
@@ -55,7 +75,7 @@ export default async function TaxInvoicePage({
           </p>
           <p className="text-text-muted">{order.user?.email ?? ""}</p>
           <p className="text-text-muted">
-            TRN {order.organisation?.trn ?? "— not captured"}
+            TRN {formatTrn(order.organisation?.trn) ?? "— not captured"}
           </p>
           <p className="text-text-muted">
             Terms {order.organisation?.paymentTerms ?? "—"}

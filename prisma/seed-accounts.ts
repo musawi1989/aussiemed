@@ -15,6 +15,10 @@ import { randomBytes, scrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
+import {
+  PLACEHOLDER_BUYER_TRN,
+  PLACEHOLDER_SELLER_TRN,
+} from "../src/lib/trn.ts";
 
 const scryptAsync = promisify(scrypt);
 
@@ -56,16 +60,35 @@ console.log("  admin                 sign in as: admin");
  * Customer
  * ------------------------------------------------------------------ */
 
+/**
+ * A placeholder TRN on the demo account, so the buyer-registered path can be
+ * exercised at all — without one, every invoice takes the unregistered branch
+ * and half the tax-invoice code is never seen.
+ *
+ * 9999-prefixed on purpose. Real Emirates TRNs begin 100, so this cannot be
+ * confused with one, and src/lib/trn.ts requires every document carrying it to
+ * say so on its face. It is a shape to test against, not an answer to AC-03.
+ */
 const org = await prisma.organisation.upsert({
   where: { id: "demo-org" },
-  update: {},
+  // Set on update as well as create, so an existing demo database gets it
+  // without being torn down and rebuilt.
+  update: { trn: PLACEHOLDER_BUYER_TRN },
   create: {
     id: "demo-org",
     name: "Al Barsha Family Clinic",
     emirate: "Dubai",
     paymentTerms: "Net30",
     creditLimitFils: 2500000,
+    trn: PLACEHOLDER_BUYER_TRN,
   },
+});
+
+/** Ours, until AC-03 is answered. Same rules, same warning on every document. */
+await prisma.setting.upsert({
+  where: { key: "sellerTrn" },
+  update: {},
+  create: { key: "sellerTrn", value: PLACEHOLDER_SELLER_TRN },
 });
 
 await prisma.user.upsert({

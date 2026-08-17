@@ -1,4 +1,5 @@
 import { PrintableDoc } from "@/components/admin/PrintableDoc";
+import { sellerIdentity } from "@/lib/seller-identity";
 import { DocTable, SellerBlock, day, loadOrderForDocs } from "@/lib/order-docs";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
@@ -17,7 +18,10 @@ export default async function DeliveryNotePage({
   params: Promise<{ reference: string }>;
 }) {
   const { reference } = await params;
-  const order = await loadOrderForDocs(reference);
+  const [order, seller] = await Promise.all([
+    loadOrderForDocs(reference),
+    sellerIdentity(),
+  ]);
 
   // Cancelled lines are not in the box, so they are not on the note.
   const shipped = order.items.filter((item) => item.status !== "Cancelled");
@@ -30,7 +34,7 @@ export default async function DeliveryNotePage({
       backHref={`/admin/orders/${reference}`}
     >
       <div className="mt-3 flex flex-wrap justify-between gap-6">
-        <SellerBlock />
+        <SellerBlock seller={seller} />
         <div className="text-sm leading-relaxed">
           <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">
             Deliver to

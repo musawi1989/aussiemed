@@ -15,11 +15,14 @@ export function EmailInvoiceForm({
   defaultTo,
   alreadySentTo,
   compliant,
+  reasons,
 }: {
   reference: string;
   defaultTo: string | null;
   alreadySentTo: string | null;
   compliant: boolean;
+  /** Why it is not compliant, from the same rules the document uses. */
+  reasons: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [state, submit, sending] = useActionState(emailInvoiceAction, null);
@@ -43,12 +46,20 @@ export function EmailInvoiceForm({
       <p className="text-sm font-bold text-text">Email invoice {reference}</p>
 
       {!compliant && (
-        <p className="mt-2 rounded-card border-l-4 border-accent-border bg-accent-soft px-3 py-2 text-xs text-text">
-          No TRN is held for this customer, so the email says plainly that it is
-          a record of what they were charged rather than a compliant UAE tax
-          invoice — AC-03. It is better to send that than something which looks
-          compliant and is not.
-        </p>
+        <div className="mt-2 rounded-card border-l-4 border-accent-border bg-accent-soft px-3 py-2 text-xs text-text">
+          <p>
+            The email will say plainly that this is a record of what the
+            customer was charged rather than a compliant UAE tax invoice. It is
+            better to send that than something which looks compliant and is not.
+          </p>
+          {reasons.length > 0 && (
+            <ul className="mt-1 list-disc pl-4">
+              {reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {alreadySentTo && (

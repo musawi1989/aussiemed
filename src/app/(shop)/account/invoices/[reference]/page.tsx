@@ -7,6 +7,8 @@ import { invoiceForAccount } from "@/lib/account-reports";
 import { formatAED } from "@/lib/money";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 import { deliveryStatusOf, paymentStatusOf, statusMeaning } from "@/lib/status-tone";
+import { sellerIdentity } from "@/lib/seller-identity";
+import { PLACEHOLDER_NOTICE, formatTrn, invoiceCompliance } from "@/lib/trn";
 
 export const metadata: Metadata = {
   title: "Invoice",
@@ -47,7 +49,10 @@ export default async function AccountInvoicePage({
   params: Promise<{ reference: string }>;
 }) {
   const { reference } = await params;
-  const invoice = await invoiceForAccount(reference);
+  const [invoice, seller] = await Promise.all([
+    invoiceForAccount(reference),
+    sellerIdentity(),
+  ]);
   if (!invoice) notFound();
 
   const shipping = parseShippingAddress(invoice.shippingSnapshot);
@@ -76,7 +81,14 @@ export default async function AccountInvoicePage({
     : Math.max(0, invoice.totalFils - invoice.paidFils);
   const settled = outstanding === 0;
 
-  const compliant = Boolean(invoice.organisation?.trn);
+  // Both sides. Read from the customer's TRN alone, this called itself a tax
+  // invoice the moment a customer was registered, whatever AussieMed's own
+  // position was — and this document can be emailed out.
+  const tax = invoiceCompliance({
+    sellerTrn: seller.trn,
+    buyerTrn: invoice.organisation?.trn,
+  });
+  const compliant = tax.compliant;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 print:max-w-none print:p-0">
@@ -93,6 +105,15 @@ export default async function AccountInvoicePage({
       {/* print-document: on paper this article is the only thing that exists.
           See the "Paper" block in globals.css. */}
       <article className="print-document mt-5 rounded-card border border-border-base bg-surface p-8 shadow-card print-flat print:mt-0">
+        {/* Loud, and at the top. The failure being guarded against is somebody
+            emailing a test invoice to a real customer and neither of them
+            noticing — a warning in the small print would not stop that. */}
+        {tax.usesPlaceholder && (
+          <p className="mb-5 rounded-card border-2 border-danger bg-danger-soft px-4 py-2.5 text-sm font-bold text-danger print-tone">
+            {PLACEHOLDER_NOTICE}
+          </p>
+        )}
+
         {/* ---------------------------------------------------------- *
          * Who it is from, and what it is
          * ---------------------------------------------------------- */}
@@ -102,9 +123,11 @@ export default async function AccountInvoicePage({
             <p className="mt-1 text-xs leading-relaxed text-text-muted">
               Medical, dental and laboratory supplies
               <br />
-              United Arab Emirates
+              {seller.address}
               <br />
               info@aussiemed.com
+              <br />
+              <span className="tnum">TRN {formatTrn(seller.trn)}</span>
             </p>
           </div>
 
@@ -170,8 +193,8 @@ export default async function AccountInvoicePage({
             <p className="mt-1 font-bold text-text">
               {invoice.organisation?.name ?? ""}
             </p>
-            <p className="text-sm text-text-muted">
-              TRN {invoice.organisation?.trn ?? "not on file"}
+            <p className="text-sm tnum text-text-muted">
+              TRN {formatTrn(invoice.organisation?.trn) ?? "not on file"}
             </p>
             {(invoice.staff?.name ?? invoice.placedByName) && (
               <p className="text-sm text-text-muted">
@@ -284,11 +307,23 @@ export default async function AccountInvoicePage({
           )}
 
           {!compliant && (
-            <p className="mt-3 border-l-[3px] border-accent-border bg-accent-soft px-3 py-2 text-xs leading-relaxed text-text print:bg-transparent">
-              We do not hold a TRN for your account, so this is a record of what
-              you were charged rather than a compliant UAE tax invoice. Send
-              your TRN to info@aussiemed.com and we will reissue it.
-            </p>
+            <div className="mt-3 border-l-[3px] border-accent-border bg-accent-soft px-3 py-2 text-xs leading-relaxed text-text print:bg-transparent">
+              <p>
+                This is a record of what you were charged rather than a
+                compliant UAE tax invoice.
+              </p>
+              <ul className="mt-1 list-disc pl-4">
+                {tax.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+                {!invoice.organisation?.trn && (
+                  <li>
+                    We do not hold a TRN for your account. Send yours to
+                    info@aussiemed.com and we will reissue it.
+                  </li>
+                )}
+              </ul>
+            </div>
           )}
 
           <p className="mt-3 text-[0.6875rem] leading-relaxed text-text-subtle">

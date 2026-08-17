@@ -3,6 +3,8 @@ import "server-only";
 import { notFound } from "next/navigation";
 import { db } from "./db";
 import { formatAED } from "./money";
+import type { SellerIdentity } from "./seller-identity";
+import { formatTrn, isPlaceholderTrn } from "./trn";
 
 /**
  * The data behind the three order documents, loaded once and shared.
@@ -33,16 +35,36 @@ export async function loadOrderForDocs(reference: string) {
   return order;
 }
 
-/** The seller's own details. Placeholders until LG-06 and AC-03 are answered. */
-export function SellerBlock() {
+/**
+ * The seller's own details, as held in settings.
+ *
+ * It used to print a flat "TRN not supplied" whatever was on file, which was
+ * true when nothing could be on file and became a lie the moment it could. It
+ * now says what is actually there and, when that is a stand-in, says that
+ * instead of implying a registration exists.
+ */
+export function SellerBlock({ seller }: { seller: SellerIdentity }) {
+  const placeholder = isPlaceholderTrn(seller.trn);
+
   return (
     <div className="text-sm leading-relaxed text-text-muted">
-      <p className="font-bold text-text">AussieMed</p>
-      <p>United Arab Emirates</p>
-      <p className="mt-1 text-xs text-danger">
-        Company registration and TRN not supplied — LG-06 and AC-03. This
-        document is not a compliant UAE tax invoice until they are.
-      </p>
+      <p className="font-bold text-text">{seller.name}</p>
+      <p>{seller.address}</p>
+      <p className="tnum">TRN {formatTrn(seller.trn)}</p>
+      {seller.tradeLicence && (
+        <p className="tnum">Trade licence {seller.tradeLicence}</p>
+      )}
+      {placeholder && (
+        <p className="mt-1 text-xs font-bold text-danger">
+          This TRN is a placeholder for testing — AC-03. Not a real
+          registration.
+        </p>
+      )}
+      {!seller.tradeLicence && (
+        <p className="mt-1 text-xs text-danger">
+          Company registration not supplied — LG-06.
+        </p>
+      )}
     </div>
   );
 }

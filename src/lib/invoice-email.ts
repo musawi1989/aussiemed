@@ -1,6 +1,8 @@
 import "server-only";
 
 import { db } from "./db";
+import { sellerIdentity } from "./seller-identity";
+import { invoiceCompliance } from "./trn";
 import { requireAdmin } from "./admin";
 import { isSendableAddress, taxInvoice } from "./email-message";
 import { send } from "./mailer";
@@ -26,6 +28,8 @@ export async function invoiceRecipient(reference: string): Promise<{
   organisationName: string;
   contactName: string;
   compliant: boolean;
+  /** Why not, in the words the document itself uses. */
+  reasons: string[];
   alreadySentTo: string | null;
 } | null> {
   await requireAdmin();
@@ -56,6 +60,13 @@ export async function invoiceRecipient(reference: string): Promise<{
     // An older snapshot shape must not stop an invoice being sent.
   }
 
+  const seller = await sellerIdentity();
+
+  const tax = invoiceCompliance({
+    sellerTrn: seller.trn,
+    buyerTrn: order.organisation?.trn,
+  });
+
   const previous = await db.outboundEmail.findFirst({
     where: { kind: "TaxInvoice", entity: "Order", entityId: order.id, status: "Sent" },
     orderBy: { sentAt: "desc" },
@@ -66,9 +77,14 @@ export async function invoiceRecipient(reference: string): Promise<{
     to: snapshotEmail ?? order.user?.email ?? null,
     organisationName: order.organisation?.name ?? "",
     contactName: snapshotContact ?? order.user?.name ?? "",
-    // Both TRNs, per AC-03. Ours is not captured anywhere yet, so this is
-    // false today and the template says so on the document.
-    compliant: Boolean(order.organisation?.trn),
+    // Both TRNs, per AC-03 — and it really is both now. This read the
+    // customer's alone, so putting a TRN on a test account was enough to mark
+    // an emailable invoice compliant while AussieMed had none.
+    compliant: tax.compliant,
+    // The reasons travel with it. The panel used to state one cause of its own
+    // — "no TRN is held for this customer" — which stopped being true the
+    // moment a customer had one and the fault lay at our end instead.
+    reasons: tax.reasons,
     alreadySentTo: previous?.toAddress ?? null,
   };
 }

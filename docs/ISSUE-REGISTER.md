@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**195 items** · 70 outstanding · **12 outstanding P1**
+**197 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -23,6 +23,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | AC-11 | Approve the VAT rounding method on invoices | Accountant | P2 | Open | VAT is rounded per line rather than once per invoice, so the printed lines always add up to the printed total. The alternative rounds once and can leave lines that do not sum. |
 | AC-12 | Confirm the reference number sequence resets each year | Accountant | P2 | Open | OUR DECISION: the sequence restarts at 000001 each calendar year, so AM-2026-000001 and AM-2027-000001 can both exist. If accounting needs a single unbroken sequence this must change before real orders. |
 | AC-13 | Decide whether an order should reserve stock | Client | P2 | Open | OUR DECISION: checkout does not decrement or reserve anything, because there are no stock levels â€” only an in/out flag. Two customers can order the last unit. |
+| AC-14 | Compliance was decided on the customer's TRN alone | Dev | P2 | Done | A document that calls itself a tax invoice without the seller's TRN is not one. The invoice can be emailed to a customer, so this is a document going out under AussieMed's name claiming a status it does not have. |
 
 ## Data
 
@@ -55,6 +56,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image â€” visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
 | DA-26 | Test orders only ever exercised one state | Dev | P3 | Done | A colour system, a report or an alert cannot be checked against data that only shows one colour. Local data that is uniformly healthy hides every defect in the handling of the unhealthy cases. |
 | DA-27 | Deleting a category puts the database out of step with the catalogue | Dev | P3 | Open | An admin who tidies the taxonomy will see db:check fail afterwards and have no way to tell whether they broke something. A check that cries wolf after a legitimate edit stops being read. |
+| DA-28 | Placeholder TRNs so the tax-invoice path can be tested | Dev | P3 | Done | Without a TRN on either side, every invoice took the unregistered branch and half the tax-invoice code was never exercised. Testing it required inventing numbers, and invented tax numbers are dangerous if they can pass for real. |
 
 ## Legal
 
