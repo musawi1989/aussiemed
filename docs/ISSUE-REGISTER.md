@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**210 items** · 70 outstanding · **12 outstanding P1**
+**213 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -60,6 +60,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-30 | Category tree completed against Livingstone | Dev | P3 | Done | A category that does not exist is a shelf nothing can be put on. The client asked for their reference catalogue's taxonomy to be covered in full so every product they intend to sell has somewhere to go. |
 | DA-27 | db:check measured categories against the frozen import | Dev | P3 | Done | A check that goes red when somebody makes a legitimate edit is a check people learn to ignore, and then it stops catching the things it was written for. |
 | DA-31 | supplyStatus was defaulted over existing availability | Dev | P3 | Done | A supplier who had said they could not supply an item had that silently reversed on the new field, while the old one still said otherwise. |
+| DA-32 | The order seed crashed once a test order had shipped | Dev | P3 | Done | A re-seed that works only until the data gets interesting is not much of a re-seed, and the failure was a wall of Prisma internals rather than a reason. |
 
 ## Legal
 
@@ -189,6 +190,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-58 | Resubmitting an application orphaned an organisation | Dev | P3 | Done | Every abandoned sign-up left an Organisation row with nobody on it — invisible on every screen, and counted by anything asking how many customers exist. |
 | BE-59 | A supplier could say whether, but never why | Dev | P2 | Done | Out of stock and discontinued want completely different things from us — one is a wait, the other needs a replacement — and a single checkbox could not tell them apart, so nobody ever acted on the second. |
 | BE-60 | Supplier turnaround was never measured | Dev | P2 | Done | Acknowledgement time says how quickly somebody reads an email. It says nothing about whether the goods moved, and a supplier can be excellent at one and poor at the other. |
+| BE-61 | Customers are emailed as their order moves | Dev | P2 | Done | A buyer with no idea where their order is rings up. Four well-written emails cost less than four phone calls, provided each one is worth opening. |
 
 ## Infrastructure
 
@@ -280,3 +282,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-37 | The printable invoice was a printed web page | Dev | P2 | Done | An invoice is the document a customer files, forwards to their accountant and pays against. One that arrives with a search box and a navigation menu across the top reads as amateur, and reflects on every figure printed underneath it. |
 | FE-38 | A refused form threw away everything that had been typed | Dev | P2 | Done | Being told what is wrong and losing the work in the same instant makes the correction cost more than the original entry. On a long form it is the difference between a usable screen and one people avoid. |
 | FE-39 | Addresses were free text, with no country at all | Dev | P2 | Done | Free text means Dubai, dubai, DXB and Dubaie are four places, and that is discovered later by whoever tries to group orders by region. No country field at all means a supplier in Guangzhou and a branch in Muscat cannot be recorded correctly. |
+| FE-40 | Status colours are settable by an admin | Dev | P3 | Done | The five tones carry meaning across every screen. A client who wants them to match their brand should not need a developer, and should not be able to break the meaning while doing it. |

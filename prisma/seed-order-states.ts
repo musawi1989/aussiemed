@@ -256,11 +256,36 @@ if (skus.length < 6) {
   process.exit(1);
 }
 
-// Clear only ours. Orders placed by hand through the site are left alone.
-const gone = await prisma.order.deleteMany({
+/**
+ * Clear only ours. Orders placed by hand through the site are left alone.
+ *
+ * Allocations have to go first. PurchaseAllocation.orderItemId is RESTRICT, not
+ * cascade, and deliberately so: an allocation records which supplier batch
+ * filled which customer line, which is how a recall gets traced to the clinics
+ * that received it. Losing that with an order would be losing the only copy.
+ *
+ * Deleting them here is safe because everything in scope is prefixed AM-TEST-.
+ * The script used to crash instead, once a test order had been through a
+ * despatch and acquired allocations — a re-seed that works only until the data
+ * gets interesting is not much of a re-seed.
+ */
+const ours = await prisma.order.findMany({
   where: { reference: { startsWith: PREFIX } },
+  select: { id: true, items: { select: { id: true } } },
 });
-if (gone.count > 0) console.log(`  cleared ${gone.count} previous test orders\n`);
+
+if (ours.length > 0) {
+  const lineIds = ours.flatMap((order) => order.items.map((item) => item.id));
+  if (lineIds.length > 0) {
+    await prisma.purchaseAllocation.deleteMany({
+      where: { orderItemId: { in: lineIds } },
+    });
+  }
+  await prisma.order.deleteMany({
+    where: { id: { in: ours.map((order) => order.id) } },
+  });
+  console.log(`  cleared ${ours.length} previous test orders\n`);
+}
 
 let skuCursor = 0;
 const nextSku = () => skus[skuCursor++ % skus.length]!;

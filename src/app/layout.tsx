@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { toneStyleBlock } from "@/lib/tone-colours";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 
@@ -48,11 +49,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  /**
+   * The admin's chosen status colours, as variables on the document.
+   *
+   * Here rather than in each area's layout because they apply everywhere — the
+   * storefront's progress bar, the admin's pills, a printed invoice — and one
+   * declaration is what makes changing a colour once change all of them.
+   *
+   * Null until somebody actually chooses, so an untouched site emits no style
+   * block at all and keeps its own tokens, including their dark variants. The
+   * hex is re-validated where this is built; a stored value is not a safe one
+   * to interpolate just because we stored it.
+   */
+  const tones = await toneStyleBlock();
+
   return (
     <html lang="en" className={bodyFont.variable}>
+      {tones && (
+        <head>
+          <style>{tones}</style>
+        </head>
+      )}
       <body className="flex min-h-screen flex-col">{children}</body>
     </html>
   );

@@ -27,6 +27,7 @@ export const EMAIL_KINDS = [
   "EmailVerification",
   "ApplicationReceived",
   "ApplicationDecided",
+  "OrderProgress",
 ] as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[number];
@@ -53,6 +54,7 @@ export const AUDIENCE: Record<EmailKind, Recipient> = {
   EmailVerification: "Customer",
   ApplicationReceived: "Customer",
   ApplicationDecided: "Customer",
+  OrderProgress: "Customer",
 };
 
 export type EmailMessage = {
@@ -705,4 +707,129 @@ export function applicationDecided(
       : "About your AussieMed trade account application",
     text: body,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Customer: the order moved
+ * ------------------------------------------------------------------ */
+
+export type OrderProgressInput = {
+  to: string;
+  contactName: string;
+  reference: string;
+  /** Pending | Processing | Dispatched | Delivered | Cancelled. */
+  status: string;
+  orderUrl: string;
+  courier?: string | null;
+  trackingNumber?: string | null;
+  expectedOn?: string | null;
+  /** Lines still to come, one per line, already indented. */
+  itemsOutstanding?: string | null;
+};
+
+/**
+ * One email per step of an order.
+ *
+ * Written to be worth receiving rather than merely triggered. Each says what
+ * has changed, what happens next, and nothing else — a buyer who gets four
+ * emails about one order will read the fourth only if the first three earned
+ * it. "Your order status has been updated to Processing" is not worth an inbox
+ * slot; "we are making it up now, it leaves us tomorrow" is.
+ *
+ * The stage words are the customer's, from order-progress.ts, not the
+ * warehouse's. Nobody outside this building knows what Processing means.
+ */
+export function orderProgressed(input: OrderProgressInput): EmailMessage {
+  const hello = `Hello ${input.contactName || "there"},`;
+  const tail = [
+    "",
+    "Everything about this order, including the invoice:",
+    `  ${input.orderUrl}`,
+    signOff(),
+  ];
+
+  const body = (lines: (string | null | undefined)[]) =>
+    [hello, "", ...lines.filter((l): l is string => typeof l === "string"), ...tail]
+      .join("\n")
+      // Never more than one blank line, whatever combination of optional
+      // clauses a particular order happens to have. Balancing the spacing by
+      // hand per branch is how a template ends up with a double gap in the one
+      // case nobody tested.
+      .replace(/\n{3,}/g, "\n\n");
+
+  switch (input.status) {
+    case "Processing":
+      return {
+        kind: "OrderProgress",
+        to: input.to,
+        subject: `${input.reference} is being made up`,
+        text: body([
+          `Your order ${input.reference} has gone into today's buying run and is`,
+          "being made up at our sorting facility.",
+          input.expectedOn ? "" : null,
+          input.expectedOn ? `We expect it to leave us on ${input.expectedOn}.` : null,
+        ]),
+      };
+
+    case "Dispatched":
+      return {
+        kind: "OrderProgress",
+        to: input.to,
+        subject: `${input.reference} is on its way`,
+        text: body([
+          `Your order ${input.reference} has left us.`,
+          "",
+          input.courier ? `Courier: ${input.courier}` : null,
+          input.trackingNumber ? `Tracking: ${input.trackingNumber}` : null,
+          // Said plainly rather than left to be discovered on the doorstep.
+          input.itemsOutstanding ? "" : null,
+          input.itemsOutstanding ? "Still to follow:" : null,
+          input.itemsOutstanding,
+          input.itemsOutstanding
+            ? "These are being sourced and will come separately, at no extra"
+            : null,
+          input.itemsOutstanding ? "delivery cost to you." : null,
+        ]),
+      };
+
+    case "Delivered":
+      return {
+        kind: "OrderProgress",
+        to: input.to,
+        subject: `${input.reference} has been delivered`,
+        text: body([
+          `Your order ${input.reference} has been delivered.`,
+          "",
+          "If anything is missing, damaged or not what you expected, reply to",
+          "this email within seven days and we will put it right.",
+        ]),
+      };
+
+    case "Cancelled":
+      return {
+        kind: "OrderProgress",
+        to: input.to,
+        subject: `${input.reference} has been cancelled`,
+        text: body([
+          `Your order ${input.reference} has been cancelled and nothing will be`,
+          "delivered against it.",
+          "",
+          // A cancellation nobody explained is a phone call, so the door is
+          // opened rather than left for them to find.
+          "If that is not what you expected, reply to this email and we will",
+          "look into it.",
+        ]),
+      };
+
+    default:
+      // Pending is the state an order is created in, and checkout already sends
+      // a confirmation. A second email saying the same thing seconds later
+      // teaches people that ours are not worth opening.
+      return {
+        kind: "OrderProgress",
+        to: input.to,
+        subject: `${input.reference} — update`,
+        text: body([`Your order ${input.reference} has been updated.`]),
+      };
+  }
 }

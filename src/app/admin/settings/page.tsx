@@ -2,6 +2,14 @@ import { db } from "@/lib/db";
 import { VatRateForm } from "@/components/VatRateForm";
 import { CutoffForm } from "@/components/CutoffForm";
 import { StatusLegend } from "@/components/admin/StatusLegend";
+import { StatusColourForm } from "@/components/admin/StatusColourForm";
+import { OrderEmailSettings } from "@/components/admin/OrderEmailSettings";
+import { toneColours } from "@/lib/tone-colours";
+import {
+  NOTIFIABLE_STEPS,
+  notifySettings,
+  stepLabel,
+} from "@/lib/order-notices";
 import { getCutoffHour } from "@/lib/purchasing";
 
 /**
@@ -12,11 +20,13 @@ import { getCutoffHour } from "@/lib/purchasing";
  * rest is listed as outstanding with the register item that tracks it.
  */
 export default async function AdminSettingsPage() {
-  const [vat, currency, version, cutoffHour] = await Promise.all([
+  const [vat, currency, version, cutoffHour, colours, notify] = await Promise.all([
     db.setting.findUnique({ where: { key: "vatRateBasisPoints" } }),
     db.setting.findUnique({ where: { key: "currency" } }),
     db.setting.findUnique({ where: { key: "catalogVersion" } }),
     getCutoffHour(),
+    toneColours(),
+    notifySettings(),
   ]);
 
   const percent = Number(vat?.value ?? 500) / 100;
@@ -42,6 +52,14 @@ export default async function AdminSettingsPage() {
         <div className="space-y-5">
           <VatRateForm percent={percent} />
           <CutoffForm hour={cutoffHour} />
+          <OrderEmailSettings
+            steps={NOTIFIABLE_STEPS.map((step) => ({
+              step,
+              label: stepLabel(step),
+              enabled: notify[step] ?? true,
+            }))}
+          />
+          <StatusColourForm colours={colours} />
           <StatusLegend />
         </div>
 

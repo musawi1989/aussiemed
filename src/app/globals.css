@@ -367,6 +367,34 @@ input[type="number"] {
 }
 
 /* ==================================================================
+   Status tones
+   ==================================================================
+
+   The five status colours get their own variables rather than reusing
+   --success, --danger and the rest directly. They are settable by an admin,
+   and those tokens are shared with buttons, form errors and links — recolouring
+   "needs attention" would otherwise repaint every amber button on the site.
+
+   Defaults point at the existing tokens, so nothing changes until somebody
+   chooses. A chosen colour applies in both light and dark, which is the honest
+   behaviour: an admin picking a brand amber means that amber, not a computed
+   variant of it they never saw.
+   ================================================================== */
+
+:root {
+  --tone-resting: var(--text-muted);
+  --tone-resting-soft: var(--surface-sunken);
+  --tone-active: var(--navy);
+  --tone-active-soft: var(--navy-soft);
+  --tone-attention: var(--accent);
+  --tone-attention-soft: var(--accent-soft);
+  --tone-complete: var(--success);
+  --tone-complete-soft: var(--success-soft);
+  --tone-stopped: var(--danger);
+  --tone-stopped-soft: var(--danger-soft);
+}
+
+/* ==================================================================
    Paper
    ==================================================================
 

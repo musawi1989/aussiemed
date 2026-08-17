@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { setToneColour } from "@/lib/tone-colours";
+import { setNotifyStep } from "@/lib/order-notices";
+import { requireAdmin } from "@/lib/admin";
 import { setVatRate } from "@/lib/admin";
 import { setCutoffHour } from "@/lib/purchasing";
 import { formatCutoffHour, parseCutoffHour } from "@/lib/cutoff";
@@ -41,5 +44,41 @@ export async function setCutoffHourAction(
   return {
     ok: true,
     message: `Saved. Buyers now see ${formatCutoffHour(hour)}.`,
+  };
+}
+
+export async function setToneColourAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await setToneColour(
+    String(data.get("tone") ?? ""),
+    String(data.get("colour") ?? "")
+  );
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/settings");
+  // Every screen, not just this one: the colours are on the document root and
+  // an admin who changes one expects to see it on the orders list.
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Colour saved." };
+}
+
+export async function setNotifyStepAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  await requireAdmin();
+
+  const step = String(data.get("step") ?? "");
+  const enabled = data.getAll("enabled").at(-1) === "1";
+  await setNotifyStep(step, enabled);
+
+  revalidatePath("/admin/settings");
+  return {
+    ok: true,
+    message: enabled
+      ? "Customers will be emailed at this step."
+      : "Customers will not be emailed at this step.",
   };
 }

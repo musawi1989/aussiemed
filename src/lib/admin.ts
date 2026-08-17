@@ -13,6 +13,7 @@ import { restockAlert } from "./email-message";
 import { sendQuietly } from "./mailer";
 import { publicUrl } from "./public-url";
 import { recordStatus } from "./status-events";
+import { notifyOrderProgress } from "./order-notices";
 
 /**
  * Every write the admin screens make goes through this file.
@@ -1158,6 +1159,12 @@ export async function setOrderStatus(
     { status: order.status },
     { status }
   );
+
+  // After the write and outside any transaction: an email is not part of the
+  // order changing, and a mail server being down must not roll back a dispatch.
+  // It is quiet, so twenty orders marked dispatched at once cannot have one
+  // fail on a send. See order-notices.ts.
+  await notifyOrderProgress({ orderId: order.id, status });
 
   // Alongside the audit entry, not instead of it: the audit is for
   // accountability and this is for measurement. See BE-30.
