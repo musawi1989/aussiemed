@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**200 items** · 71 outstanding · **12 outstanding P1**
+**203 items** · 71 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -181,6 +181,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-54 | Categories could be created and renamed, never removed | Dev | P2 | Done | A taxonomy that only grows is a taxonomy nobody maintains. A category made by mistake stays in the search dropdown and the admin's own screen for the life of the site, and the only way out was a developer with database access. |
 | BE-55 | Products could not be added one at a time | Dev | P2 | Done | The bulk upload answers a price list arriving as a spreadsheet. It does not answer the other half of the job — one new line, typed in, usually while somebody is on the phone about it — and there was no way to do that at all. |
 | BE-56 | Saving a product from the admin always failed | Dev | P1 | Done | Every edit to a product — name, description, price class, categories — was refused. The admin could open the screen, change anything, press save, and be told a supplier did not exist. |
+| BE-57 | Customers could not open an account themselves | Dev | P1 | Done | Every trade account had to be created directly in the database. A business that found the site had no way in at all, and the only route was an email nobody was watching for. |
+| BE-58 | Resubmitting an application orphaned an organisation | Dev | P3 | Done | Every abandoned sign-up left an Organisation row with nobody on it — invisible on every screen, and counted by anything asking how many customers exist. |
 
 ## Infrastructure
 
@@ -190,12 +192,12 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | IN-02 | Choose the database | Dev | P2 | Open | SQLite for development with a switch to Postgres. No SQLite-only SQL. |
 | IN-03 | Choose an SMTP provider and sending domain | Client | P2 | Open | Required for every transactional email. |
 | IN-04 | Decide on a payment gateway | Client | P2 | Open | v1 ships offline / purchase order only. Gateway integration is a pluggable interface. |
-| IN-05 | Supply Google and Facebook OAuth keys | Client | P3 | Open | Social login endpoints currently return 501. |
 | IN-06 | Remove noindex before launch | Dev | P1 | Open | The site is set to noindex, nofollow site-wide so it cannot be indexed while in development. |
 | IN-07 | Confirm the GitHub repository is private | Client | P1 | Done | The repository contains the previous agency's purchased theme, fonts and vendor libraries. |
 | IN-08 | Correct the git author name | Client | P3 | Open | Commits are authored as 'AussieMed' because git had no identity configured. |
 | IN-09 | Set up continuous integration | Dev | P3 | Open | No CI runs the checks automatically. The spec asks for the currency grep check to run in CI. |
 | IN-10 | Plan backups and disaster recovery | Client | P3 | Open | No backup strategy exists for the database or uploaded files. |
+| IN-05 | Google sign-in is built and waiting on keys | Client | P3 | Open | The button cannot work without OAuth credentials from the client's own Google Cloud project. A button that throws on click reads as a broken site rather than a feature nobody has enabled. |
 
 ## Deferred
 
@@ -216,6 +218,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
 | SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Done | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
+| SEC-04 | Sign-in tells an applicant why they are being held up | Dev | P2 | Done | A generic refusal must not reveal which addresses have accounts. But after a correct password, the same generic message to somebody whose application is in a queue is a lie that produces a support call. |
 
 ## Decision
 

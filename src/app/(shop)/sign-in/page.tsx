@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RoleSignInForm } from "@/components/RoleSignInForm";
+import { googleEnabled } from "@/lib/oauth";
 import { TestCredentials } from "@/components/TestCredentials";
 import { getSessionUser } from "@/lib/auth";
 
@@ -35,7 +36,11 @@ export default async function SignInPage() {
       </p>
 
       <div className="mt-6">
-        <RoleSignInForm expectRole="Customer" next="/account" />
+        <RoleSignInForm
+          expectRole="Customer"
+          next="/account"
+          googleEnabled={googleEnabled()}
+        />
       </div>
 
       <p className="mt-4 text-center text-sm text-text-muted">

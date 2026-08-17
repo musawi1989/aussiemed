@@ -71,6 +71,10 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
     icon: "people",
     links: [
       { href: "/admin/customers", label: "Customers" },
+      // Above suppliers because it is a queue rather than a list: somebody is
+      // waiting on it, and a trade account nobody notices for three days is a
+      // customer who has gone somewhere else.
+      { href: "/admin/applications", label: "Applications" },
       { href: "/admin/suppliers", label: "Suppliers" },
     ],
   },

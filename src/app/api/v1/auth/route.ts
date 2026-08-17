@@ -41,10 +41,19 @@ export async function POST(request: Request) {
 
   const result = await signIn(identifier, password);
   if (!result.ok) {
-    // 401 with a generic message — the form must not reveal which accounts
-    // exist.
+    // Generic for a wrong password — the form must not reveal which accounts
+    // exist. Specific once the password was right and it is our own process
+    // holding them up: an applicant told "those details do not match" while
+    // their application sits in a queue rings up instead.
     return NextResponse.json(
-      { error: { code: "unauthorised", message: result.message } },
+      {
+        error: {
+          code: "unauthorised",
+          message: result.message,
+          // Lets the form offer the code again rather than just refusing.
+          needsVerification: result.needsVerification === true,
+        },
+      },
       { status: 401 }
     );
   }

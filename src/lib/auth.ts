@@ -1,4 +1,5 @@
 import "server-only";
+import { canSignIn } from "./registration";
 
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
@@ -76,7 +77,10 @@ export type SessionUser = {
 export async function signIn(
   identifier: string,
   password: string
-): Promise<{ ok: true; user: SessionUser } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; user: SessionUser }
+  | { ok: false; message: string; needsVerification?: boolean }
+> {
   const handle = identifier.trim().toLowerCase();
   const generic = "Those details do not match an account";
 
@@ -88,6 +92,29 @@ export async function signIn(
   if (!user || user.isDisabled) return { ok: false, message: generic };
   if (!(await verifyPassword(password, user.passwordHash))) {
     return { ok: false, message: generic };
+  }
+
+  /**
+   * The password was right. Now: are they allowed in?
+   *
+   * Deliberately after the password check, and deliberately specific. Before
+   * it, "your application is pending" would tell anyone who typed an address
+   * whether it is registered. After it, the person has already proved who they
+   * are, and being told "those details do not match an account" when their
+   * application is sitting in a queue is a lie that produces a support call.
+   */
+  const verdict = canSignIn({
+    isVerified: user.isVerified,
+    approvalStatus: user.approvalStatus,
+    isDisabled: user.isDisabled,
+    rejectedReason: user.rejectedReason,
+  });
+  if (!verdict.allowed) {
+    return {
+      ok: false,
+      message: verdict.reason,
+      needsVerification: verdict.canResendOtp === true,
+    };
   }
 
   const token = randomUUID() + randomBytes(24).toString("hex");

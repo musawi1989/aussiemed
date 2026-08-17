@@ -24,6 +24,9 @@ export const EMAIL_KINDS = [
   "StaffAlert",
   "TaxInvoice",
   "Forwarded",
+  "EmailVerification",
+  "ApplicationReceived",
+  "ApplicationDecided",
 ] as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[number];
@@ -42,6 +45,14 @@ export const AUDIENCE: Record<EmailKind, Recipient> = {
   // checks, because it is written by us and addressed by hand rather than
   // generated for one side.
   Forwarded: "Staff",
+
+  // Opening a trade account. All three go to somebody who is not a customer
+  // yet, but "Customer" is the right leak test for them — an applicant must
+  // never learn a supplier's name either, and this is the audience that
+  // check enforces.
+  EmailVerification: "Customer",
+  ApplicationReceived: "Customer",
+  ApplicationDecided: "Customer",
 };
 
 export type EmailMessage = {
@@ -559,6 +570,139 @@ export function forwarded(input: ForwardInput): EmailMessage {
     kind: "Forwarded",
     to: input.to,
     subject: input.subject,
+    text: body,
+  };
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Opening a trade account
+ * ------------------------------------------------------------------ */
+
+export type EmailVerificationInput = {
+  to: string;
+  contactName: string;
+  code: string;
+  minutes: number;
+};
+
+/**
+ * The code that proves an address reaches somebody.
+ *
+ * The code is on its own line and nothing else on that line, because people
+ * copy it with a double-click, and a line reading "Your code is 123456."
+ * copies the full stop with it.
+ */
+export function emailVerification(input: EmailVerificationInput): EmailMessage {
+  const body = [
+    `Hello ${input.contactName || "there"},`,
+    "",
+    "Confirming your email address is the first step in opening a trade",
+    "account with AussieMed. Your code is:",
+    "",
+    `  ${input.code}`,
+    "",
+    `It stops working in ${input.minutes} minutes. If you did not ask for it,`,
+    "you can ignore this — nothing has been created in your name.",
+    "",
+    "Once your address is confirmed, an account manager reviews the",
+    "application. We will email you either way.",
+    signOff(),
+  ].join("\n");
+
+  return {
+    kind: "EmailVerification",
+    to: input.to,
+    subject: `${input.code} is your AussieMed confirmation code`,
+    text: body,
+  };
+}
+
+export type ApplicationReceivedInput = {
+  to: string;
+  contactName: string;
+  companyName: string;
+};
+
+/**
+ * Sent the moment the address is confirmed, so nobody is left wondering
+ * whether the form worked. Says plainly that nothing can be ordered yet — a
+ * customer who thinks they have an account and finds they cannot sign in has
+ * been misled by us, not by their own misreading.
+ */
+export function applicationReceived(
+  input: ApplicationReceivedInput
+): EmailMessage {
+  const body = [
+    `Hello ${input.contactName || "there"},`,
+    "",
+    `Thank you — your email address is confirmed and your application for a`,
+    `trade account for ${input.companyName} is with our team.`,
+    "",
+    "You cannot place orders yet. Trade accounts are opened by a person",
+    "rather than automatically, and we will email you as soon as yours is",
+    "approved — usually within one working day.",
+    "",
+    "If anything on the application needs correcting, reply to this email",
+    "and we will sort it out before it goes to review.",
+    signOff(),
+  ].join("\n");
+
+  return {
+    kind: "ApplicationReceived",
+    to: input.to,
+    subject: "We have your AussieMed trade account application",
+    text: body,
+  };
+}
+
+export type ApplicationDecidedInput = {
+  to: string;
+  contactName: string;
+  companyName: string;
+  approved: boolean;
+  /** Told to the applicant on a refusal. */
+  reason?: string | null;
+  signInUrl: string;
+};
+
+export function applicationDecided(
+  input: ApplicationDecidedInput
+): EmailMessage {
+  const body = input.approved
+    ? [
+        `Hello ${input.contactName || "there"},`,
+        "",
+        `Your AussieMed trade account for ${input.companyName} is open.`,
+        "",
+        "Sign in with the email address and password you chose:",
+        "",
+        `  ${input.signInUrl}`,
+        "",
+        "Your first order can go in straight away. Anything placed before 5pm",
+        "joins the same day's buying run.",
+        signOff(),
+      ].join("\n")
+    : [
+        `Hello ${input.contactName || "there"},`,
+        "",
+        `We are not able to open a trade account for ${input.companyName} at`,
+        "the moment.",
+        "",
+        // A refusal with no reason is an email nobody can act on, and it
+        // produces a phone call rather than a corrected application.
+        ...(input.reason?.trim() ? [input.reason.trim(), ""] : []),
+        "If you think this is a mistake, or something has changed, reply to",
+        "this email and we will look again.",
+        signOff(),
+      ].join("\n");
+
+  return {
+    kind: "ApplicationDecided",
+    to: input.to,
+    subject: input.approved
+      ? "Your AussieMed trade account is open"
+      : "About your AussieMed trade account application",
     text: body,
   };
 }

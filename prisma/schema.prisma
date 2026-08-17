@@ -44,12 +44,39 @@ model User {
   role         String  @default("Customer")
   name         String
   phone        String?
+  /// Email proved by an OTP at sign-up. Separate from approval: a verified
+  /// address only says we can reach them, not that we will trade with them.
   isVerified   Boolean @default(false)
   isDisabled   Boolean @default(false)
+
+  /// approvalStatus: Pending | Approved | Rejected
+  ///
+  /// Trade accounts are opened by people we have not met, so a self-service
+  /// sign-up is an application rather than an account. Defaults to Approved
+  /// because every account that existed before this was created by hand and
+  /// locking them out on a migration would be a self-inflicted outage; the
+  /// sign-up path sets Pending explicitly.
+  approvalStatus String    @default("Approved")
+  approvedAt     DateTime?
+  approvedBy     String?
+  /// Why an application was turned down, told to the applicant. Refusing
+  /// without a reason produces an email nobody can act on.
+  rejectedReason String?
+  appliedAt      DateTime?
+
+  /// Where a sign-in came from, so a Google account is not asked for a
+  /// password it never had. authProvider: Password | Google
+  authProvider   String  @default("Password")
+  googleSubject  String? @unique
 
   /// Email OTP. The spec's sign-in is a code, not a password.
   otpCode      String?
   otpExpiresAt DateTime?
+  /// Wrong guesses against the current code. Six digits is a million
+  /// combinations, which is plenty against a person and nothing against a
+  /// script — without a cap the code is a formality. Reset when a new one is
+  /// issued, so a legitimate retry is never punished for an earlier attempt.
+  otpAttempts  Int       @default(0)
 
   supplier       Supplier?
   organisationId String?
@@ -87,6 +114,11 @@ model Organisation {
   emirate String?
   /// ISO 3166-1 alpha-2. See Address.countryCode.
   countryCode String @default("AE")
+
+  /// Opened through the sign-up form rather than by an admin, so it carries
+  /// nothing we have agreed — terms, credit limit and pricing are all set
+  /// when the application is approved.
+  isSelfRegistered Boolean @default(false)
 
   /// paymentTerms: Prepaid | Net7 | Net30 | Net60
   paymentTerms    String  @default("Prepaid")
