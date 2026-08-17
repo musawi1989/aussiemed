@@ -38,7 +38,16 @@ export default async function AdminCategoriesPage() {
         })),
     }));
 
-  const empty = categories.filter((c) => (count.get(c.id) ?? 0) === 0).length;
+  // Removable, not merely bare. A department showing no direct products is not
+  // empty if a subcategory under it is stocked, and counting it as such here
+  // would put a number on this screen that disagrees with the one on the button
+  // below it.
+  const removable = tree.reduce((n, dept) => {
+    const goingChildren = dept.children.filter((c) => c.productCount === 0);
+    const deptGoes =
+      dept.productCount === 0 && goingChildren.length === dept.children.length;
+    return n + goingChildren.length + (deptGoes ? 1 : 0);
+  }, 0);
 
   return (
     <>
@@ -46,7 +55,7 @@ export default async function AdminCategoriesPage() {
         <h1 className="text-xl font-bold tracking-tight text-text">Categories</h1>
         <p className="mt-1 text-sm text-text-muted tnum">
           {categories.length} categories in {tree.length} departments &middot;{" "}
-          {empty} hold nothing and are hidden from the storefront menu
+          {removable} hold nothing and can be removed
         </p>
       </div>
 

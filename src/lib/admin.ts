@@ -838,6 +838,155 @@ export async function renameCategory(
   return ok(undefined);
 }
 
+/**
+ * Removing a category.
+ *
+ * The schema makes this quietly destructive: ProductCategory cascades on
+ * delete, so removing a category takes its product links with it without a
+ * word, and the parent relation is optional, so removing a department would
+ * leave its subcategories pointing at nothing. Neither shows up as an error.
+ * Both are guarded here rather than in the form, because a server action is a
+ * public endpoint and a hidden button guards nothing.
+ *
+ * The guard that matters is not "does it hold products" — a product usually
+ * sits in several categories and losing one is ordinary tidying. It is whether
+ * a product would be left in NO category at all, because such a product falls
+ * out of every browse path on the storefront while still being live, orderable
+ * and invisible. That is the one outcome an admin cannot see happening and
+ * would struggle to find afterwards.
+ */
+export async function deleteCategory(id: string): Promise<Result<string>> {
+  const actor = await requireAdmin();
+
+  const category = await db.category.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      parentId: true,
+      children: { select: { id: true, name: true } },
+      products: { select: { productMasterId: true } },
+    },
+  });
+  if (!category) return fail("That category no longer exists.");
+
+  // Subcategories first. Deleting the parent would silently promote them to
+  // departments, which is a bigger change to the storefront than the one being
+  // asked for, and not one anybody would connect to this click afterwards.
+  if (category.children.length > 0) {
+    const names = category.children.map((c) => c.name).join(", ");
+    return fail(
+      `${category.name} still holds ${category.children.length} ` +
+        `${category.children.length === 1 ? "subcategory" : "subcategories"} ` +
+        `(${names}). Remove or move ${category.children.length === 1 ? "it" : "them"} first.`
+    );
+  }
+
+  const productIds = category.products.map((p) => p.productMasterId);
+
+  if (productIds.length > 0) {
+    // Which of them are in this category and nowhere else.
+    const counts = await db.productCategory.groupBy({
+      by: ["productMasterId"],
+      where: { productMasterId: { in: productIds } },
+      _count: { categoryId: true },
+    });
+    const orphanIds = counts
+      .filter((row) => row._count.categoryId <= 1)
+      .map((row) => row.productMasterId);
+
+    if (orphanIds.length > 0) {
+      const orphans = await db.productMaster.findMany({
+        where: { id: { in: orphanIds } },
+        select: { name: true },
+        take: 4,
+        orderBy: { name: "asc" },
+      });
+      const shown = orphans.map((p) => p.name).join(", ");
+      const more =
+        orphanIds.length > orphans.length
+          ? ` and ${orphanIds.length - orphans.length} more`
+          : "";
+      return fail(
+        `${orphanIds.length} ${orphanIds.length === 1 ? "product is" : "products are"} ` +
+          `only in ${category.name} (${shown}${more}). Deleting it would leave ` +
+          `${orphanIds.length === 1 ? "it" : "them"} in no category at all — still ` +
+          `on sale, but reachable only by search. Put ${orphanIds.length === 1 ? "it" : "them"} ` +
+          `in another category first.`
+      );
+    }
+  }
+
+  await db.category.delete({ where: { id } });
+
+  await audit(
+    actor,
+    "category.delete",
+    "Category",
+    id,
+    {
+      name: category.name,
+      slug: category.slug,
+      parentId: category.parentId,
+      // The links that went with it, so the deletion can be understood — and
+      // undone by hand — from the log alone.
+      productsUncategorised: productIds.length,
+    },
+    undefined
+  );
+  await invalidateCatalog();
+  return ok(category.name);
+}
+
+/**
+ * Clearing out the empty ones.
+ *
+ * The catalogue import creates the supplier's whole taxonomy whether or not we
+ * stock anything in it, so the tree carries well over a hundred categories
+ * holding nothing. They are filtered out of the browse menu but still fill the
+ * search scope dropdown and the admin's own screen, and removing them one at a
+ * time is not a feature, it is a chore.
+ *
+ * Empty leaves are removed repeatedly rather than in one pass, so a department
+ * whose every subcategory was empty goes too, in the same run. Without the
+ * loop it would survive as an empty department and need a second click, which
+ * reads as the button not having worked.
+ */
+export async function deleteEmptyCategories(): Promise<Result<number>> {
+  const actor = await requireAdmin();
+
+  const removed: { id: string; name: string; slug: string }[] = [];
+
+  // Bounded rather than while(true): the tree is two deep by construction, so
+  // three passes is already more than can be needed, and a loop that cannot
+  // terminate has no place in a delete.
+  for (let pass = 0; pass < 4; pass += 1) {
+    const empty = await db.category.findMany({
+      where: { products: { none: {} }, children: { none: {} } },
+      select: { id: true, name: true, slug: true },
+    });
+    if (empty.length === 0) break;
+
+    await db.category.deleteMany({ where: { id: { in: empty.map((c) => c.id) } } });
+    removed.push(...empty);
+  }
+
+  if (removed.length === 0) return ok(0);
+
+  await audit(
+    actor,
+    "category.deleteEmpty",
+    "Category",
+    // Not one row, so the entity id records the shape of the action instead.
+    `${removed.length} categories`,
+    { removed: removed.map((c) => `${c.name} (/${c.slug})`) },
+    undefined
+  );
+  await invalidateCatalog();
+  return ok(removed.length);
+}
+
 /* ------------------------------------------------------------------ *
  * Orders
  * ------------------------------------------------------------------ */

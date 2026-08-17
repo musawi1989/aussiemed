@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**190 items** · 69 outstanding · **12 outstanding P1**
+**192 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -54,6 +54,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-24 | 13 of 60 products have no image | Client | P2 | Open | Those products render as a monogram tile rather than a photograph. It is a deliberate stand-in and reads acceptably in a grid, but on a trade catalogue an image is often how a buyer confirms they have the right item. |
 | DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image â€” visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
 | DA-26 | Test orders only ever exercised one state | Dev | P3 | Done | A colour system, a report or an alert cannot be checked against data that only shows one colour. Local data that is uniformly healthy hides every defect in the handling of the unhealthy cases. |
+| DA-27 | Deleting a category puts the database out of step with the catalogue | Dev | P3 | Open | An admin who tidies the taxonomy will see db:check fail afterwards and have no way to tell whether they broke something. A check that cries wolf after a legitimate edit stops being read. |
 
 ## Legal
 
@@ -173,6 +174,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-51 | No in-site inbox, and no way to send anything on by email | Dev | P2 | Done | Needs attention counts what is outstanding right now and returns to zero when the work is done, so anything worth knowing but not doing had nowhere to live — an order arriving, a supplier confirming. There was also no way to put any of it, or an invoice, in front of somebody by email without retyping it. |
 | BE-52 | An admin could see every email but could not write one | Dev | P2 | Done | The Email screen recorded everything the system sent and gave no way to send anything. Any message about an order — it is running late, an item cannot be supplied, the payment is overdue — had to be written from a personal mailbox, which meant it was not recorded anywhere and nobody else could see it had gone. |
 | BE-53 | One colour system for every status | Dev | P2 | Done | Colour is how a person reads a list of forty orders without reading it. If the same colour means different things on different screens, or the alarming states are not coloured at all, the list stops being scannable and every row has to be read. |
+| BE-54 | Categories could be created and renamed, never removed | Dev | P2 | Done | A taxonomy that only grows is a taxonomy nobody maintains. A category made by mistake stays in the search dropdown and the admin's own screen for the life of the site, and the only way out was a developer with database access. |
 
 ## Infrastructure
 
