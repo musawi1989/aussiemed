@@ -150,6 +150,46 @@ check(
   `${productsWithoutCategory} uncategorised`
 );
 
+/**
+ * isAvailable is derived from supplyStatus and must never be written alone.
+ *
+ * It stays a column because the daily buying run and nine other places read
+ * it, and a boolean filter is far clearer than one unpacking a string. The
+ * risk of two fields for one fact is that they drift — and this drift is
+ * invisible: a row reading "discontinued" that the buying run happily orders
+ * from shows nothing wrong on any screen. So it is asserted instead of hoped
+ * for. Every write goes through src/lib/supply-state.ts.
+ */
+const supplies = await prisma.productSupply.findMany({
+  select: {
+    isAvailable: true,
+    supplyStatus: true,
+    sku: { select: { skuCode: true } },
+  },
+});
+const disagreeing = supplies.filter(
+  (s) => s.isAvailable !== (s.supplyStatus === "Available")
+);
+check(
+  "supply availability agrees with the supply status",
+  disagreeing.length === 0,
+  `${disagreeing.length} disagree: ${disagreeing
+    .slice(0, 5)
+    .map((s) => `${s.sku.skuCode} (${s.supplyStatus}, available=${s.isAvailable})`)
+    .join("; ")}`
+);
+
+// An alternative on a line the supplier says they can supply is stale advice,
+// and reads as "buy this instead" beside an item that is perfectly orderable.
+const staleAlternatives = await prisma.productSupply.count({
+  where: { supplyStatus: "Available", alternativeSkuId: { not: null } },
+});
+check(
+  "no replacement is suggested against an item that can be supplied",
+  staleAlternatives === 0,
+  `${staleAlternatives} stale`
+);
+
 const rootCategories = categories.filter((c) => c.parentId === null).length;
 check(
   // Not a comparison against the import, for the reason above — only that a

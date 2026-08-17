@@ -254,6 +254,19 @@ export type SupplierRow = {
   ordersWithUnknownCost: number;
   /** How quickly they acknowledge, from the status log. */
   acknowledgement: Summary;
+  /**
+   * How long from us sending the order to them despatching it — the number
+   * that decides whether a clinic gets its gloves this week.
+   *
+   * Acknowledgement measures how quickly somebody reads their email.
+   * Turnaround measures whether the goods actually move, and a supplier can be
+   * excellent at the first and poor at the second.
+   */
+  turnaround: Summary;
+  /** Turnaround against their promised lead time, or null if none agreed. */
+  turnaroundOnTimePercent: number | null;
+  /** Sent, still not despatched, right now. */
+  openPastPromise: number;
   /** Against their agreed window, or null when nothing was agreed — BE-33. */
   onTimePercent: number | null;
   promisedAckHours: number | null;
@@ -289,6 +302,8 @@ export async function supplierReport(): Promise<SupplierReport> {
         select: {
           id: true,
           createdAt: true,
+          sentAt: true,
+          dispatchedAt: true,
           totalCostFils: true,
           lines: { select: { wasFallback: true } },
         },
@@ -302,10 +317,32 @@ export async function supplierReport(): Promise<SupplierReport> {
 
   const rows: SupplierRow[] = suppliers.map((supplier) => {
     const ackDurations: number[] = [];
+    const turnaroundDurations: number[] = [];
     for (const po of supplier.purchaseOrders) {
-      const ms = timeBetween(histories.get(po.id) ?? [], "Sent", "Acknowledged");
-      if (ms !== null) ackDurations.push(ms);
+      const history = histories.get(po.id) ?? [];
+      const ack = timeBetween(history, "Sent", "Acknowledged");
+      if (ack !== null) ackDurations.push(ack);
+
+      // From our order to their despatch. Read from the status log rather than
+      // the dispatchedAt column so it measures the same way acknowledgement
+      // does, and so a row edited by hand cannot quietly improve the figure.
+      const out = timeBetween(history, "Sent", "Dispatched");
+      if (out !== null) turnaroundDurations.push(out);
     }
+
+    const promisedMs =
+      supplier.promisedLeadTimeDays === null
+        ? null
+        : supplier.promisedLeadTimeDays * 86_400_000;
+
+    // Orders sitting past the promise with nothing despatched. A median of
+    // three days looks healthy while two orders sit open for a fortnight,
+    // because an order that never ships never enters the average at all.
+    const now = Date.now();
+    const openPastPromise = supplier.purchaseOrders.filter((po) => {
+      if (po.dispatchedAt || !po.sentAt || promisedMs === null) return false;
+      return now - po.sentAt.getTime() > promisedMs;
+    }).length;
 
     const unknown = supplier.purchaseOrders.filter(
       (po) => po.totalCostFils === null
@@ -330,6 +367,9 @@ export async function supplierReport(): Promise<SupplierReport> {
             ),
       ordersWithUnknownCost: unknown,
       acknowledgement: summarise(ackDurations),
+      turnaround: summarise(turnaroundDurations),
+      turnaroundOnTimePercent: onTimeRate(turnaroundDurations, promisedMs).rate,
+      openPastPromise,
       onTimePercent: onTimeRate(
         ackDurations,
         supplier.ackSlaHours ? supplier.ackSlaHours * 3_600_000 : null

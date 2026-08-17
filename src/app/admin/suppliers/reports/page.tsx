@@ -129,6 +129,12 @@ export default async function SupplierReportsPage() {
                     <th className="py-1.5 pr-3 text-right font-bold">Acknowledges in</th>
                     <th className="py-1.5 pr-3 text-right font-bold">Worst 10%</th>
                     <th className="py-1.5 pr-3 text-right font-bold">On time</th>
+                    {/* Acknowledgement says how fast they read an email.
+                        Turnaround says whether the goods actually moved, and a
+                        supplier can be excellent at one and poor at the other. */}
+                    <th className="py-1.5 pr-3 text-right font-bold">Ships in</th>
+                    <th className="py-1.5 pr-3 text-right font-bold">Ships on time</th>
+                    <th className="py-1.5 pr-3 text-right font-bold">Overdue now</th>
                     <th className="py-1.5 text-right font-bold">Fallback</th>
                   </tr>
                 </thead>
@@ -225,6 +231,56 @@ export default async function SupplierReportsPage() {
                           >
                             {supplier.onTimePercent}%
                           </span>
+                        )}
+                      </td>
+
+                      {/* From our order to their despatch — the number that
+                          decides whether a clinic gets its gloves this week. */}
+                      <td className="py-2 pr-3 text-right tnum text-text">
+                        {supplier.turnaround.enough ? (
+                          humanDuration(supplier.turnaround.medianMs)
+                        ) : (
+                          <Unknown>
+                            {supplier.turnaround.count === 0
+                              ? "none shipped"
+                              : `only ${supplier.turnaround.count}`}
+                          </Unknown>
+                        )}
+                      </td>
+
+                      <td className="py-2 pr-3 text-right tnum">
+                        {supplier.promisedLeadTimeDays === null ? (
+                          <Unknown>no target</Unknown>
+                        ) : supplier.turnaroundOnTimePercent === null ? (
+                          <Unknown>not enough</Unknown>
+                        ) : (
+                          <span
+                            className={`font-bold ${
+                              supplier.turnaroundOnTimePercent >= 90
+                                ? "text-success"
+                                : supplier.turnaroundOnTimePercent >= 70
+                                  ? "text-accent"
+                                  : "text-danger"
+                            }`}
+                          >
+                            {supplier.turnaroundOnTimePercent}%
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Orders sitting past the promise with nothing shipped.
+                          A healthy-looking median hides these entirely, because
+                          an order that never ships never enters an average. */}
+                      <td className="py-2 pr-3 text-right tnum">
+                        {supplier.openPastPromise > 0 ? (
+                          <span
+                            className="font-bold text-danger"
+                            title="Sent, past their promised lead time, and still not despatched"
+                          >
+                            {supplier.openPastPromise}
+                          </span>
+                        ) : (
+                          <span className="text-text-subtle">—</span>
                         )}
                       </td>
 

@@ -476,6 +476,8 @@ model ProductSku {
   batches      SkuBatch[]
   images       ProductImage[]
   supplies     ProductSupply[]
+  /// Supplies that name this SKU as the thing to buy instead.
+  offeredAsAlternativeFor ProductSupply[] @relation("SupplyAlternative")
   poLines      PurchaseOrderLine[]
 
   createdAt DateTime @default(now())
@@ -526,7 +528,30 @@ model ProductSupply {
   /// This supplier cannot currently supply this particular item. Distinct from
   /// Supplier.isAvailable, which takes the whole company out — they are
   /// different situations and either one moves a line to the backup.
+  ///
+  /// DERIVED from supplyStatus and never set on its own. It stays a column
+  /// because the daily buying run and nine other places already read it, and a
+  /// query filtering on a boolean is a great deal clearer than one unpacking a
+  /// string. src/lib/supply-state.ts owns the relationship and db:check
+  /// asserts the two never disagree.
   isAvailable Boolean @default(true)
+
+  /// supplyStatus: Available | OutOfStock | Discontinued
+  ///
+  /// Why, not just whether. Out of stock is a waiting problem — use the backup
+  /// and ask again next month. Discontinued is a catalogue problem: the line
+  /// has gone and needs replacing. A single "unavailable" flag could not tell
+  /// them apart, so nobody ever acted on the second.
+  supplyStatus String @default("Available")
+
+  /// What this supplier says to buy instead, when they cannot supply.
+  ///
+  /// Their suggestion, not our decision: it appears to the admin as advice
+  /// beside the line and changes nothing about what gets ordered. A supplier
+  /// silently redirecting our purchase orders to a different product is how a
+  /// clinic receives something it did not ask for.
+  alternativeSkuId String?
+  alternativeSku   ProductSku? @relation("SupplyAlternative", fields: [alternativeSkuId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

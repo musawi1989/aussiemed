@@ -19,14 +19,20 @@ export type SupplyTermsInput = {
   costAED?: string | number | null;
   /** Days from order to dispatch. Blank clears it and falls back to theirs. */
   leadTimeDays?: string | number | null;
-  isAvailable?: boolean;
 };
 
+/**
+ * Whether they can supply is deliberately not here.
+ *
+ * It used to be, as a boolean, and it has become a three-way state with a
+ * suggested replacement attached — see supply-state.ts. Keeping a copy of it
+ * on this type would mean two places deciding the same thing, and the one that
+ * lost would be found months later by an order going to the wrong supplier.
+ */
 export type SupplyTerms = {
   supplierPartNumber: string | null;
   costFils: number | null;
   leadTimeDays: number | null;
-  isAvailable: boolean;
 };
 
 export type TermsResult =
@@ -170,7 +176,9 @@ export function checkSupplyTerms(input: SupplyTermsInput): TermsResult {
       supplierPartNumber: partNumber || null,
       costFils: cost.fils,
       leadTimeDays: lead.days,
-      isAvailable: input.isAvailable !== false,
+      // isAvailable is not set here. It is derived from supplyStatus by
+      // src/lib/supply-state.ts, and the service layer writes both together —
+      // setting it in two places is how the two would come to disagree.
     },
   };
 }

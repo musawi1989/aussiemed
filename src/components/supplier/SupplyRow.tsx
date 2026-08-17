@@ -4,6 +4,11 @@ import { useActionState, useState } from "react";
 import { updateSupplyAction } from "@/app/business-portal/actions";
 import type { FormState } from "@/components/AdminForm";
 import type { MySupply } from "@/lib/supplier-portal";
+import {
+  SUPPLY_STATES,
+  SUPPLY_STATE_META,
+  supplyStateMeta,
+} from "@/lib/supply-state";
 
 const field =
   "h-9 w-full rounded-card border border-border-strong bg-surface px-2.5 text-sm text-text";
@@ -18,9 +23,20 @@ const field =
  * The form opens on demand rather than rendering forty live forms at once,
  * which is both faster and harder to mis-click.
  */
-export function SupplyRow({ supply }: { supply: MySupply }) {
+export function SupplyRow({
+  supply,
+  alternatives,
+}: {
+  supply: MySupply;
+  /** Packs this supplier supplies, so a replacement can be named. */
+  alternatives: { id: string; label: string }[];
+}) {
   const [open, setOpen] = useState(false);
   const [state, submit, pending] = useActionState(updateSupplyAction, null);
+  // Held here so the replacement picker can appear the moment "out of stock"
+  // is chosen, rather than after a save.
+  const [status, setStatus] = useState(supply.supplyStatus ?? "Available");
+  const meta = supplyStateMeta(status);
 
   const back = (key: string, fallback: string) =>
     (state?.ok === false ? state.values?.[key] : undefined) ?? fallback;
@@ -35,6 +51,27 @@ export function SupplyRow({ supply }: { supply: MySupply }) {
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          {/* A picture, because their part numbers rarely match ours and a
+              wrong line marked discontinued takes a product off sale for no
+              reason. Fixed size so forty rows stay a list rather than a
+              gallery. */}
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-card border border-border-base bg-surface-sunken">
+            {supply.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={supply.image}
+                alt={supply.imageAlt ?? ""}
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <span aria-hidden="true" className="text-xs text-text-subtle">
+                no photo
+              </span>
+            )}
+          </span>
         <div className="min-w-0">
           <p className="font-bold text-text">{supply.productName}</p>
           <p className="mt-0.5 text-sm text-text-muted tnum">
@@ -43,6 +80,16 @@ export function SupplyRow({ supply }: { supply: MySupply }) {
               ? ` · your ref ${supply.supplierPartNumber}`
               : ""}
           </p>
+          {supply.alternative && (
+            <p className="mt-1 text-sm text-text-muted">
+              You suggested{" "}
+              <span className="font-semibold text-text">
+                {supply.alternative.label}
+              </span>{" "}
+              instead.
+            </p>
+          )}
+        </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-3">
@@ -59,8 +106,14 @@ export function SupplyRow({ supply }: { supply: MySupply }) {
           </span>
 
           {!supply.isAvailable && (
-            <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent">
-              you cannot supply this
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                supplyStateMeta(supply.supplyStatus).tone === "stopped"
+                  ? "bg-danger-soft text-danger"
+                  : "bg-accent-soft text-accent"
+              }`}
+            >
+              {supplyStateMeta(supply.supplyStatus).label.toLowerCase()}
             </span>
           )}
           {!supply.listed && (
@@ -139,20 +192,56 @@ export function SupplyRow({ supply }: { supply: MySupply }) {
             </label>
           </div>
 
-          <label className="mt-3 flex items-center gap-2 text-sm text-text">
-            <input
-              type="checkbox"
-              name="isAvailable"
-              value="yes"
-              defaultChecked={supply.isAvailable}
-              className="h-4 w-4"
-            />
-            I can supply this item
+          <label className="mt-3 block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-text-subtle">
+              Can you supply this?
+            </span>
+            <select
+              name="supplyStatus"
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className={field}
+            >
+              {SUPPLY_STATES.map((value) => (
+                <option key={value} value={value}>
+                  {SUPPLY_STATE_META[value].label}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-text-subtle">
+              {meta.meaning}
+              {!meta.canSupply
+                ? " It does not affect anything else you supply."
+                : ""}
+            </span>
           </label>
-          <p className="mt-1 text-xs text-text-subtle">
-            Unticking it sends this item to the other supplier until you tick it
-            again. It does not affect anything else you supply.
-          </p>
+
+          {/* Only when it would help. A replacement box on a line they can
+              supply is a question with no answer. */}
+          {meta.invitesAlternative && (
+            <label className="mt-3 block">
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-text-subtle">
+                Is there something we should buy instead? (optional)
+              </span>
+              <select
+                name="alternativeSkuId"
+                defaultValue={supply.alternative?.id ?? ""}
+                className={field}
+              >
+                <option value="">No suggestion</option>
+                {alternatives.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-text-subtle">
+                From what you supply. A suggestion for our buyer, nothing more
+                — it does not change what gets ordered. If the replacement is
+                something you do not supply, tell us in the usual way.
+              </span>
+            </label>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button

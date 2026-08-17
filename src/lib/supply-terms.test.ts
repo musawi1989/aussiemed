@@ -126,14 +126,12 @@ describe("checkSupplyTerms", () => {
       supplierPartNumber: "  LIV-88231 ",
       costAED: "12.34",
       leadTimeDays: "3",
-      isAvailable: true,
     });
     assert.equal(result.ok, true);
     assert.deepEqual(result.ok && result.terms, {
       supplierPartNumber: "LIV-88231",
       costFils: 1_234,
       leadTimeDays: 3,
-      isAvailable: true,
     });
   });
 
@@ -142,13 +140,11 @@ describe("checkSupplyTerms", () => {
       supplierPartNumber: "",
       costAED: "",
       leadTimeDays: "",
-      isAvailable: false,
     });
     assert.deepEqual(result.ok && result.terms, {
       supplierPartNumber: null,
       costFils: null,
       leadTimeDays: null,
-      isAvailable: false,
     });
   });
 
@@ -180,6 +176,9 @@ describe("parseSupplyRows", () => {
       supplierPartNumber: "LIV-88231",
       costFils: 1_234,
       leadTimeDays: 3,
+      // The spreadsheet keeps its availability column: a supplier updating
+      // forty lines at once needs to say which they cannot supply, and the
+      // three-way state on the screen would be a poor fit for a text cell.
       isAvailable: true,
     });
     assert.equal(rows[1].isAvailable, false);

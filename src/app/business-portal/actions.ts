@@ -56,7 +56,8 @@ export async function updateSupplyAction(
     supplierPartNumber: text(data, "supplierPartNumber"),
     costAED: text(data, "costAED"),
     leadTimeDays: text(data, "leadTimeDays"),
-    isAvailable: data.get("isAvailable") === "yes",
+    supplyStatus: text(data, "supplyStatus"),
+    alternativeSkuId: text(data, "alternativeSkuId") || null,
   });
 
   if (result.ok) refreshSupplies();

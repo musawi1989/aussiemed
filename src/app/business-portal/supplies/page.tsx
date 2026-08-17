@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AvailabilityToggle } from "@/components/supplier/AvailabilityToggle";
 import { SupplyRow } from "@/components/supplier/SupplyRow";
-import { listMySupplies, myCompany } from "@/lib/supplier-portal";
+import {
+  alternativeChoices,
+  listMySupplies,
+  myCompany,
+} from "@/lib/supplier-portal";
 
 export const metadata: Metadata = {
   title: "What you supply",
@@ -20,7 +24,11 @@ export const metadata: Metadata = {
  * anywhere in this portal at all.
  */
 export default async function SuppliesPage() {
-  const [supplies, company] = await Promise.all([listMySupplies(), myCompany()]);
+  const [supplies, company, alternatives] = await Promise.all([
+    listMySupplies(),
+    myCompany(),
+    alternativeChoices(),
+  ]);
 
   const unavailable = supplies.filter((s) => !s.isAvailable);
   const noPrice = supplies.filter((s) => s.costFils === null);
@@ -77,7 +85,11 @@ export default async function SuppliesPage() {
       ) : (
         <ul className="mt-5 space-y-2">
           {supplies.map((supply) => (
-            <SupplyRow key={supply.id} supply={supply} />
+            <SupplyRow
+              key={supply.id}
+              supply={supply}
+              alternatives={alternatives}
+            />
           ))}
         </ul>
       )}

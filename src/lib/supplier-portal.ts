@@ -1,4 +1,9 @@
 import "server-only";
+import {
+  availabilityFor,
+  isSupplyState,
+  keepsAlternative,
+} from "./supply-state";
 
 import { db } from "./db";
 import { audit, type Result } from "./admin";
@@ -202,12 +207,35 @@ export async function listMySupplies() {
       supplierPartNumber: true,
       leadTimeDays: true,
       isAvailable: true,
+      supplyStatus: true,
+      alternativeSku: {
+        select: {
+          id: true,
+          skuCode: true,
+          unitLabel: true,
+          product: { select: { name: true } },
+        },
+      },
       sku: {
         select: {
           skuCode: true,
           unitLabel: true,
           isActive: true,
-          product: { select: { name: true, status: true } },
+          product: {
+            select: {
+              name: true,
+              status: true,
+              // One picture, so a supplier scanning forty rows can tell at a
+              // glance which item a code refers to. Their part numbers rarely
+              // match ours, and the wrong line marked discontinued takes a
+              // product off sale for no reason.
+              images: {
+                orderBy: { sortOrder: "asc" },
+                take: 1,
+                select: { path: true, altText: true },
+              },
+            },
+          },
         },
       },
     },
@@ -228,10 +256,61 @@ export async function listMySupplies() {
     supplierPartNumber: supply.supplierPartNumber,
     leadTimeDays: supply.leadTimeDays,
     isAvailable: supply.isAvailable,
+    supplyStatus: supply.supplyStatus,
+    image: supply.sku.product.images[0]?.path ?? null,
+    imageAlt: supply.sku.product.images[0]?.altText ?? null,
+    alternative: supply.alternativeSku
+      ? {
+          id: supply.alternativeSku.id,
+          label: `${supply.alternativeSku.product.name} · ${supply.alternativeSku.unitLabel}`,
+          skuCode: supply.alternativeSku.skuCode,
+        }
+      : null,
   }));
 }
 
 export type MySupply = Awaited<ReturnType<typeof listMySupplies>>[number];
+
+/**
+ * Packs a supplier can offer as a replacement — from their own range only.
+ *
+ * My first version offered the whole live catalogue, reasoning that "we cannot
+ * get the 100-box but the 50-box would do" is the useful case whoever ends up
+ * sending it. check:privacy refused it, and was right: a dropdown listing
+ * every pack we sell is a way for one supplier to read our entire range and,
+ * through it, infer what a competitor supplies. That is a commercial problem,
+ * not merely a privacy one, and BE-39 exists precisely to stop it.
+ *
+ * So it is their own supplies. The common case survives — a supplier out of
+ * one pack size usually has another — and a replacement from outside their
+ * range is a conversation with the buyer rather than a dropdown.
+ *
+ * Nothing about cost, margin or another supplier is selected. The item code is
+ * not returned either: it is not rendered, and anything sent to the browser
+ * that need not be is one more thing that can leak.
+ */
+export async function alternativeChoices() {
+  const { supplierId } = await requireSupplier();
+
+  const supplies = await db.productSupply.findMany({
+    where: { supplierId, sku: { isActive: true, product: { status: "Active" } } },
+    orderBy: [{ sku: { product: { name: "asc" } } }, { sku: { eachesPerPack: "asc" } }],
+    select: {
+      sku: {
+        select: {
+          id: true,
+          unitLabel: true,
+          product: { select: { name: true } },
+        },
+      },
+    },
+  });
+
+  return supplies.map((supply) => ({
+    id: supply.sku.id,
+    label: `${supply.sku.product.name} · ${supply.sku.unitLabel}`,
+  }));
+}
 
 /**
  * Updates one line's terms.
@@ -242,9 +321,16 @@ export type MySupply = Awaited<ReturnType<typeof listMySupplies>>[number];
  * what is an admin decision, and a portal that could create the pairing would
  * let a supplier appoint themselves to a competitor's line.
  */
+export type SupplyUpdate = SupplyTermsInput & {
+  /** Available | OutOfStock | Discontinued. Anything else reads as Available. */
+  supplyStatus?: string | null;
+  /** Their suggested replacement, kept only while they cannot supply. */
+  alternativeSkuId?: string | null;
+};
+
 export async function updateMySupply(
   supplyId: string,
-  input: SupplyTermsInput
+  input: SupplyUpdate
 ): Promise<Result> {
   const actor = await requireSupplier();
 
@@ -386,7 +472,24 @@ export async function applySupplyUpload(
         leadTimeDays: row.leadTimeDays,
         // Blank means no change, so the current value is kept rather than
         // being defaulted to available.
-        ...(row.isAvailable === null ? {} : { isAvailable: row.isAvailable }),
+        //
+        // Both fields move together or neither does. Writing isAvailable alone
+        // — which this did — would leave a row saying "discontinued" that the
+        // buying run treats as orderable, and nothing on any screen would show
+        // the disagreement. A spreadsheet can only say yes or no, so "yes"
+        // means Available and "no" means out of stock: the milder of the two
+        // reasons, since a supplier ending a line permanently should have to
+        // say so on the screen where the word appears.
+        ...(row.isAvailable === null
+          ? {}
+          : {
+              isAvailable: row.isAvailable,
+              supplyStatus: row.isAvailable ? "Available" : "OutOfStock",
+              // A replacement offered while out of stock is advice about that
+              // moment; left in place once they can supply again it becomes a
+              // suggestion to buy the wrong thing.
+              ...(row.isAvailable ? { alternativeSkuId: null } : {}),
+            }),
       },
     });
     updated++;

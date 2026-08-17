@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**206 items** · 70 outstanding · **12 outstanding P1**
+**210 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -59,6 +59,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-29 | Country stored as a code as well as a name | Dev | P3 | Done | Grouping or filtering by a display name means UAE, U.A.E. and United Arab Emirates are three places. Printing a code means a delivery note that reads AE. |
 | DA-30 | Category tree completed against Livingstone | Dev | P3 | Done | A category that does not exist is a shelf nothing can be put on. The client asked for their reference catalogue's taxonomy to be covered in full so every product they intend to sell has somewhere to go. |
 | DA-27 | db:check measured categories against the frozen import | Dev | P3 | Done | A check that goes red when somebody makes a legitimate edit is a check people learn to ignore, and then it stops catching the things it was written for. |
+| DA-31 | supplyStatus was defaulted over existing availability | Dev | P3 | Done | A supplier who had said they could not supply an item had that silently reversed on the new field, while the old one still said otherwise. |
 
 ## Legal
 
@@ -186,6 +187,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-56 | Saving a product from the admin always failed | Dev | P1 | Done | Every edit to a product — name, description, price class, categories — was refused. The admin could open the screen, change anything, press save, and be told a supplier did not exist. |
 | BE-57 | Customers could not open an account themselves | Dev | P1 | Done | Every trade account had to be created directly in the database. A business that found the site had no way in at all, and the only route was an email nobody was watching for. |
 | BE-58 | Resubmitting an application orphaned an organisation | Dev | P3 | Done | Every abandoned sign-up left an Organisation row with nobody on it — invisible on every screen, and counted by anything asking how many customers exist. |
+| BE-59 | A supplier could say whether, but never why | Dev | P2 | Done | Out of stock and discontinued want completely different things from us — one is a wait, the other needs a replacement — and a single checkbox could not tell them apart, so nobody ever acted on the second. |
+| BE-60 | Supplier turnaround was never measured | Dev | P2 | Done | Acknowledgement time says how quickly somebody reads an email. It says nothing about whether the goods moved, and a supplier can be excellent at one and poor at the other. |
 
 ## Infrastructure
 
@@ -222,6 +225,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
 | SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Done | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
 | SEC-04 | Sign-in tells an applicant why they are being held up | Dev | P2 | Done | A generic refusal must not reveal which addresses have accounts. But after a correct password, the same generic message to somebody whose application is in a queue is a lie that produces a support call. |
+| SEC-05 | The replacement picker offered the whole catalogue | Dev | P2 | Done | A dropdown listing every pack we sell lets one supplier read our entire range, and infer from it what a competitor supplies. |
 
 ## Decision
 
