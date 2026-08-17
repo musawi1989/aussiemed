@@ -36,14 +36,53 @@ console.log("\nDatabase checks\n");
 
 /* ---------- counts ---------- */
 
-const expectedCategories =
-  catalog.departments.length +
-  catalog.departments.reduce((n: number, d: any) => n + d.children.length, 0);
+/**
+ * Categories are NOT compared against the catalogue JSON.
+ *
+ * They were, and it was wrong the moment they became editable. The JSON is
+ * generated from the read-only extraction mirror, so it records the taxonomy
+ * as imported once — and every legitimate edit since then reads as drift. An
+ * admin who removes an empty category or adds a missing one is not breaking
+ * anything, and a check that goes red when they do is a check people learn to
+ * ignore.
+ *
+ * What is checked instead is that the tree itself holds together: no category
+ * points at a parent that does not exist, no two share a slug, and the tree
+ * stays two deep. Those are the things that actually break a storefront, and
+ * unlike a count they are true regardless of who edited what. Recorded as
+ * DA-27.
+ */
+const categories = await prisma.category.findMany({
+  select: { id: true, slug: true, parentId: true, name: true },
+});
+const ids = new Set(categories.map((c) => c.id));
 
+const orphans = categories.filter((c) => c.parentId && !ids.has(c.parentId));
 check(
-  "category count matches the catalogue",
-  (await prisma.category.count()) === expectedCategories,
-  `db=${await prisma.category.count()} json=${expectedCategories}`
+  "every category's parent exists",
+  orphans.length === 0,
+  `${orphans.length} orphaned: ${orphans.map((c) => c.name).join(", ")}`
+);
+
+const slugs = categories.map((c) => c.slug);
+const duplicateSlugs = slugs.filter((s, i) => slugs.indexOf(s) !== i);
+check(
+  "no two categories share a slug",
+  duplicateSlugs.length === 0,
+  // A shared slug makes one of them unreachable and the other answer to the
+  // wrong name — the defect the @unique on the column was added for.
+  `duplicated: ${[...new Set(duplicateSlugs)].join(", ")}`
+);
+
+const byId = new Map(categories.map((c) => [c.id, c]));
+const tooDeep = categories.filter((c) => {
+  const parent = c.parentId ? byId.get(c.parentId) : null;
+  return Boolean(parent?.parentId);
+});
+check(
+  "the category tree is two levels deep",
+  tooDeep.length === 0,
+  `${tooDeep.length} sit three levels down: ${tooDeep.map((c) => c.name).join(", ")}`
 );
 
 // Active only: retired products stay in the table because orders reference them.
@@ -111,11 +150,13 @@ check(
   `${productsWithoutCategory} uncategorised`
 );
 
-const rootCategories = await prisma.category.count({ where: { parentId: null } });
+const rootCategories = categories.filter((c) => c.parentId === null).length;
 check(
-  "the category tree has the expected departments",
-  rootCategories === catalog.departments.length,
-  `db=${rootCategories} json=${catalog.departments.length}`
+  // Not a comparison against the import, for the reason above — only that a
+  // storefront with nothing to browse would be noticed.
+  "there is at least one department to browse",
+  rootCategories > 0,
+  `${rootCategories} departments`
 );
 
 /* ---------- money round trip ---------- */

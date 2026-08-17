@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**205 items** · 71 outstanding · **12 outstanding P1**
+**206 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -55,9 +55,10 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-24 | 13 of 60 products have no image | Client | P2 | Open | Those products render as a monogram tile rather than a photograph. It is a deliberate stand-in and reads acceptably in a grid, but on a trade catalogue an image is often how a buyer confirms they have the right item. |
 | DA-25 | Four product images were SVG placeholders saved as .jpg | Dev | P3 | Done | Next's image optimiser rejected them with a 400, so those four products showed a broken image â€” visibly worse than the products with no image at all, which fall back to a monogram tile. The existing check only asked whether the file existed, and it did. |
 | DA-26 | Test orders only ever exercised one state | Dev | P3 | Done | A colour system, a report or an alert cannot be checked against data that only shows one colour. Local data that is uniformly healthy hides every defect in the handling of the unhealthy cases. |
-| DA-27 | Deleting a category puts the database out of step with the catalogue | Dev | P3 | Open | An admin who tidies the taxonomy will see db:check fail afterwards and have no way to tell whether they broke something. A check that cries wolf after a legitimate edit stops being read. |
 | DA-28 | Placeholder TRNs so the tax-invoice path can be tested | Dev | P3 | Done | Without a TRN on either side, every invoice took the unregistered branch and half the tax-invoice code was never exercised. Testing it required inventing numbers, and invented tax numbers are dangerous if they can pass for real. |
 | DA-29 | Country stored as a code as well as a name | Dev | P3 | Done | Grouping or filtering by a display name means UAE, U.A.E. and United Arab Emirates are three places. Printing a code means a delivery note that reads AE. |
+| DA-30 | Category tree completed against Livingstone | Dev | P3 | Done | A category that does not exist is a shelf nothing can be put on. The client asked for their reference catalogue's taxonomy to be covered in full so every product they intend to sell has somewhere to go. |
+| DA-27 | db:check measured categories against the frozen import | Dev | P3 | Done | A check that goes red when somebody makes a legitimate edit is a check people learn to ignore, and then it stops catching the things it was written for. |
 
 ## Legal
 
