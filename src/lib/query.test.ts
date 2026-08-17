@@ -247,40 +247,67 @@ describe("sorting", () => {
   });
 });
 
-describe("pagination", () => {
-  const many = Array.from({ length: 30 }, (_, i) =>
+describe("the window", () => {
+  const many = Array.from({ length: 60 }, (_, i) =>
     product({ name: `Item ${String(i).padStart(2, "0")}` })
   );
 
-  it("splits into pages of PAGE_SIZE", () => {
-    const page1 = queryProducts(many, resolve, { sort: "name" });
-    assert.equal(page1.items.length, PAGE_SIZE);
-    assert.equal(page1.pageCount, Math.ceil(30 / PAGE_SIZE));
-    assert.equal(page1.total, 30);
+  it("returns the first PAGE_SIZE by default", () => {
+    const first = queryProducts(many, resolve, { sort: "name" });
+    assert.equal(first.items.length, PAGE_SIZE);
+    assert.equal(first.total, 60);
   });
 
-  it("does not repeat items across pages", () => {
-    const seen = new Set<number>();
-    const pageCount = queryProducts(many, resolve, { sort: "name" }).pageCount;
-    for (let p = 1; p <= pageCount; p += 1) {
-      for (const item of queryProducts(many, resolve, { sort: "name", page: p })
-        .items) {
-        assert.ok(!seen.has(item.id), `item ${item.id} appeared twice`);
-        seen.add(item.id);
-      }
-    }
-    assert.equal(seen.size, 30);
+  it("grows from the top, so nothing already seen disappears", () => {
+    // The storefront asks for "the first 48", never "the second 24". Getting a
+    // window instead would make the products being compared vanish the moment
+    // more were asked for.
+    const first = queryProducts(many, resolve, { sort: "name" });
+    const more = queryProducts(many, resolve, {
+      sort: "name",
+      limit: PAGE_SIZE * 2,
+    });
+    assert.equal(more.items.length, PAGE_SIZE * 2);
+    assert.deepEqual(
+      more.items.slice(0, PAGE_SIZE).map((p) => p.id),
+      first.items.map((p) => p.id)
+    );
   });
 
-  it("clamps out-of-range page numbers instead of returning nothing", () => {
-    assert.equal(queryProducts(many, resolve, { page: 999 }).page, 3);
-    assert.equal(queryProducts(many, resolve, { page: 0 }).page, 1);
-    assert.equal(queryProducts(many, resolve, { page: -4 }).page, 1);
+  it("still windows for the paginated API", () => {
+    const second = queryProducts(many, resolve, {
+      sort: "name",
+      offset: PAGE_SIZE,
+      limit: PAGE_SIZE,
+    });
+    const first = queryProducts(many, resolve, { sort: "name" });
+    assert.equal(second.items.length, PAGE_SIZE);
+    const overlap = second.items.filter((s) =>
+      first.items.some((f) => f.id === s.id)
+    );
+    assert.equal(overlap.length, 0);
   });
 
-  it("reports one page for an empty result", () => {
+  it("stops at the end rather than padding", () => {
+    const all = queryProducts(many, resolve, { sort: "name", limit: 999 });
+    assert.equal(all.items.length, 60);
+    const past = queryProducts(many, resolve, { offset: 100, limit: 24 });
+    assert.equal(past.items.length, 0);
+    // The total still reports what matched, so the caller can say so.
+    assert.equal(past.total, 60);
+  });
+
+  it("survives a hand-edited query string", () => {
+    // These come straight off the URL, so all of them are reachable.
+    assert.equal(queryProducts(many, resolve, { offset: -5 }).items.length, PAGE_SIZE);
+    assert.equal(queryProducts(many, resolve, { limit: 0 }).items.length, 1);
+    assert.equal(queryProducts(many, resolve, { limit: -3 }).items.length, 1);
+    assert.ok(queryProducts(many, resolve, { limit: 1e9 }).items.length <= 500);
+  });
+
+  it("reports nothing for an empty catalogue", () => {
     const empty = queryProducts([], resolve, {});
-    assert.equal(empty.pageCount, 1);
+    assert.equal(empty.items.length, 0);
     assert.equal(empty.total, 0);
   });
 });

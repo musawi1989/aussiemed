@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { FilterPanel } from "@/components/FilterPanel";
-import { Pagination } from "@/components/Pagination";
+import { ViewMore } from "@/components/ViewMore";
 import { ProductCard } from "@/components/ProductCard";
 import { SortSelect } from "@/components/SortSelect";
 import { getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
+import { PAGE_SIZE } from "@/lib/query";
 import { logSearch } from "@/lib/search-log";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -60,7 +61,12 @@ export default async function ProductsPage({
     sort: one(raw.sort),
   };
 
-  const page = Number.parseInt(one(raw.page) ?? "1", 10) || 1;
+  // How many to show, not which page. Everything already seen stays on
+  // screen, so this only ever grows.
+  const show = Math.max(
+    PAGE_SIZE,
+    Number.parseInt(one(raw.show) ?? "", 10) || PAGE_SIZE
+  );
 
   const result = await queryProducts({
     categorySlug: params.category,
@@ -68,7 +74,8 @@ export default async function ProductsPage({
     q: params.q,
     inStockOnly: params.inStock === "1",
     sort: (params.sort as SortKey) ?? "relevance",
-    page,
+    offset: 0,
+    limit: show,
   });
 
   // Recorded here rather than in the search box, because this is the only
@@ -87,8 +94,7 @@ export default async function ProductsPage({
     : undefined;
   const heading = category?.name ?? (params.q ? `Results for “${params.q}”` : "All products");
 
-  const from = (result.page - 1) * 12 + 1;
-  const to = Math.min(result.page * 12, result.total);
+  const hasMore = result.items.length < result.total;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -122,7 +128,7 @@ export default async function ProductsPage({
           <p className="mt-1 text-sm text-text-muted tnum">
             {result.total === 0
               ? "No products match these filters"
-              : `Showing ${from}–${to} of ${result.total} products`}
+              : `${result.total} ${result.total === 1 ? "product" : "products"}`}
           </p>
         </div>
         <Suspense fallback={null}>
@@ -158,10 +164,19 @@ export default async function ProductsPage({
                 ))}
               </div>
               <div className="mt-8">
-                <Pagination
-                  page={result.page}
-                  pageCount={result.pageCount}
-                  params={params}
+                <ViewMore
+                  shown={result.items.length}
+                  total={result.total}
+                  hasMore={hasMore}
+                  nextHref={`?${new URLSearchParams({
+                    ...Object.fromEntries(
+                      Object.entries(params).filter(([, v]) => Boolean(v)) as [
+                        string,
+                        string,
+                      ][]
+                    ),
+                    show: String(show + PAGE_SIZE),
+                  }).toString()}`}
                 />
               </div>
             </>

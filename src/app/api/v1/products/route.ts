@@ -21,16 +21,20 @@ export async function GET(request: Request) {
     q: searchParams.get("q") ?? undefined,
     inStockOnly: searchParams.get("inStock") === "1",
     sort: (searchParams.get("sort") as SortKey) ?? "relevance",
-    page,
+    // The API stays paginated — it is a published v1 contract and the
+    // storefront's move to "view more" is a presentation change, not a
+    // contract change.
+    offset: (page - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE,
   });
 
   return NextResponse.json({
     currency: "AED",
     items: result.items.map((p) => toProductSummary(p)),
     pagination: {
-      page: result.page,
+      page,
       pageSize: PAGE_SIZE,
-      pageCount: result.pageCount,
+      pageCount: Math.max(1, Math.ceil(result.total / PAGE_SIZE)),
       total: result.total,
     },
     facets: {

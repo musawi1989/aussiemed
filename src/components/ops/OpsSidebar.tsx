@@ -139,6 +139,20 @@ export function OpsSidebar({
           </span>
           <SignOutButton sizeClassName="shrink-0 px-2.5 py-[0.3rem] text-[13.2px]" />
         </div>
+
+        {/* Back to the shop.
+            The back office is a different world from the storefront — its own
+            layout, its own navigation — and there was no way out of it except
+            editing the address bar. Admins and suppliers both need to see what
+            a customer sees: an admin to check a product they have just
+            published, a supplier to see the site they are supplying. */}
+        <Link
+          href="/"
+          className="mt-2.5 flex items-center justify-center gap-1.5 rounded-card border border-border-strong bg-surface px-3 py-2 text-xs font-bold text-text transition-colors hover:bg-surface-hover"
+        >
+          <span aria-hidden="true">&#8599;</span>
+          Go to website
+        </Link>
       </div>
     </div>
   );

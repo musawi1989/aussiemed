@@ -89,7 +89,7 @@ export function Header({
             <div className="order-last h-11 w-full min-w-0 md:order-none md:w-auto md:flex-1" />
           }
         >
-          <SearchBox departments={departments} />
+          <SearchBox />
         </Suspense>
 
         <div className="ml-auto flex items-center gap-3 sm:gap-4">
@@ -256,12 +256,11 @@ function IconLink({
   );
 }
 
-function SearchBox({ departments }: { departments: Department[] }) {
+function SearchBox() {
   const router = useRouter();
   const params = useSearchParams();
   const { suggest } = useCatalog();
   const [term, setTerm] = useState(params.get("q") ?? "");
-  const [scope, setScope] = useState(params.get("category") ?? "");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -289,7 +288,6 @@ function SearchBox({ departments }: { departments: Department[] }) {
     }
     const search = new URLSearchParams();
     if (term.trim()) search.set("q", term.trim());
-    if (scope) search.set("category", scope);
     const qs = search.toString();
     go(qs ? `/products?${qs}` : "/products");
   };
@@ -306,25 +304,13 @@ function SearchBox({ departments }: { departments: Department[] }) {
           submit();
         }}
       >
-        <div className="relative flex items-stretch rounded-card border border-border-strong bg-surface">
-          {/* Category-scoped search, as on the live site. */}
-          <label className="sr-only" htmlFor="search-scope">
-            Search within
-          </label>
-          <select
-            id="search-scope"
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
-            className="hidden max-w-[9rem] shrink-0 rounded-l-card border-r border-border-base bg-surface px-3 text-sm text-text-muted sm:block"
-          >
-            <option value="">All</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.slug}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-
+        {/* One pill. The scope dropdown that used to sit on the left is gone:
+            it was set to "All" on effectively every search, it pushed the box
+            people actually type in to the right, and it filled up with empty
+            departments. Narrowing by category is what the filters on the
+            products page are for, and they do it better because they show how
+            many results each one holds. */}
+        <div className="relative flex items-stretch rounded-full border border-border-strong bg-surface">
           <input
             type="search"
             value={term}
