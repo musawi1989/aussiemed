@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**187 items** · 71 outstanding · **14 outstanding P1**
+**187 items** · 69 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -120,9 +120,9 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
-| BE-01 | Build the backend | Dev | P1 | In progress | Express and Prisma per extraction/BACKEND_SPEC.md: roles, auth, orders, invoices, emails. Eight phases. |
+| BE-01 | Build the backend | Dev | P1 | Done | Express and Prisma per extraction/BACKEND_SPEC.md: roles, auth, orders, invoices, emails. Eight phases. |
 | BE-02 | Build the admin panel | Dev | P1 | Done | Products, categories, suppliers, customers, orders, marketing, reports, settings. |
-| BE-03 | Build the supplier portal | Dev | P1 | In progress | Suppliers manage their own products but can never self-approve. Must have a failing-then-passing test. |
+| BE-03 | Build the supplier portal | Dev | P1 | Done | Suppliers manage their own products but can never self-approve. Must have a failing-then-passing test. |
 | BE-04 | Build comma-safe .xlsx bulk upload | Dev | P2 | Done | Parsed natively with exceljs, never by splitting on commas — that is what broke the old platform's bulk upload, where a category named Gloves, Nitrile shifted every column after it and the prices were wrong for weeks before anyone noticed. |
 | BE-05 | Build the email flows | Dev | P2 | Done | OTP verification, order confirmation, restock alerts, supplier notifications to both primary and secondary addresses. |
 | BE-06 | Add an audit log | Dev | P2 | Done | Every status transition and every admin or supplier write should be recorded. |
