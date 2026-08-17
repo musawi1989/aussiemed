@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { createContext, useContext, useState, useActionState } from "react";
 
 /**
  * The pieces every admin form is made of.
@@ -27,6 +27,45 @@ export type FormState = {
   values?: Record<string, string>;
 } | null;
 
+/* ------------------------------------------------------------------ *
+ * Keeping what was typed when a form is refused
+ * ------------------------------------------------------------------ */
+
+/**
+ * What the person had entered when the form was turned away.
+ *
+ * React resets an uncontrolled form as soon as its action returns, refusal
+ * included. On a short form that is a nuisance; on the new-product form it
+ * meant being told "that item code is already used" and losing the name, the
+ * description, the price, the pack and every category tick along with it — so
+ * correcting one character cost more than the original entry.
+ *
+ * Captured here rather than echoed back by each action, because an action that
+ * has to remember to return every field it read is an action that will
+ * eventually forget one, and the field that goes missing is the long one
+ * nobody wants to retype.
+ */
+const Restored = createContext<FormData | null>(null);
+
+/** A single value as it was submitted, or undefined on a clean form. */
+export function useRestored(name: string): string | undefined {
+  const data = useContext(Restored);
+  if (!data) return undefined;
+  const value = data.get(name);
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * Every value posted under one name — checkbox groups, where the question is
+ * "was this one ticked" rather than "what was the value". Returns null on a
+ * clean form so a caller can tell "nothing was ticked" from "not a redraw".
+ */
+export function useRestoredList(name: string): string[] | null {
+  const data = useContext(Restored);
+  if (!data) return null;
+  return data.getAll(name).filter((v): v is string => typeof v === "string");
+}
+
 export function AdminForm({
   action,
   children,
@@ -39,10 +78,38 @@ export function AdminForm({
   className?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const [submitted, setSubmitted] = useState<FormData | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const refused = state?.ok === false;
+
+  // An action may still supply its own `values` — for a field it normalised,
+  // where redrawing what was typed would be redrawing something we have
+  // already decided is wrong. Those win over the raw capture.
+  let restored: FormData | null = refused ? submitted : null;
+  if (restored && state?.values) {
+    const merged = new FormData();
+    for (const [key, value] of restored.entries()) merged.append(key, value);
+    for (const [key, value] of Object.entries(state.values)) merged.set(key, value);
+    restored = merged;
+  }
 
   return (
-    <form action={formAction} className={className}>
-      {children}
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        setSubmitted(new FormData(event.currentTarget));
+        setAttempt((n) => n + 1);
+      }}
+      className={className}
+    >
+      {/* Keyed so the inputs genuinely remount and take the restored values:
+          changing defaultValue on a mounted uncontrolled input does nothing.
+          The key only moves on a refusal, so a form that is behaving is never
+          torn down underneath the person using it. */}
+      <Restored.Provider value={restored}>
+        <div key={restored ? attempt : "clean"}>{children}</div>
+      </Restored.Provider>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
@@ -76,6 +143,8 @@ export function Field({
   type = "text",
   required = false,
   placeholder,
+  step,
+  min,
 }: {
   label: string;
   name: string;
@@ -84,7 +153,19 @@ export function Field({
   type?: string;
   required?: boolean;
   placeholder?: string;
+  /**
+   * A count and a price are both type="number" and want different things: 1
+   * for units per pack, 0.01 for AED. Left unset it stays "any", which is
+   * what every existing caller was getting — but a quantity field offering
+   * 2.5 in its stepper invites a value the server will only reject later.
+   */
+  step?: string;
+  min?: string;
 }) {
+  // What was typed wins over what was stored: after a refusal the person is
+  // correcting their own entry, not starting again from the saved record.
+  const restored = useRestored(name);
+
   return (
     <label className="block">
       <span className="block text-xs font-bold uppercase tracking-wide text-text-subtle">
@@ -96,9 +177,10 @@ export function Field({
         type={type}
         required={required}
         placeholder={placeholder}
-        defaultValue={defaultValue ?? ""}
+        defaultValue={restored ?? defaultValue ?? ""}
         // Prices and quantities are typed often enough that the step matters.
-        step={type === "number" ? "any" : undefined}
+        step={type === "number" ? (step ?? "any") : undefined}
+        min={type === "number" ? min : undefined}
         className="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
       />
       {hint && <span className="mt-1 block text-xs text-text-subtle">{hint}</span>}
@@ -119,6 +201,8 @@ export function TextArea({
   hint?: string;
   rows?: number;
 }) {
+  const restored = useRestored(name);
+
   return (
     <label className="block">
       <span className="block text-xs font-bold uppercase tracking-wide text-text-subtle">
@@ -127,7 +211,7 @@ export function TextArea({
       <textarea
         name={name}
         rows={rows}
-        defaultValue={defaultValue ?? ""}
+        defaultValue={restored ?? defaultValue ?? ""}
         className="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm leading-relaxed text-text focus:border-navy focus:outline-none"
       />
       {hint && <span className="mt-1 block text-xs text-text-subtle">{hint}</span>}
@@ -151,6 +235,8 @@ export function Select({
   /** Label for the empty choice, when "none" is a valid answer. */
   allowEmpty?: string;
 }) {
+  const restored = useRestored(name);
+
   return (
     <label className="block">
       <span className="block text-xs font-bold uppercase tracking-wide text-text-subtle">
@@ -158,7 +244,7 @@ export function Select({
       </span>
       <select
         name={name}
-        defaultValue={defaultValue ?? ""}
+        defaultValue={restored ?? defaultValue ?? ""}
         className="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
       >
         {allowEmpty && <option value="">{allowEmpty}</option>}
@@ -184,6 +270,11 @@ export function Checkbox({
   defaultChecked?: boolean;
   hint?: string;
 }) {
+  // The last value wins on submit, matching how the actions read it: the
+  // hidden "0" posts first, the box's "1" after it.
+  const restored = useRestoredList(name);
+  const wasChecked = restored ? restored.at(-1) === "1" : undefined;
+
   return (
     <label className="flex items-start gap-2.5">
       {/* The hidden "0" means an unchecked box still posts a value: an absent
@@ -193,7 +284,7 @@ export function Checkbox({
         type="checkbox"
         name={name}
         value="1"
-        defaultChecked={defaultChecked}
+        defaultChecked={wasChecked ?? defaultChecked}
         className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-navy)]"
       />
       <span>

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**192 items** · 70 outstanding · **12 outstanding P1**
+**195 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -175,6 +175,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-52 | An admin could see every email but could not write one | Dev | P2 | Done | The Email screen recorded everything the system sent and gave no way to send anything. Any message about an order — it is running late, an item cannot be supplied, the payment is overdue — had to be written from a personal mailbox, which meant it was not recorded anywhere and nobody else could see it had gone. |
 | BE-53 | One colour system for every status | Dev | P2 | Done | Colour is how a person reads a list of forty orders without reading it. If the same colour means different things on different screens, or the alarming states are not coloured at all, the list stops being scannable and every row has to be read. |
 | BE-54 | Categories could be created and renamed, never removed | Dev | P2 | Done | A taxonomy that only grows is a taxonomy nobody maintains. A category made by mistake stays in the search dropdown and the admin's own screen for the life of the site, and the only way out was a developer with database access. |
+| BE-55 | Products could not be added one at a time | Dev | P2 | Done | The bulk upload answers a price list arriving as a spreadsheet. It does not answer the other half of the job — one new line, typed in, usually while somebody is on the phone about it — and there was no way to do that at all. |
+| BE-56 | Saving a product from the admin always failed | Dev | P1 | Done | Every edit to a product — name, description, price class, categories — was refused. The admin could open the screen, change anything, press save, and be told a supplier did not exist. |
 
 ## Infrastructure
 
@@ -262,3 +264,4 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
 | FE-37 | The printable invoice was a printed web page | Dev | P2 | Done | An invoice is the document a customer files, forwards to their accountant and pays against. One that arrives with a search box and a navigation menu across the top reads as amateur, and reflects on every figure printed underneath it. |
+| FE-38 | A refused form threw away everything that had been typed | Dev | P2 | Done | Being told what is wrong and losing the work in the same instant makes the correction cost more than the original entry. On a long form it is the difference between a usable screen and one people avoid. |

@@ -143,12 +143,149 @@ export type ProductEdit = {
   name: string;
   description: string | null;
   brandId: string | null;
-  supplierId: string;
+  /**
+   * No supplierId. A product is not owned by a supplier — supply is per pack
+   * with a primary and a backup, held in ProductSupply (DEC-25).
+   *
+   * It was still here long after the column went, and it broke every save:
+   * the form had correctly stopped sending one, so updateProduct looked up a
+   * supplier with a blank id, found nothing, and refused with "That supplier
+   * no longer exists." Nothing in the type system caught it because the field
+   * existed on this type and was simply never satisfied.
+   */
   taxClass: string;
   variantGroup: string | null;
   variantLabel: string | null;
   categoryIds: string[];
 };
+
+/**
+ * A new product, and the first pack it is sold in.
+ *
+ * The pack is not optional and is not a second step. A ProductMaster on its
+ * own has no code, no unit and no price — there is nothing to put in a cart,
+ * so it is not a product yet, it is a name. Creating one without a pack would
+ * leave a row that passes every screen and fails db:check's "no product exists
+ * without a purchasable SKU", and the person who made it would have no reason
+ * to think anything was wrong.
+ *
+ * It arrives as Draft. Going live is `setProductStatus`, deliberately its own
+ * action — the moment a product becomes buyable is worth being a decision
+ * rather than the last field on a long form.
+ */
+export type ProductCreate = ProductEdit & {
+  skuCode: string;
+  unitLabel: string;
+  unitShortLabel: string;
+  baseUnitName: string;
+  eachesPerPack: number;
+  priceAED: number;
+};
+
+export async function createProduct(
+  input: ProductCreate
+): Promise<Result<{ id: string; slug: string }>> {
+  const actor = await requireAdmin();
+
+  const name = input.name.trim();
+  if (!name) return fail("A product needs a name.");
+  if (!TAX_CLASSES.includes(input.taxClass as (typeof TAX_CLASSES)[number])) {
+    return fail("That is not a tax class we recognise.");
+  }
+  if (input.categoryIds.length === 0) {
+    return fail("Choose at least one category, or nobody can browse to it.");
+  }
+
+  const skuCode = input.skuCode.trim();
+  if (!skuCode) return fail("The first pack needs an item code.");
+  if (!input.unitLabel.trim()) {
+    return fail("The first pack needs a unit label, e.g. 100 Pieces/Box.");
+  }
+  if (!Number.isFinite(input.priceAED) || input.priceAED <= 0) {
+    return fail("The price must be more than zero.");
+  }
+  if (!Number.isInteger(input.eachesPerPack) || input.eachesPerPack < 1) {
+    return fail("Units per pack must be a whole number of at least 1.");
+  }
+
+  // Item codes are unique across the whole catalogue, and this is the error a
+  // person will actually hit — typing a code that is already on another
+  // product. Checked before anything is written so the failure costs nothing.
+  const clash = await db.productSku.findUnique({ where: { skuCode } });
+  if (clash) return fail(`Item code ${skuCode} is already used by another SKU.`);
+
+  const categories = await db.category.findMany({
+    where: { id: { in: input.categoryIds } },
+    select: { id: true },
+  });
+  if (categories.length !== input.categoryIds.length) {
+    return fail("One of those categories no longer exists. Reload and try again.");
+  }
+
+  if (input.brandId) {
+    const brand = await db.brand.findUnique({ where: { id: input.brandId } });
+    if (!brand) return fail("That brand no longer exists.");
+  }
+
+  // Slugs are unique across the catalogue and are the product's URL. A second
+  // "Nitrile Gloves" gets -2 rather than being refused: two products may
+  // legitimately share a name, and the person naming them should not have to
+  // invent a difference to satisfy a database.
+  const base = slugify(name);
+  let slug = base;
+  for (let n = 2; await db.productMaster.findUnique({ where: { slug } }); n += 1) {
+    slug = `${base}-${n}`;
+  }
+
+  const product = await db.$transaction(async (tx) => {
+    const created = await tx.productMaster.create({
+      data: {
+        name,
+        slug,
+        description: trim(input.description),
+        brandId: input.brandId || null,
+        taxClass: input.taxClass,
+        variantGroup: trim(input.variantGroup),
+        variantLabel: trim(input.variantLabel),
+        status: "Draft",
+        createdBy: actor.id,
+      },
+    });
+
+    await tx.productCategory.createMany({
+      data: input.categoryIds.map((categoryId) => ({
+        productMasterId: created.id,
+        categoryId,
+      })),
+    });
+
+    await tx.productSku.create({
+      data: {
+        productMasterId: created.id,
+        skuCode,
+        baseUnitName: input.baseUnitName.trim() || "Each",
+        unitLabel: input.unitLabel.trim(),
+        unitShortLabel: input.unitShortLabel.trim() || input.unitLabel.trim(),
+        eachesPerPack: input.eachesPerPack,
+        priceFils: toFils(input.priceAED),
+      },
+    });
+
+    return created;
+  });
+
+  await audit(actor, "product.create", "ProductMaster", product.id, undefined, {
+    name,
+    slug,
+    status: "Draft",
+    taxClass: input.taxClass,
+    categoryIds: input.categoryIds,
+    skuCode,
+    priceFils: toFils(input.priceAED),
+  });
+  await invalidateCatalog();
+  return ok({ id: product.id, slug });
+}
 
 export async function updateProduct(
   id: string,
@@ -168,11 +305,6 @@ export async function updateProduct(
     return fail("That is not a tax class we recognise.");
   }
 
-  const supplier = await db.supplier.findUnique({
-    where: { id: input.supplierId },
-  });
-  if (!supplier) return fail("That supplier no longer exists.");
-
   // A product with no category is unreachable by browsing: it exists, it is
   // searchable, and no amount of clicking will ever find it.
   if (input.categoryIds.length === 0) {
@@ -183,7 +315,6 @@ export async function updateProduct(
     name,
     description: trim(input.description),
     brandId: input.brandId || null,
-    supplierId: input.supplierId,
     taxClass: input.taxClass,
     variantGroup: trim(input.variantGroup),
     variantLabel: trim(input.variantLabel),

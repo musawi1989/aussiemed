@@ -98,6 +98,24 @@ export default async function AdminProductsPage({
             {page > 1 ? ` · page ${page} of ${pages}` : ""}
           </p>
         </div>
+
+        {/* Two ways in, because they are genuinely different jobs: a price
+            list arriving as a spreadsheet, and one new line typed in while
+            somebody is on the phone about it. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/products/upload"
+            className="rounded-card border border-border-strong bg-surface px-4 py-2 text-sm font-bold text-text transition-colors hover:bg-surface-hover"
+          >
+            Bulk upload
+          </Link>
+          <Link
+            href="/admin/products/new"
+            className="rounded-card bg-red px-4 py-2 text-sm font-bold text-on-red transition-colors hover:bg-red-hover"
+          >
+            Add a product
+          </Link>
+        </div>
       </div>
 
       <AdminFilters

@@ -2,6 +2,7 @@
 
 import { saveProductAction } from "@/app/admin/products/[id]/actions";
 import { AdminForm, Field, Panel, Select, TextArea } from "./AdminForm";
+import { CategoryChecklist, type Department } from "./admin/CategoryChecklist";
 
 /**
  * The product's own details.
@@ -29,15 +30,9 @@ export function ProductDetailsForm({
   };
   brands: { id: string; name: string }[];
   taxClasses: string[];
-  departments: {
-    id: string;
-    name: string;
-    children: { id: string; name: string }[];
-  }[];
+  departments: Department[];
   selectedCategoryIds: string[];
 }) {
-  const selected = new Set(selectedCategoryIds);
-
   return (
     <AdminForm action={saveProductAction}>
       <input type="hidden" name="id" value={product.id} />
@@ -103,49 +98,10 @@ export function ProductDetailsForm({
       </div>
 
       <div className="mt-5">
-        <Panel
-          title="Categories"
-          note="A product with no category exists and is searchable, but nobody can ever browse to it."
-        >
-          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-            {departments.map((dept) => (
-              <fieldset key={dept.id}>
-                <legend className="text-xs font-bold uppercase tracking-wide text-text-subtle">
-                  {dept.name}
-                </legend>
-                <label className="mt-1 flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    name="categoryIds"
-                    value={dept.id}
-                    defaultChecked={selected.has(dept.id)}
-                    className="h-4 w-4 accent-[var(--color-navy)]"
-                  />
-                  <span className="font-semibold text-text">
-                    {dept.name} (department itself)
-                  </span>
-                </label>
-                <div className="ml-5 mt-1 grid gap-1 sm:grid-cols-2">
-                  {dept.children.map((child) => (
-                    <label
-                      key={child.id}
-                      className="flex items-center gap-2 text-sm text-text-muted"
-                    >
-                      <input
-                        type="checkbox"
-                        name="categoryIds"
-                        value={child.id}
-                        defaultChecked={selected.has(child.id)}
-                        className="h-4 w-4 accent-[var(--color-navy)]"
-                      />
-                      {child.name}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            ))}
-          </div>
-        </Panel>
+        <CategoryChecklist
+          departments={departments}
+          selectedCategoryIds={selectedCategoryIds}
+        />
       </div>
     </AdminForm>
   );

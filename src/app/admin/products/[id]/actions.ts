@@ -44,7 +44,6 @@ export async function saveProductAction(
     name: text(data, "name"),
     description: text(data, "description") || null,
     brandId: text(data, "brandId") || null,
-    supplierId: text(data, "supplierId"),
     taxClass: text(data, "taxClass"),
     variantGroup: text(data, "variantGroup") || null,
     variantLabel: text(data, "variantLabel") || null,
