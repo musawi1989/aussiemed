@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**187 items** · 73 outstanding · **15 outstanding P1**
+**187 items** · 71 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -156,11 +156,11 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-35 | Products are hard-tied to one supplier | Dev | P1 | Done | ProductMaster.supplierId was a required field, so every product belonged to exactly one supplier and could not have a backup. It also meant supplier identity was carried on the product record itself, which is how it reached the browser. |
 | BE-36 | No purchase orders exist | Dev | P1 | Done | Nothing bought anything. Customer orders were recorded but there was no mechanism to order the goods from a supplier, which is the entire middle of the business. |
 | BE-37 | Nothing links received goods back to the customers waiting for them | Dev | P1 | Done | Goods arrive pooled by item, not by customer. Without an allocation record there was no way to know whose units arrived, and no way to answer a recall. |
-| BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Open | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
+| BE-38 | Supplier identity is exposed to customers today | Dev | P1 | Done | DEC-24 requires that customers never learn who supplied their goods. Three routes currently break that, and one of them ships supplier records to every visitor's browser. |
 | BE-39 | The supplier portal still shows customer orders | Dev | P1 | Done | It listed order references and invoice lines drawn from customer orders, which contradicts DEC-24 now that suppliers deal only in purchase orders. |
 | BE-40 | Remove OrderSupplierInvoice, the last of the marketplace model | Dev | P1 | Done | A customer's order was split into one invoice per supplier at checkout. That was right for a marketplace and wrong for what AussieMed is: under DEC-22 AussieMed is the seller of record and issues one invoice, and under DEC-24 the customer never learns a supplier was involved. |
 | BE-41 | No admin queue for enquiries | Dev | P2 | Done | Capturing quote requests, bulk-buy enquiries and restock demand without anywhere to read them would only have moved the problem. |
-| BE-42 | OrganisationStaff.email is no longer collected | Dev | P3 | Open | The Who orders list records who at a practice placed an order. Nobody on it signs in, so an email address was never used for anything — it was asked for, stored, and read by nothing. Client asked for the field to go on 16 Aug 2026. |
+| BE-42 | OrganisationStaff.email is no longer collected | Dev | P3 | Done | The Who orders list records who at a practice placed an order. Nobody on it signs in, so an email address was never used for anything — it was asked for, stored, and read by nothing. Client asked for the field to go on 16 Aug 2026. |
 | BE-43 | Account changes were made silently and with no reason attached | Dev | P2 | Done | A customer could add or remove a person from Who orders, add a branch, or remove one, and nothing recorded who did it or why. Six months later the account would show a delivery address nobody could account for. Worse, a branch is where medical supplies get sent: an address added by a customer went live immediately, so the next order could ship to somewhere nobody at AussieMed had ever checked. |
 | BE-44 | A refused form deleted everything the person had typed | Dev | P2 | Done | React clears an uncontrolled form as soon as its action returns, success or failure alike. Now that every account change needs a reason, being told the reason is too short also silently deleted the name, the address and everything else just typed — so correcting a small mistake cost more than the original entry did. |
 | BE-45 | A purchase order line with no recorded cost was stored as costing zero | Dev | P1 | Done | buildPurchaseOrders wrote unitCostFils ?? 0, so every line drawn from a supply whose cost had not been loaded was saved as free. Downstream that is indistinguishable from a genuine zero, and the realised margin on the customer order it fulfilled came out at 100% — stated confidently on the screen whose entire purpose is deciding whether a trade is worth doing. The pure planner already modelled the cost as nullable and got it right; the flattening happened only at the database write. |
