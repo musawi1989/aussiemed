@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { BranchFilter } from "@/components/account/BranchFilter";
+import { accountBranches } from "@/lib/account";
 import Link from "next/link";
 import { OrderProgress } from "@/components/OrderProgress";
 import { formatAED } from "@/lib/money";
@@ -23,11 +25,17 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
  * step. What stays is the part that is an answer rather than a record: what is
  * open right now, and the last order, which is the one a buyer repeats.
  */
-export default async function AccountPage() {
-  const overview = await accountOverview();
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>;
+}) {
+  const { branch } = await searchParams;
+  const overview = await accountOverview(branch);
 
   // A personal login with no trade account has no orders or branches to show.
-  const orders = overview ? await accountOrders() : [];
+  const orders = overview ? await accountOrders(branch) : [];
+  const branches = overview ? await accountBranches() : [];
   const open = orders.filter((order) => isOpenOrder(order.status));
   const latest = orders[0] ?? null;
 
@@ -54,6 +62,17 @@ export default async function AccountPage() {
 
   return (
     <>
+      {/* Above the figures, because it changes every one of them. A filter
+          below the numbers it governs reads as a filter on the list further
+          down the page. */}
+      <div className="mb-4 flex justify-end">
+        <BranchFilter
+          basePath="/account"
+          branches={branches.map((b) => ({ id: b.id, label: b.label ?? b.city }))}
+          active={branch}
+        />
+      </div>
+
       <section>
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat label="Orders placed" value={String(metrics!.orderCount)} />

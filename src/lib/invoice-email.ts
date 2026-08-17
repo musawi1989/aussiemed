@@ -4,6 +4,7 @@ import { db } from "./db";
 import { sellerIdentity } from "./seller-identity";
 import { invoiceCompliance } from "./trn";
 import { requireAdmin } from "./admin";
+import { accountSession } from "./account";
 import { isSendableAddress, taxInvoice } from "./email-message";
 import { send } from "./mailer";
 import { publicUrl } from "./public-url";
@@ -94,7 +95,48 @@ export async function emailInvoice(
   to: string
 ): Promise<Result<{ status: string; to: string }>> {
   await requireAdmin();
+  return sendInvoiceTo(reference, to);
+}
 
+/**
+ * A customer emailing themselves their own invoice.
+ *
+ * Deliberately takes no address: it goes to the address on the account and
+ * nowhere else. Letting a buyer type a destination would turn a convenience
+ * into a way to post someone else's invoice anywhere, and the account holder
+ * already has the printable page in front of them if they want to forward it.
+ *
+ * The order is looked up by reference *within their own organisation*, so a
+ * guessed reference belonging to another clinic finds nothing.
+ */
+export async function emailMyInvoice(
+  reference: string
+): Promise<Result<{ status: string; to: string }>> {
+  const session = await accountSession();
+  if (!session) {
+    return { ok: false, error: "Sign in to email yourself an invoice." };
+  }
+
+  const own = await db.order.findFirst({
+    where: { reference, organisationId: session.organisationId },
+    select: { reference: true },
+  });
+  if (!own) return { ok: false, error: "That order is not on your account." };
+
+  if (!isSendableAddress(session.email)) {
+    return {
+      ok: false,
+      error: "There is no usable email address on your account.",
+    };
+  }
+
+  return sendInvoiceTo(reference, session.email);
+}
+
+async function sendInvoiceTo(
+  reference: string,
+  to: string
+): Promise<Result<{ status: string; to: string }>> {
   const address = to.trim();
   if (!isSendableAddress(address)) {
     return { ok: false, error: "That does not look like an email address." };

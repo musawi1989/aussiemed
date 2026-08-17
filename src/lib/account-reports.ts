@@ -64,7 +64,10 @@ export type AccountReport = {
   firstOrderAt: Date | null;
 };
 
-export async function accountReport(period: Period): Promise<AccountReport | null> {
+export async function accountReport(
+  period: Period,
+  branchId?: string
+): Promise<AccountReport | null> {
   const session = await accountSession();
   if (!session) return null;
 
@@ -72,6 +75,7 @@ export async function accountReport(period: Period): Promise<AccountReport | nul
     where: {
       organisationId: session.organisationId,
       status: { not: "Cancelled" },
+      ...(branchId ? { addressId: branchId } : {}),
       placedAt: {
         ...(period.from ? { gte: period.from } : {}),
         lt: period.to,

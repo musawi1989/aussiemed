@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { BranchFilter } from "@/components/account/BranchFilter";
+import { accountBranches } from "@/lib/account";
 import { redirect } from "next/navigation";
 import { WithdrawChangeButton } from "@/components/AccountLists";
 import { StatusPill } from "@/components/StatusPill";
@@ -25,23 +27,50 @@ const when = (d: Date) =>
  * will always be able to say a branch was removed; only this can say the
  * clinic closed.
  */
-export default async function AccountChangesPage() {
+export default async function AccountChangesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>;
+}) {
+  const { branch } = await searchParams;
   const session = await accountSession();
   if (!session) redirect("/account");
 
-  const changes = await accountChangeLog();
+  const [changes, branches] = await Promise.all([
+    accountChangeLog(branch),
+    accountBranches(),
+  ]);
   const waiting = changes.filter((c) => c.status === "Pending");
 
   return (
     <>
-      <h2 className="text-lg font-bold tracking-tight text-text">
-        Account changes
-      </h2>
-      <p className="mt-1 max-w-xl text-sm text-text-muted">
-        Everything that has been changed on this account, who changed it and
-        why. Changes to branches and to your account name are checked by us
-        first; changes to who orders take effect straight away.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-text">
+            Account changes
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-text-muted">
+            Everything that has been changed on this account, who changed it and
+            why. Changes to branches and to your account name are checked by us
+            first; changes to who orders take effect straight away.
+          </p>
+        </div>
+
+        <BranchFilter
+          basePath="/account/changes"
+          branches={branches.map((b) => ({ id: b.id, label: b.label ?? b.city }))}
+          active={branch}
+        />
+      </div>
+
+      {/* Said plainly, because a filtered log that silently hides things is a
+          log nobody can rely on. */}
+      {branch && (
+        <p className="mt-3 text-xs text-text-subtle">
+          Showing changes to this branch and to the people who order for it.
+          Changes to the account as a whole are under All branches.
+        </p>
+      )}
 
       {waiting.length > 0 && (
         <p className="mt-4 rounded-card border-l-4 border-accent-border bg-accent-soft px-4 py-2.5 text-sm font-semibold text-text tnum">

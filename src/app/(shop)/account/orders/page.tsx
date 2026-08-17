@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { OrderProgress } from "@/components/OrderProgress";
 import { StatusPill } from "@/components/StatusPill";
+import { InvoiceActions } from "@/components/account/InvoiceActions";
 import { formatAED } from "@/lib/money";
 import {
   isOpenOrder,
@@ -214,6 +215,7 @@ function OpenOrderCard({ order }: { order: OrderRow }) {
         >
           Order again
         </Link>
+        <InvoiceActions reference={order.reference} />
       </div>
     </li>
   );
@@ -253,6 +255,7 @@ function PastOrderRow({ order }: { order: OrderRow }) {
         >
           Reorder
         </Link>
+        <InvoiceActions reference={order.reference} compact />
       </div>
     </li>
   );

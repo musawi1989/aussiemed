@@ -129,9 +129,41 @@ export async function submitChange(input: {
 
 export type ChangeRow = Awaited<ReturnType<typeof accountChanges>>[number];
 
-export async function accountChanges(organisationId: string) {
+export async function accountChanges(
+  organisationId: string,
+  branchId?: string
+) {
+  if (!branchId) {
+    return db.accountChange.findMany({
+      where: { organisationId },
+      orderBy: { requestedAt: "desc" },
+      take: 200,
+    });
+  }
+
+  /**
+   * Narrowed to one site.
+   *
+   * A change is about a branch in two different ways, and both belong under
+   * that branch. The obvious one is a change to the branch itself, where
+   * targetId is the address. The other is a change to somebody who orders for
+   * it — adding or removing a person is a change to that site's arrangements,
+   * and a manager filtering to Jumeirah expects to see that Jumeirah gained a
+   * practice manager.
+   *
+   * Changes to the account as a whole — a rename — belong to no branch and
+   * appear only under "All branches". Showing them under every branch would
+   * make three sites look like they each changed the company name.
+   */
+  const staff = await db.organisationStaff.findMany({
+    where: { organisationId, addressId: branchId },
+    select: { id: true },
+  });
+
+  const targets = [branchId, ...staff.map((s) => s.id)];
+
   return db.accountChange.findMany({
-    where: { organisationId },
+    where: { organisationId, targetId: { in: targets } },
     orderBy: { requestedAt: "desc" },
     take: 200,
   });

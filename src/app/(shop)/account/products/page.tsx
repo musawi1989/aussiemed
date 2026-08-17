@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { BranchFilter } from "@/components/account/BranchFilter";
+import { accountBranches } from "@/lib/account";
 import Image from "next/image";
 import Link from "next/link";
 import { QuickBuy } from "@/components/QuickBuy";
@@ -21,8 +23,16 @@ const aed = (fils: number) => formatAED(fils / 100);
  * categories with something in them appear, because a list of empty headings
  * is the catalogue tree pretending to be a personal list.
  */
-export default async function MyProductsPage() {
-  const groups = await savedProducts();
+export default async function MyProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>;
+}) {
+  const { branch } = await searchParams;
+  const [groups, branches] = await Promise.all([
+    savedProducts(branch),
+    accountBranches(),
+  ]);
   const total = groups.reduce((n, g) => n + g.products.length, 0);
 
   return (
@@ -36,8 +46,15 @@ export default async function MyProductsPage() {
             {total === 0
               ? "Nothing saved yet"
               : `${total} saved across ${groups.length} ${groups.length === 1 ? "category" : "categories"}`}
+            {branch ? " · ordered by this branch" : ""}
           </p>
         </div>
+
+        <BranchFilter
+          basePath="/account/products"
+          branches={branches.map((b) => ({ id: b.id, label: b.label ?? b.city }))}
+          active={branch}
+        />
       </div>
 
       {groups.length === 0 ? (

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { addressPartsFrom } from "@/lib/geo";
+import { emailMyInvoice } from "@/lib/invoice-email";
 import { redirect } from "next/navigation";
 import {
   addStaff,
@@ -250,4 +251,25 @@ export async function reorderAction(
   }
 
   redirect("/cart");
+}
+
+/**
+ * Emails the signed-in buyer their own invoice.
+ *
+ * No address field: it goes to the account's own address and nowhere else. The
+ * printable page is right there if they want to forward it to their
+ * accountant, and a destination box would turn a convenience into a way to
+ * post somebody else's invoice anywhere.
+ */
+export async function emailMyInvoiceAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await emailMyInvoice(text(data, "reference"));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  return {
+    ok: true,
+    message: `Sent to ${result.value.to}.`,
+  };
 }

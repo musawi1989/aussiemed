@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { BranchFilter } from "@/components/account/BranchFilter";
+import { accountBranches } from "@/lib/account";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PeriodPicker } from "@/components/account/PeriodPicker";
@@ -38,7 +40,12 @@ const day = (d: Date) =>
 export default async function AccountReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; from?: string; to?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    from?: string;
+    to?: string;
+    branch?: string;
+  }>;
 }) {
   const session = await accountSession();
   if (!session) redirect("/account");
@@ -50,7 +57,10 @@ export default async function AccountReportsPage({
     to: params.to,
   });
 
-  const report = await accountReport(period);
+  const [report, branches] = await Promise.all([
+    accountReport(period, params.branch),
+    accountBranches(),
+  ]);
   if (!report) redirect("/account");
 
   const topCategories = topBy(report.categories, (c) => c.netFils, (c) => c.name, 8);
@@ -65,6 +75,16 @@ export default async function AccountReportsPage({
             {period.label}. All figures exclude VAT unless it says otherwise.
           </p>
         </div>
+
+        {/* The period is kept when the branch changes, and the other way
+            round. Losing the period on every branch click would make
+            comparing two sites over the same months a chore. */}
+        <BranchFilter
+          basePath="/account/reports"
+          branches={branches.map((b) => ({ id: b.id, label: b.label ?? b.city }))}
+          active={params.branch}
+          keep={{ period: params.period, from: params.from, to: params.to }}
+        />
       </div>
 
       <div className="mt-4">

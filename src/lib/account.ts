@@ -53,7 +53,7 @@ async function requireAccount(): Promise<AccountSession> {
  * Dashboard
  * ------------------------------------------------------------------ */
 
-export async function accountOverview(): Promise<{
+export async function accountOverview(branchId?: string): Promise<{
   metrics: AccountMetrics;
   organisationName: string;
 } | null> {
@@ -62,7 +62,15 @@ export async function accountOverview(): Promise<{
 
   const [orders, organisation] = await Promise.all([
     db.order.findMany({
-      where: { organisationId: session.organisationId, status: { not: "Cancelled" } },
+      // Narrowed to one site when asked. A practice manager looking at
+      // Jumeirah wants Jumeirah's numbers, not the group's with Jumeirah's
+      // orders listed underneath — the two disagreeing on one screen is worse
+      // than either alone.
+      where: {
+        organisationId: session.organisationId,
+        status: { not: "Cancelled" },
+        ...(branchId ? { addressId: branchId } : {}),
+      },
       select: { placedAt: true, totalFils: true },
     }),
     db.organisation.findUnique({
@@ -433,9 +441,9 @@ export async function removeStaff(
  * accounts; nothing the customer reaches does.
  */
 
-export async function accountChangeLog() {
+export async function accountChangeLog(branchId?: string) {
   const session = await requireAccount();
-  return accountChanges(session.organisationId);
+  return accountChanges(session.organisationId, branchId);
 }
 
 export async function accountPendingByTarget() {
@@ -626,9 +634,34 @@ export type SavedGroup = {
  * Only categories with something in them: a list of empty headings is the
  * whole catalogue tree pretending to be a personal list.
  */
-export async function savedProducts(): Promise<SavedGroup[]> {
+export async function savedProducts(branchId?: string): Promise<SavedGroup[]> {
   const session = await accountSession();
   if (!session) return [];
+
+  /**
+   * Narrowing a saved list by branch needs a word of explanation, because a
+   * wishlist belongs to a person rather than to a site and filtering it by
+   * address would be filtering on a field it does not have.
+   *
+   * What a manager actually means by "My products for Jumeirah" is "which of
+   * these does Jumeirah order" — so the filter keeps the saved products that
+   * appear on an order for that branch. Everything else is still saved and
+   * still there under All branches; this is a lens, not a deletion.
+   */
+  let orderedHere: Set<string> | null = null;
+  if (branchId) {
+    const lines = await db.orderItem.findMany({
+      where: {
+        order: { organisationId: session.organisationId, addressId: branchId },
+      },
+      select: { sku: { select: { productMasterId: true } } },
+    });
+    orderedHere = new Set(
+      lines
+        .map((line) => line.sku?.productMasterId)
+        .filter((id): id is string => Boolean(id))
+    );
+  }
 
   const saved = await db.wishlistItem.findMany({
     where: { userId: session.id },
@@ -665,6 +698,8 @@ export async function savedProducts(): Promise<SavedGroup[]> {
   const groups = new Map<string, SavedGroup>();
 
   for (const row of saved) {
+    if (orderedHere && !orderedHere.has(row.product.id)) continue;
+
     // The deepest category is the specific one — "Gloves" rather than
     // "Medical Consumables", which is what a person is actually browsing by.
     const category = row.product.categories.at(-1)?.category ?? null;
