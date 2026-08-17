@@ -137,7 +137,7 @@ export function OpsSidebar({
               {user.name}
             </span>
           </span>
-          <SignOutButton className="shrink-0 rounded-card border border-border-strong bg-surface px-2 py-1 text-[11px] font-bold text-text-muted transition-colors hover:bg-surface-hover hover:text-text disabled:opacity-60" />
+          <SignOutButton sizeClassName="shrink-0 px-2.5 py-[0.3rem] text-[13.2px]" />
         </div>
       </div>
     </div>

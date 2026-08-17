@@ -431,13 +431,17 @@ export function RenameAccountForm({ current }: { current: string }) {
  * Staff
  * ------------------------------------------------------------------ */
 
-export function AddStaffForm() {
+export function AddStaffForm({
+  branches = [],
+}: {
+  branches?: { id: string; label: string }[];
+}) {
   const [state, submit, pending] = useActionState(addStaffAction, null);
 
   return (
     <form action={submit} className="max-w-sm space-y-3">
-      {/* A name is the whole record. Nobody here signs in, so there is nothing
-          an email address would be used for. */}
+      {/* A name and a branch. Nobody here signs in, so there is nothing an
+          email address would be used for. */}
       <label className="block">
         <span className="mb-1 block text-sm font-bold text-text">Name</span>
         <input
@@ -447,6 +451,33 @@ export function AddStaffForm() {
           placeholder="Dr Reem Haddad"
           className={field}
         />
+      </label>
+
+      {/* Which site they order for. Required, because a practice with three
+          sites needs to know, and because every report broken down by branch
+          rests on this answer. */}
+      <label className="block">
+        <span className="mb-1 block text-sm font-bold text-text">
+          Which branch do they order for?
+        </span>
+        <select
+          name="addressId"
+          required
+          defaultValue={state?.values?.addressId ?? (branches.length === 1 ? branches[0]!.id : "")}
+          className={field}
+        >
+          <option value="">Choose a branch</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+        {branches.length === 0 && (
+          <span className="mt-1 block text-xs text-danger">
+            Add a branch first — a person has to order for somewhere.
+          </span>
+        )}
       </label>
 
       <ReasonField

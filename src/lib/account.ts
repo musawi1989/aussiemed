@@ -317,7 +317,10 @@ export async function accountStaff(includeInactive = false) {
       ...(includeInactive ? {} : { isActive: true }),
     },
     orderBy: { name: "asc" },
-    include: { _count: { select: { orders: true } } },
+    include: {
+      _count: { select: { orders: true } },
+      address: { select: { id: true, label: true, city: true } },
+    },
   });
 }
 
@@ -337,12 +340,28 @@ export async function accountStaff(includeInactive = false) {
  */
 export async function addStaff(
   name: string,
-  reason: string
+  reason: string,
+  addressId: string
 ): Promise<Result<{ applied: boolean }>> {
   const session = await requireAccount();
 
   const cleanName = trim(name);
   if (!cleanName) return fail("A name is needed.");
+
+  // Checked against this account's own branches, not trusted from the form.
+  // A server action is a public endpoint, and an id posted from elsewhere
+  // would otherwise attach one account's staff to another's site.
+  const branch = await db.address.findFirst({
+    where: {
+      id: addressId,
+      organisationId: session.organisationId,
+      isArchived: false,
+    },
+    select: { id: true, label: true, city: true },
+  });
+  if (!branch) {
+    return fail("Choose which branch they order for.");
+  }
 
   const existing = await db.organisationStaff.findFirst({
     where: { organisationId: session.organisationId, name: cleanName },
@@ -352,7 +371,7 @@ export async function addStaff(
   return submitChange({
     organisationId: session.organisationId,
     kind: "StaffAdded",
-    subject: cleanName,
+    subject: `${cleanName} (${branch.label ?? branch.city})`,
     reason,
     actor: { id: session.id, name: session.name },
     apply: async () => {
@@ -361,12 +380,16 @@ export async function addStaff(
         // failing on a constraint the person cannot see.
         await db.organisationStaff.update({
           where: { id: existing.id },
-          data: { isActive: true },
+          data: { isActive: true, addressId: branch.id },
         });
         return;
       }
       await db.organisationStaff.create({
-        data: { organisationId: session.organisationId, name: cleanName },
+        data: {
+          organisationId: session.organisationId,
+          name: cleanName,
+          addressId: branch.id,
+        },
       });
     },
   });

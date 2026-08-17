@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { accountSession, accountStaff } from "@/lib/account";
+import { accountBranches, accountSession, accountStaff } from "@/lib/account";
 import { AddStaffForm, RemoveStaffButton } from "@/components/AccountLists";
 
 export const metadata: Metadata = {
@@ -21,7 +21,10 @@ export default async function StaffPage() {
   const session = await accountSession();
   if (!session) redirect("/account");
 
-  const staff = await accountStaff();
+  const [staff, branches] = await Promise.all([
+    accountStaff(),
+    accountBranches(),
+  ]);
 
   return (
     <>
@@ -51,6 +54,11 @@ export default async function StaffPage() {
               >
                 <div className="min-w-0">
                   <p className="font-bold text-text">{person.name}</p>
+                  <p className="text-xs text-text-muted">
+                    {person.address
+                      ? (person.address.label ?? person.address.city)
+                      : "No branch recorded"}
+                  </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <span className="text-xs tnum text-text-subtle">
@@ -70,7 +78,12 @@ export default async function StaffPage() {
           Add someone
         </h2>
         <div className="mt-3">
-          <AddStaffForm />
+          <AddStaffForm
+            branches={branches.map((b) => ({
+              id: b.id,
+              label: b.label ?? b.city,
+            }))}
+          />
         </div>
       </section>
 

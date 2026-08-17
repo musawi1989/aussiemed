@@ -149,7 +149,11 @@ export async function addStaffAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  const result = await addStaff(text(data, "name"), text(data, "reason"));
+  const result = await addStaff(
+    text(data, "name"),
+    text(data, "reason"),
+    text(data, "addressId")
+  );
   if (!result.ok) return refuse(result.error, data);
   refresh();
   return { ok: true, message: "Added to the list, with your note." };

@@ -59,7 +59,7 @@ export function SignInMenu({
         {/* Sign out sits in the slot the Sign in button occupies when signed
             out, so it is in the same place on every page rather than only on
             the dashboard someone happens to be looking at. */}
-        <SignOutButton className="shrink-0 rounded-card border border-border-strong bg-surface px-3 py-2.5 text-sm font-bold text-text transition-colors hover:bg-surface-hover disabled:opacity-60" />
+        <SignOutButton sizeClassName="shrink-0 px-[0.9rem] py-3 text-[1.05rem]" />
       </div>
     );
   }

@@ -198,6 +198,9 @@ model Address {
   country   String  @default("United Arab Emirates")
   isDefault Boolean @default(false)
 
+  /// The people who order for this site.
+  staff OrganisationStaff[]
+
   /// Removed by the customer, not deleted. Orders already delivered there
   /// still name it, and a branch that closes must not blank its own history.
   isArchived Boolean @default(false)
@@ -222,6 +225,16 @@ model OrganisationStaff {
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   name  String
+  /// Which site they order for.
+  ///
+  /// Nullable because people were added before it was asked, and blanking
+  /// their record or inventing a branch for them would both be worse than an
+  /// honest gap. Every new person must choose one — a practice with three
+  /// sites needs to know which of them a person orders for, and that is the
+  /// question every report by branch depends on.
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
   /// Removed from the picker without touching the orders they placed.
   isActive Boolean @default(true)
 
