@@ -14,6 +14,13 @@ import { sendQuietly } from "./mailer";
 import { publicUrl } from "./public-url";
 import { recordStatus } from "./status-events";
 import { notifyOrderProgress } from "./order-notices";
+import { checkReason, summarise } from "./account-change-plan";
+import {
+  normaliseOrganisation,
+  organisationChanges,
+  validateOrganisation,
+  type OrganisationInput,
+} from "./organisation";
 
 /**
  * Every write the admin screens make goes through this file.
@@ -1465,5 +1472,177 @@ export async function setVatRate(percent: number): Promise<Result> {
     { value: String(basisPoints) }
   );
   await invalidateCatalog();
+  return ok(undefined);
+}
+
+/* ------------------------------------------------------------------ *
+ * Customer accounts — FN-19
+ * ------------------------------------------------------------------ */
+
+/**
+ * An account could previously only come into being one of two ways: a business
+ * applying through the sign-up form, or somebody writing a row into the
+ * database. Neither covers the ordinary case of a clinic that phones, and
+ * neither let anyone correct a name or add a TRN afterwards — which matters,
+ * because the TRN is printed on every tax invoice they keep (AC-03).
+ *
+ * Payment terms and the credit limit are deliberately NOT here. They are an
+ * accounting decision nobody has taken yet (AC-09), and a screen that lets
+ * someone set a credit limit before the policy exists invites a number that
+ * turns out to be wrong and is then believed. They keep their schema defaults —
+ * Prepaid, no credit — until that decision lands.
+ */
+async function organisationOrFail(id: string) {
+  const row = await db.organisation.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      trn: true,
+      phone: true,
+      countryCode: true,
+      emirate: true,
+      notes: true,
+      isDisabled: true,
+    },
+  });
+  return row;
+}
+
+export async function createOrganisation(
+  input: OrganisationInput
+): Promise<Result<string>> {
+  const actor = await requireAdmin();
+
+  const problem = validateOrganisation(input);
+  if (problem) return fail(problem.message);
+
+  const account = normaliseOrganisation(input);
+
+  // Two accounts with one name is how the wrong clinic gets an invoice. Not a
+  // database constraint, because a real second branch of a chain may well
+  // deserve its own account under a similar name — so this refuses the exact
+  // duplicate and leaves the judgement call to a person.
+  const clash = await db.organisation.findFirst({
+    where: { name: account.name },
+    select: { id: true },
+  });
+  if (clash) {
+    return fail(`There is already an account called ${account.name}.`);
+  }
+
+  const created = await db.organisation.create({
+    data: {
+      name: account.name,
+      trn: account.trn,
+      phone: account.phone,
+      countryCode: account.countryCode,
+      emirate: account.emirate,
+      notes: account.notes,
+      isDisabled: account.isDisabled,
+      // Opened by us, not through the sign-up form. The flag is what tells an
+      // abandoned self-registration from an account somebody set up on purpose
+      // — applications.ts deletes the former and must never touch the latter.
+      isSelfRegistered: false,
+    },
+    select: { id: true },
+  });
+
+  await audit(actor, "organisation.create", "Organisation", created.id, undefined, {
+    name: account.name,
+    trn: account.trn,
+    countryCode: account.countryCode,
+  });
+
+  return ok(created.id);
+}
+
+export async function updateOrganisation(
+  id: string,
+  input: OrganisationInput,
+  rawReason: string
+): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const existing = await organisationOrFail(id);
+  if (!existing) return fail("That account no longer exists.");
+
+  const problem = validateOrganisation(input);
+  if (problem) return fail(problem.message);
+
+  const before: OrganisationInput = {
+    name: existing.name,
+    trn: existing.trn,
+    phone: existing.phone,
+    countryCode: existing.countryCode,
+    emirate: existing.emirate,
+    notes: existing.notes,
+    isDisabled: existing.isDisabled,
+  };
+  const after = normaliseOrganisation(input);
+
+  const changes = organisationChanges(before, after);
+  if (changes.length === 0) return fail("Nothing was changed.");
+
+  // The same rule the customer's own forms follow: a change to somebody else's
+  // account needs a reason typed by whoever made it. The database will always
+  // be able to say the name changed and will never be able to say why.
+  const reason = checkReason(rawReason);
+  if (!reason.ok) return fail(reason.error);
+
+  if (after.name !== before.name) {
+    const clash = await db.organisation.findFirst({
+      where: { name: after.name, NOT: { id } },
+      select: { id: true },
+    });
+    if (clash) return fail(`There is already an account called ${after.name}.`);
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.organisation.update({
+      where: { id },
+      data: {
+        name: after.name,
+        trn: after.trn,
+        phone: after.phone,
+        countryCode: after.countryCode,
+        emirate: after.emirate,
+        notes: after.notes,
+        isDisabled: after.isDisabled,
+      },
+    });
+
+    /**
+     * A rename also lands on the customer's own timeline.
+     *
+     * Their change log answers "what has been changed here, by whom, and why",
+     * and an account renamed by us with no trace of it there would make that
+     * log a half-truth. Recorded as Applied rather than Pending: it has already
+     * happened, and the approval queue is for what a customer is asking us for,
+     * not for what we did. AccountChange carries the requester's name, so the
+     * entry reads as ours rather than appearing to be theirs.
+     */
+    if (after.name !== before.name) {
+      await tx.accountChange.create({
+        data: {
+          organisationId: id,
+          kind: "AccountRenamed",
+          summary: summarise("AccountRenamed", after.name),
+          reason: reason.reason,
+          status: "Applied",
+          targetId: id,
+          requestedByUserId: actor.id,
+          requestedByName: actor.name ?? "AussieMed",
+        },
+      });
+    }
+  });
+
+  await audit(actor, "organisation.update", "Organisation", id, before, {
+    ...after,
+    changes,
+    reason: reason.reason,
+  });
+
   return ok(undefined);
 }

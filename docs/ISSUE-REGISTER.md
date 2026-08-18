@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**216 items** · 71 outstanding · **13 outstanding P1**
+**216 items** · 70 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -96,7 +96,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-16 | Orders did not say who placed them or which site they were for | Dev | P2 | Done | A practice with several sites and several people ordering had one undifferentiated history, so "who ordered this and where did it go" could not be answered. |
 | FN-17 | Saved products were an undifferentiated list | Dev | P2 | Done | A buyer who has saved forty things needs them grouped to find anything. |
 | FN-18 | A customer could see their orders but never their spending | Dev | P2 | Done | The account showed a list of orders and a few headline figures on the overview, and nothing else. There was no way to ask what a practice had spent over a quarter, where it went, who was ordering it, or to get the invoices out in a form a bookkeeper could use — all questions a trade buyer asks at budget time and at year end. |
-| FN-19 | No admin form to add or edit a customer account | Dev | P2 | Open | Customer organisations can only be created directly in the database. The country and region dropdowns cannot reach a customer record because there is no screen on which to set them. |
+| FN-19 | No admin form to add or edit a customer account | Dev | P2 | Done | Customer organisations can only be created directly in the database. The country and region dropdowns cannot reach a customer record because there is no screen on which to set them. |
 | FN-20 | Invoices were three clicks from the order they belong to | Dev | P2 | Done | A buyer looking at an order who wants its invoice had to leave for Spending, find the right period, and find the reference in a list — to reach a document about the order already on screen. |
 | FN-21 | Every account screen can be narrowed to one branch | Dev | P2 | Done | A practice with three clinics does not have one set of orders, one bill and one shopping list — it has three of each, and the manager asking a question is nearly always asking about one of them. |
 
