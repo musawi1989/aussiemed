@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**219 items** · 69 outstanding · **13 outstanding P1**
+**221 items** · 69 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -265,6 +265,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-25 | Two suppliers per item, with automatic fallback | Client | P1 | Done | A single supplier per product makes every product only as reliable as one company, and in cross-dock a supplier who cannot supply means a customer waits a full cycle. |
 | DEC-26 | One consolidated purchase order per supplier per day | Client | P1 | Done | Sending a purchase order per customer order would flood suppliers and lose the buying power of pooled quantities. |
 | DEC-27 | The whole category tree is visible, stocked or not | Client | P2 | Done | The site should advertise the range AussieMed sells, not the 23 categories the 71 placeholder products happen to fill. Hiding the rest made a supplier of medical, dental, laboratory, cleaning, kitchen, office, pet and tattoo supplies look like a supplier of eight departments, and gave the client no way to see on the storefront the tree they had just approved. |
+| DEC-28 | The cutoff runs every day, weekends included | Client | P2 | Done | The daily purchase-order cutoff had no weekend rule because none had been agreed, and the buyer-facing countdown sits on every storefront page. On a Saturday it counts down to a run nobody has agreed to work. |
+| DEC-29 | Customers get printable invoices, not spreadsheets | Client | P2 | Done | Asked on 18 Aug 2026 how bulk invoice downloads should work, given that a folder of PDFs would need two new dependencies. The client's answer was to remove the spreadsheets instead. |
 
 ## Frontend
 

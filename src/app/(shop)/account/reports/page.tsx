@@ -4,10 +4,6 @@ import { accountBranches } from "@/lib/account";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PeriodPicker } from "@/components/account/PeriodPicker";
-import {
-  BulkInvoiceDownload,
-  OneInvoiceDownload,
-} from "@/components/account/InvoiceDownloads";
 import { accountReport } from "@/lib/account-reports";
 import { accountSession } from "@/lib/account";
 import { formatAED } from "@/lib/money";
@@ -217,18 +213,10 @@ export default async function AccountReportsPage({
                   Your invoices
                 </h3>
                 <p className="mt-1 max-w-xl text-sm text-text-muted">
-                  Every order in this period. Open one to print or save it, or
-                  take the lot as a spreadsheet.
+                  Every order in this period. Open one to read it, print it, or
+                  save it as a PDF.
                 </p>
               </div>
-              <BulkInvoiceDownload
-                period={{
-                  key: period.key,
-                  from: params.from ?? "",
-                  to: params.to ?? "",
-                }}
-                count={report.invoices.length}
-              />
             </div>
 
             <div className="mt-4 overflow-x-auto">
@@ -279,15 +267,12 @@ export default async function AccountReportsPage({
                         {aed(invoice.totalFils)}
                       </td>
                       <td className="py-2">
-                        <span className="flex items-center gap-3">
-                          <Link
-                            href={`/account/invoices/${invoice.reference}`}
-                            className="text-xs font-bold text-navy hover:underline"
-                          >
-                            Invoice
-                          </Link>
-                          <OneInvoiceDownload reference={invoice.reference} />
-                        </span>
+                        <Link
+                          href={`/account/invoices/${invoice.reference}`}
+                          className="text-xs font-bold text-navy hover:underline"
+                        >
+                          Invoice
+                        </Link>
                       </td>
                     </tr>
                   ))}
@@ -296,9 +281,10 @@ export default async function AccountReportsPage({
             </div>
 
             <p className="mt-3 text-xs leading-relaxed text-text-subtle">
-              The spreadsheet has one sheet per invoice summary and one row per
-              line, so it can be reconciled or pivoted. To save a single
-              invoice as a PDF, open it and print to PDF from your browser.
+              Open an invoice and print it to save it as a PDF. Every figure on
+              this page is ex-VAT with VAT shown separately, and the period is
+              in the address bar, so a link to what you are looking at can be
+              sent to whoever needs it.
             </p>
           </section>
         </>
