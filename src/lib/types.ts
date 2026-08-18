@@ -8,6 +8,17 @@ export type Category = CategoryRef & {
   parentId?: number | null;
   /** Active products filed directly here. */
   productCount: number;
+  /**
+   * A third level, where there is one.
+   *
+   * Only dental has it, and only because that taxonomy genuinely is three deep:
+   * Dental > Endodontics > Hand Files. The client asked for one Dental
+   * department carrying the whole of Henry Schein's dental tree, and flattening
+   * it would have collided twelve names as siblings — "Accessories" belongs to
+   * five different disciplines at once. Optional, so the other departments stay
+   * two deep and no screen has to pretend otherwise.
+   */
+  children?: Category[];
 };
 
 export type Department = CategoryRef & {

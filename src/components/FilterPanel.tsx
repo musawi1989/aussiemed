@@ -71,9 +71,15 @@ export async function FilterPanel({
         <ul className="space-y-0.5">
           {departments.map((dept) => {
             const deptCount = facetCounts[dept.id] ?? 0;
+            // Three levels means a department can be open because of a
+            // grandchild — Dental, when the buyer is inside Hand Files.
             const isActiveDept =
               activeCategory === dept.slug ||
-              dept.children.some((c) => c.slug === activeCategory);
+              dept.children.some(
+                (c) =>
+                  c.slug === activeCategory ||
+                  (c.children ?? []).some((g) => g.slug === activeCategory)
+              );
             // Only expand the department the buyer is actually inside — 154
             // sub-categories at once is not navigable.
             const visibleChildren = !isActiveDept
@@ -100,23 +106,63 @@ export async function FilterPanel({
 
                 {visibleChildren.length > 0 && (
                   <ul className="ml-3 border-l border-border-base pl-3">
-                    {visibleChildren.map((child) => (
-                      <li key={child.id}>
-                        <Link
-                          href={hrefWith(params, { category: child.slug })}
-                          className={`flex items-center justify-between gap-2 rounded-card px-1 py-1 text-sm transition-colors hover:text-text ${
-                            activeCategory === child.slug
-                              ? "font-medium text-brand"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          <span>{child.name}</span>
-                          <span className="tnum text-xs text-text-subtle">
-                            {facetCounts[child.id] ?? 0}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
+                    {visibleChildren.map((child) => {
+                      /**
+                       * Dental is three deep, so a shelf can have shelves of its
+                       * own — Dental > Endodontics > Hand Files (DA-41). They
+                       * open only for the one the buyer is actually inside: all
+                       * 263 dental sub-shelves at once is a wall, not a filter.
+                       */
+                      const grandchildren = child.children ?? [];
+                      const inside =
+                        activeCategory === child.slug ||
+                        grandchildren.some((g) => g.slug === activeCategory);
+                      const openGrandchildren = !inside
+                        ? []
+                        : narrowed
+                          ? grandchildren.filter((g) => (facetCounts[g.id] ?? 0) > 0)
+                          : grandchildren;
+
+                      return (
+                        <li key={child.id}>
+                          <Link
+                            href={hrefWith(params, { category: child.slug })}
+                            className={`flex items-center justify-between gap-2 rounded-card px-1 py-1 text-sm transition-colors hover:text-text ${
+                              activeCategory === child.slug
+                                ? "font-medium text-brand"
+                                : "text-text-muted"
+                            }`}
+                          >
+                            <span>{child.name}</span>
+                            <span className="tnum text-xs text-text-subtle">
+                              {facetCounts[child.id] ?? 0}
+                            </span>
+                          </Link>
+
+                          {openGrandchildren.length > 0 && (
+                            <ul className="ml-3 border-l border-border-base pl-3">
+                              {openGrandchildren.map((grandchild) => (
+                                <li key={grandchild.id}>
+                                  <Link
+                                    href={hrefWith(params, { category: grandchild.slug })}
+                                    className={`flex items-center justify-between gap-2 rounded-card px-1 py-1 text-xs transition-colors hover:text-text ${
+                                      activeCategory === grandchild.slug
+                                        ? "font-medium text-brand"
+                                        : "text-text-muted"
+                                    }`}
+                                  >
+                                    <span>{grandchild.name}</span>
+                                    <span className="tnum text-text-subtle">
+                                      {facetCounts[grandchild.id] ?? 0}
+                                    </span>
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </li>

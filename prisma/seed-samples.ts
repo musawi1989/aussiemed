@@ -120,24 +120,43 @@ if (remove) {
 console.log("\nFilling every sub-category with sample products\n");
 
 /**
- * Sub-categories only. A department's count is the sum of its children, so
- * filling both would put five unnecessary products directly on a department
- * that its children already fill.
+ * LEAVES only — a category with nothing below it.
+ *
+ * Departments are excluded because their count is the sum of what is beneath
+ * them, so filling both would put five unnecessary products on a department its
+ * children already fill. Since dental went three deep (DA-41) the same argument
+ * excludes the middle level: Endodontics holds nineteen shelves of its own and
+ * does not need five products of its own on top of them.
  */
-const categories = await prisma.category.findMany({
-  where: { parentId: { not: null } },
+const all = await prisma.category.findMany({
   select: {
     id: true,
     name: true,
     slug: true,
-    parent: { select: { id: true, name: true } },
+    parentId: true,
     products: {
       where: { product: { status: "Active" } },
       select: { productMasterId: true },
     },
   },
-  orderBy: [{ parent: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+  orderBy: { sortOrder: "asc" },
 });
+
+const parentIds = new Set(all.map((c) => c.parentId).filter(Boolean) as string[]);
+const byId = new Map(all.map((c) => [c.id, c]));
+
+/** Every category above this one, nearest first. */
+const ancestorsOf = (id: string): string[] => {
+  const out: string[] = [];
+  let current = byId.get(id);
+  while (current?.parentId) {
+    out.push(current.parentId);
+    current = byId.get(current.parentId);
+  }
+  return out;
+};
+
+const categories = all.filter((c) => c.parentId !== null && !parentIds.has(c.id));
 
 /**
  * No supplier is attached, deliberately. A product is not owned by a supplier
@@ -185,16 +204,20 @@ for (const category of categories) {
       },
     });
 
-    // Category links are replaced rather than added to, so re-running cannot
-    // file one sample under a category twice.
+    /**
+     * Filed against the shelf AND every category above it, which since dental
+     * went three deep means up to three links rather than two. A product's path
+     * is what the breadcrumb reads and what every count rolls up from, so a
+     * sample that named only its own shelf would leave Dental reading as empty
+     * while holding 1,300 products. Replaced rather than added to, so
+     * re-running cannot file one sample twice.
+     */
     await prisma.productCategory.deleteMany({ where: { productMasterId: master.id } });
     await prisma.productCategory.createMany({
-      data: [
-        { productMasterId: master.id, categoryId: category.id },
-        // The department too, exactly as the catalogue seed does — a product's
-        // path is what a breadcrumb and a department count both read.
-        { productMasterId: master.id, categoryId: category.parent!.id },
-      ],
+      data: [category.id, ...ancestorsOf(category.id)].map((categoryId) => ({
+        productMasterId: master.id,
+        categoryId,
+      })),
     });
 
     await prisma.productSku.upsert({

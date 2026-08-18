@@ -21,10 +21,19 @@ import { PrismaClient } from "../src/generated/prisma/client.ts";
 const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
 const prisma = new PrismaClient({ adapter });
 
+/**
+ * A shelf, or a shelf with shelves of its own.
+ *
+ * Dental is three deep — Dental > Endodontics > Hand Files — because Henry
+ * Schein's dental taxonomy genuinely is, and the client asked for it under one
+ * department (DA-41). Everything else is a plain name two levels down.
+ */
+type Shelf = string | { name: string; children: string[] };
+
 type Group = {
   /** The department these belong under, by the name OUR tree uses. */
   department: string;
-  children: string[];
+  children: Shelf[];
 };
 
 type Source = {
@@ -123,17 +132,20 @@ const LIVINGSTONE: Source = {
       department: "Tattoo & Piercing",
       children: ["Tattoo Supplies", "Piercing Supplies"],
     },
-    {
-      department: "Dental",
-      children: [
-        "Dental Bibs & Chains", "Finishing & Polishing", "Waxes", "Evacuation",
-        "Storage", "Rubber Dams & Accessories", "Stone & Plaster", "Articulating",
-        "Acrylic & Reline", "Teeth", "Impression Materials",
-        "Mouthguards & Splints", "Restorative & Cosmetic", "Autoclave", "Prophy",
-        "Burs & Accessories", "Endodontics", "Preventive Oral Care",
-        "Instruments & Equipment", "Crown & Bridge",
-      ],
-    },
+    /*
+     * Livingstone's twenty dental shelves are NOT listed here any more, and this
+     * comment is standing in for them so nobody restores them by accident.
+     *
+     * They were absorbed on 19 Aug (DA-39) when Henry Schein's dental taxonomy
+     * arrived: every one of them was a name the new tree already carries, and
+     * Dental > Endodontics beside an Endodontics shelf is the duplication merged
+     * out of Beauty the day before. Their one real product, a Myerson Dura-Post,
+     * moved to Dental > Restorative & Cosmetic > Pins & Posts.
+     *
+     * Leaving the list in place would have made this script undo that work the
+     * next time anybody ran it — which is exactly the fault DA-37 fixed in the
+     * catalogue seed, arriving by a different door.
+     */
     {
       department: "Cleaning & Hygiene",
       children: [
@@ -265,211 +277,165 @@ const CLINICAL: Source = {
 
 const HENRY_SCHEIN: Source = {
   label: "henryschein.com.au",
-  note: "read 19 Aug 2026, dental made comprehensive at the client's request",
+  note: "read 19 Aug 2026; one Dental department, three levels deep (DA-41)",
   groups: [
     {
-      department: "Anaesthetic",
+      /**
+       * ONE department, not twenty-four.
+       *
+       * Promoting their top level to departments put twenty-four dental tiles on
+       * the front page beside Kitchen and Pet Care, and the client asked for
+       * them grouped. Flattening instead was measured and rejected: twelve names
+       * collide as siblings — "Accessories" belongs to five disciplines at once —
+       * so the tree carries a third level for dental and each shelf keeps its
+       * own name.
+       */
+      department: "Dental",
       children: [
-        "Delivery Systems", "Dental Needles", "Hypodermic Needles",
-        "Local Anaesthetic", "Pharmaceuticals", "Sharps Disposal & Protection",
-        "Syringes", "Topical Anaesthetic",
+    {
+      name: "Anaesthetic",
+      children: [
+        "Delivery Systems", "Dental Needles", "Hypodermic Needles", "Local Anaesthetic", "Pharmaceuticals", "Sharps Disposal & Protection", "Syringes", "Topical Anaesthetic",
       ],
     },
     {
-      department: "Articulating",
+      name: "Articulating",
       children: [
-        "Articulators & Facebows", "Foil", "Forceps", "Occlusal Indicators",
-        "Paper", "Silk", "Sprays",
+        "Articulators & Facebows", "Foil", "Forceps", "Occlusal Indicators", "Paper", "Silk", "Sprays",
       ],
     },
     {
-      department: "Dental Burs",
+      name: "Dental Burs",
       children: [
-        "Accessories", "Bur Kits", "Carbide Highspeed Burs",
-        "Carbide Slowspeed Burs", "Caries Excavation", "Ceramic Highspeed Burs",
-        "Ceramic Slowspeed Burs", "Crown Cutters", "Diamond Highspeed Burs",
-        "Diamond Slowspeed Burs", "Endodontics", "Filling Remover",
-        "Finishing & Polishing", "Implantology", "Oral Surgery Burs",
-        "Orthodontics", "Polishers", "Preparation", "Root Planing",
-        "Single Use Sterile Burs", "Sonic Tips", "Speciality Endodontics",
-        "Speciality Surgical", "Steel Burs",
+        "Accessories", "Bur Kits", "Carbide Highspeed Burs", "Carbide Slowspeed Burs", "Caries Excavation", "Ceramic Highspeed Burs", "Ceramic Slowspeed Burs", "Crown Cutters", "Diamond Highspeed Burs", "Diamond Slowspeed Burs", "Endodontics", "Filling Remover", "Finishing & Polishing", "Implantology", "Oral Surgery Burs", "Orthodontics", "Polishers", "Preparation", "Root Planing", "Single Use Sterile Burs", "Sonic Tips", "Speciality Endodontics", "Speciality Surgical", "Steel Burs",
       ],
     },
     {
-      department: "Laboratory Burs",
+      name: "Laboratory Burs",
       children: [
-        "Carbide Burs", "Cutters", "Diamond Burs", "Discs",
-        "Grinding, Finishing & Polishing", "Lab Bur Kits", "Milling Burs",
-        "Polishers", "Separating & Contouring", "Steel Burs",
-        "Twist Drills & Mandrels",
+        "Carbide Burs", "Cutters", "Diamond Burs", "Discs", "Grinding, Finishing & Polishing", "Lab Bur Kits", "Milling Burs", "Polishers", "Separating & Contouring", "Steel Burs", "Twist Drills & Mandrels",
       ],
     },
     {
-      department: "CAD/CAM",
+      name: "CAD/CAM",
       children: [
-        "Blocks", "Discs", "Finishing & Polishing", "Ingots",
-        "Milling Unit Accessories", "Sprays, Etchants & Primers",
-        "Stain, Glaze & Firing Accessories",
+        "Blocks", "Discs", "Finishing & Polishing", "Ingots", "Milling Unit Accessories", "Sprays, Etchants & Primers", "Stain, Glaze & Firing Accessories",
       ],
     },
     {
-      department: "3D Printing",
-      children: ["3D Printers", "3D Printing Accessories"],
-    },
-    {
-      department: "Crown & Bridge",
+      name: "3D Printing",
       children: [
-        "Accessories", "Cements", "Cleaners", "Core Material", "Crown Forms",
-        "Liners & Base", "Temporary Crown & Bridge",
-        "Varnish, Sealants & Conditioners",
+        "3D Printers", "3D Printing Accessories"
       ],
     },
     {
-      department: "Disposables",
+      name: "Crown & Bridge",
       children: [
-        "Bags & Bin Liners", "Barrier Products", "Bibs", "Cotton", "Cups",
-        "Dispensers, Towels & Tissues", "Dry Tips", "Evacuation", "Gauze",
-        "Gloves", "Gowns & Caps", "Masks", "Tissues", "Towels",
+        "Accessories", "Cements", "Cleaners", "Core Material", "Crown Forms", "Liners & Base", "Temporary Crown & Bridge", "Varnish, Sealants & Conditioners",
       ],
     },
     {
-      department: "Education & Toys",
-      children: ["Books", "Patient Education", "Toys & Stickers"],
-    },
-    {
-      department: "Endodontics",
+      name: "Disposables",
       children: [
-        "Access", "Apex Locators", "Calcium Hydroxide", "Endo Motors",
-        "Finger Pluggers & Spreaders", "GP Points", "Hand Files",
-        "Irrigation Syringes & Needles", "Medicaments & Solutions",
-        "Obturation Material", "Obturation Units", "Organisers & Accessories",
-        "Paper Points", "Paste Carriers", "Primers, Sealers & Cements",
-        "Pulp Tester", "Rotary Files", "Sterile Rotary Files",
-        "Ultrasonic Tips",
+        "Bags & Bin Liners", "Barrier Products", "Bibs", "Cotton", "Cups", "Dispensers, Towels & Tissues", "Dry Tips", "Evacuation", "Gauze", "Gloves", "Gowns & Caps", "Masks", "Tissues", "Towels",
       ],
     },
     {
-      // Their Equipment plus their two-item Equipment Consumables, which is not
-      // worth a department of its own.
-      department: "Dental Equipment",
+      name: "Education & Toys",
       children: [
-        "Dental Chairs", "Digital Dentistry", "Imaging", "Plant",
-        "Sterilisation", "Suction System Accessories",
-        "Treatment Unit Accessories",
+        "Books", "Patient Education", "Toys & Stickers"
       ],
     },
     {
-      department: "Finishing & Polishing",
-      children: ["Direct", "Indirect"],
-    },
-    {
-      department: "Handpieces",
+      name: "Endodontics",
       children: [
-        "Air Motors", "Cleaners, Lubricants & Accessories",
-        "Electric Micromotors", "Endo Handpieces & Accessories", "High Speed",
-        "Lab Handpieces", "Low Speed", "Motor Adaptors & Couplings",
-        "Perio Handpieces & Tips", "Surgical Handpieces",
+        "Access", "Apex Locators", "Calcium Hydroxide", "Endo Motors", "Finger Pluggers & Spreaders", "GP Points", "Hand Files", "Irrigation Syringes & Needles", "Medicaments & Solutions", "Obturation Material", "Obturation Units", "Organisers & Accessories", "Paper Points", "Paste Carriers", "Primers, Sealers & Cements", "Pulp Tester", "Rotary Files", "Sterile Rotary Files", "Ultrasonic Tips",
       ],
     },
     {
-      department: "Impression",
+      name: "Dental Equipment",
       children: [
-        "Accessories", "Alginate", "Bite Registration", "Compound",
-        "Impression Disinfectant", "Laboratory Putty", "Mixers & Mixing Bowls",
-        "Mixing Tips", "Polyether", "Polyvinylsiloxane", "Silicone",
-        "Syringes & Dispensers", "Trays",
+        "Dental Chairs", "Digital Dentistry", "Imaging", "Plant", "Sterilisation", "Suction System Accessories", "Treatment Unit Accessories",
       ],
     },
     {
-      department: "Infection Control",
+      name: "Finishing & Polishing",
       children: [
-        "Air Purification", "Barrier", "Disinfectants & Detergents", "Gloves",
-        "Hand Hygiene", "Masks", "Protective Apparel", "Steri Room",
-        "Ultrasonic Cleaning", "Waste Management", "Wipes",
+        "Direct", "Indirect"
       ],
     },
     {
-      department: "Dental Instruments",
+      name: "Handpieces",
       children: [
-        "Accessories", "Bundles", "Calipers & Gauges", "Diagnostic",
-        "Endodontics", "Instrument Maintenance", "Laboratory", "Orthodontics",
-        "Periodontics", "Restorative", "Surgical", "Trays & Cassettes",
+        "Air Motors", "Cleaners, Lubricants & Accessories", "Electric Micromotors", "Endo Handpieces & Accessories", "High Speed", "Lab Handpieces", "Low Speed", "Motor Adaptors & Couplings", "Perio Handpieces & Tips", "Surgical Handpieces",
       ],
     },
     {
-      department: "Dental Laboratory",
+      name: "Impression",
       children: [
-        "Abrasives", "Acrylics", "Alloy", "Articulation", "Brushes & Buffs",
-        "Burners & Torches", "Casting", "Ceramics & Porcelain",
-        "Denture Accessories", "Duplicating Material", "Furniture",
-        "Instruments", "Investment", "Lab Equipment", "Model Preparation",
-        "Polishing", "Shade Taking", "Stone & Plaster",
-        "Storage, Packing & Delivery", "Teeth", "Thermo & Pressure Forming",
-        "Waxes",
+        "Accessories", "Alginate", "Bite Registration", "Compound", "Impression Disinfectant", "Laboratory Putty", "Mixers & Mixing Bowls", "Mixing Tips", "Polyether", "Polyvinylsiloxane", "Silicone", "Syringes & Dispensers", "Trays",
       ],
     },
     {
-      department: "Oral Surgery",
+      name: "Infection Control",
       children: [
-        "Electrosurgery", "Grafting Materials", "Implant Dentistry",
-        "Implant Stability Testing", "Interproximal Reduction", "Lasers",
-        "Oral Cancer Detection", "Piezo Surgery", "Post Operative Care",
-        "Sterile Gloves", "Surgical Accessories", "Surgical Drapes",
-        "Surgical Instruments", "Surgical Irrigation", "Sutures",
-        "Wound Management",
+        "Air Purification", "Barrier", "Disinfectants & Detergents", "Gloves", "Hand Hygiene", "Masks", "Protective Apparel", "Steri Room", "Ultrasonic Cleaning", "Waste Management", "Wipes",
       ],
     },
     {
-      department: "Orthodontics",
+      name: "Dental Instruments",
       children: [
-        "Adhesives & Cements", "Archwires & Straight Lengths", "Bands",
-        "Brackets", "Buccal Tubes", "Elastomerics",
-        "Fixed Appliance Accessories", "Interproximal Reduction", "Laboratory",
-        "Lingual Arches & Palatal Bars", "Lingual Attachments & Wires",
-        "Mouthguard Cases & Retainers", "Orthodontic Instruments",
-        "Photographic Mirrors", "Springs", "Stops & Hooks",
-        "Storage & Dispensers",
+        "Accessories", "Bundles", "Calipers & Gauges", "Diagnostic", "Endodontics", "Instrument Maintenance", "Laboratory", "Orthodontics", "Periodontics", "Restorative", "Surgical", "Trays & Cassettes",
       ],
     },
     {
-      department: "Preventive",
+      name: "Dental Laboratory",
       children: [
-        "Appliance Care", "Caries & Crack Detection", "Disclosing", "Flossing",
-        "Fluoride Treatments", "Interdental Brushes", "Pit & Fissure", "Prophy",
-        "Rinses", "Speciality", "Tongue Cleaners & Toothpicks", "Toothbrushes",
-        "Toothpaste", "Ultrasonic Prophylaxis",
+        "Abrasives", "Acrylics", "Alloy", "Articulation", "Brushes & Buffs", "Burners & Torches", "Casting", "Ceramics & Porcelain", "Denture Accessories", "Duplicating Material", "Furniture", "Instruments", "Investment", "Lab Equipment", "Model Preparation", "Polishing", "Shade Taking", "Stone & Plaster", "Storage, Packing & Delivery", "Teeth", "Thermo & Pressure Forming", "Waxes",
       ],
     },
     {
-      department: "Restorative & Cosmetic",
+      name: "Oral Surgery",
       children: [
-        "Accessories", "Amalgam & Alloys", "Bonds & Etch",
-        "Brushes & Applicators", "Compomer", "Composite", "Curing Lights",
-        "Dentin Conditioners", "Glass Ionomers", "Jewellery",
-        "Matrix Bands & Retainers", "Pins & Posts", "Shade Taking",
-        "Staining & Reinforcement", "Teeth Whitening",
+        "Electrosurgery", "Grafting Materials", "Implant Dentistry", "Implant Stability Testing", "Interproximal Reduction", "Lasers", "Oral Cancer Detection", "Piezo Surgery", "Post Operative Care", "Sterile Gloves", "Surgical Accessories", "Surgical Drapes", "Surgical Instruments", "Surgical Irrigation", "Sutures", "Wound Management",
       ],
     },
     {
-      department: "Retraction",
+      name: "Orthodontics",
       children: [
-        "Cords, Twists & Braids", "Hemostatic Gels & Solutions",
-        "Pellets & Cotton", "Retraction Systems",
+        "Adhesives & Cements", "Archwires & Straight Lengths", "Bands", "Brackets", "Buccal Tubes", "Elastomerics", "Fixed Appliance Accessories", "Interproximal Reduction", "Laboratory", "Lingual Arches & Palatal Bars", "Lingual Attachments & Wires", "Mouthguard Cases & Retainers", "Orthodontic Instruments", "Photographic Mirrors", "Springs", "Stops & Hooks", "Storage & Dispensers",
       ],
     },
     {
-      department: "Rubber Dam",
+      name: "Preventive",
       children: [
-        "Clamps", "Frames", "Latex Dam", "Napkins", "Non-Latex Dam",
-        "Punches & Forceps", "Stabilising Cord", "Stamps & Templates",
+        "Appliance Care", "Caries & Crack Detection", "Disclosing", "Flossing", "Fluoride Treatments", "Interdental Brushes", "Pit & Fissure", "Prophy", "Rinses", "Speciality", "Tongue Cleaners & Toothpicks", "Toothbrushes", "Toothpaste", "Ultrasonic Prophylaxis",
       ],
     },
     {
-      department: "Dental X-Ray",
+      name: "Restorative & Cosmetic",
       children: [
-        "Aprons", "Bite Blocks", "Bite Wings, Tabs & Hangers",
-        "Film (Intra-oral)", "Film Position Holders", "Film Storage",
-        "Fixers & Developers", "Intra-Oral X-ray", "Sensors & Plates",
+        "Accessories", "Amalgam & Alloys", "Bonds & Etch", "Brushes & Applicators", "Compomer", "Composite", "Curing Lights", "Dentin Conditioners", "Glass Ionomers", "Jewellery", "Matrix Bands & Retainers", "Pins & Posts", "Shade Taking", "Staining & Reinforcement", "Teeth Whitening",
+      ],
+    },
+    {
+      name: "Retraction",
+      children: [
+        "Cords, Twists & Braids", "Hemostatic Gels & Solutions", "Pellets & Cotton", "Retraction Systems",
+      ],
+    },
+    {
+      name: "Rubber Dam",
+      children: [
+        "Clamps", "Frames", "Latex Dam", "Napkins", "Non-Latex Dam", "Punches & Forceps", "Stabilising Cord", "Stamps & Templates",
+      ],
+    },
+    {
+      name: "Dental X-Ray",
+      children: [
+        "Aprons", "Bite Blocks", "Bite Wings, Tabs & Hangers", "Film (Intra-oral)", "Film Position Holders", "Film Storage", "Fixers & Developers", "Intra-Oral X-ray", "Sensors & Plates",
+      ],
+    },
       ],
     },
   ],
@@ -532,28 +498,51 @@ for (const source of SOURCES) {
       console.log(`  + department  ${group.department}`);
     }
 
-    // Only among this department's own children: "Dispensers" under Cleaning
-    // and "Dispensers" under Medical Consumables are two different shelves, and
-    // matching on name across the whole tree would silently merge them.
-    const siblings = existing.filter((c) => c.parentId === parent!.id);
-
-    let position = siblings.length;
-    for (const child of group.children) {
-      if (siblings.some((s) => sameName(s.name, child))) continue;
+    /**
+     * Only ever matched among one parent's own children: "Dispensers" under
+     * Cleaning and "Dispensers" under Medical Consumables are two different
+     * shelves, and matching on name across the whole tree would silently merge
+     * them. That is also what makes three levels safe — twelve dental names
+     * repeat across disciplines, and each keeps its own shelf.
+     */
+    const ensure = async (
+      name: string,
+      parentId: string,
+      position: number,
+      path: string
+    ): Promise<string> => {
+      const found = existing.find(
+        (c) => c.parentId === parentId && sameName(c.name, name)
+      );
+      if (found) return found.id;
 
       const created = await prisma.category.create({
         data: {
-          name: child,
-          slug: await uniqueSlug(slugify(child)),
-          parentId: parent.id,
+          name,
+          slug: await uniqueSlug(slugify(name)),
+          parentId,
           sortOrder: position,
         },
       });
-      existing.push({ id: created.id, name: created.name, parentId: parent.id });
-      siblings.push({ id: created.id, name: created.name, parentId: parent.id });
-      position += 1;
+      existing.push({ id: created.id, name: created.name, parentId });
       addedChildren += 1;
-      console.log(`  + ${group.department} / ${child}`);
+      console.log(`  + ${path} / ${name}`);
+      return created.id;
+    };
+
+    let position = existing.filter((c) => c.parentId === parent.id).length;
+    for (const shelf of group.children) {
+      const name = typeof shelf === "string" ? shelf : shelf.name;
+      const childId = await ensure(name, parent.id, position, group.department);
+      position += 1;
+
+      if (typeof shelf === "string") continue;
+
+      let deep = existing.filter((c) => c.parentId === childId).length;
+      for (const grandchild of shelf.children) {
+        await ensure(grandchild, childId, deep, `${group.department} / ${name}`);
+        deep += 1;
+      }
     }
   }
 }

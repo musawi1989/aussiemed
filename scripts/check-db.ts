@@ -75,15 +75,32 @@ check(
   `duplicated: ${[...new Set(duplicateSlugs)].join(", ")}`
 );
 
+/**
+ * Three levels, since 19 Aug. Dental carries Henry Schein's taxonomy, which is
+ * genuinely three deep — Dental > Endodontics > Hand Files — and the client
+ * asked for it under one department (DA-41). Everything else is two.
+ *
+ * A fourth level is still checked, because nothing renders one: the filter
+ * sidebar, the Browse menu and the breadcrumb all stop at three, so a category
+ * four deep would be reachable only by URL and invisible everywhere else.
+ */
 const byId = new Map(categories.map((c) => [c.id, c]));
-const tooDeep = categories.filter((c) => {
-  const parent = c.parentId ? byId.get(c.parentId) : null;
-  return Boolean(parent?.parentId);
-});
+const depthOf = (category: (typeof categories)[number]): number => {
+  let depth = 0;
+  let current = category;
+  while (current.parentId) {
+    const parent = byId.get(current.parentId);
+    if (!parent) break;
+    current = parent;
+    depth += 1;
+  }
+  return depth;
+};
+const tooDeep = categories.filter((c) => depthOf(c) > 2);
 check(
-  "the category tree is two levels deep",
+  "the category tree is no more than three levels deep",
   tooDeep.length === 0,
-  `${tooDeep.length} sit three levels down: ${tooDeep.map((c) => c.name).join(", ")}`
+  `${tooDeep.length} sit four levels down: ${tooDeep.map((c) => c.name).join(", ")}`
 );
 
 /**

@@ -17,25 +17,41 @@ export async function GET(request: Request) {
 
   const { facetCounts } = await queryProducts({ inStockOnly });
 
-  const departments = (await getDepartments()).map((dept) => ({
-    id: dept.id,
-    name: dept.name,
-    slug: dept.slug,
-    productCount: facetCounts[dept.id] ?? 0,
-    children: dept.children.map((child) => ({
-      id: child.id,
-      name: child.name,
-      slug: child.slug,
-      parentId: dept.id,
-      productCount: facetCounts[child.id] ?? 0,
-    })),
-  }));
+  /**
+   * Carried to whatever depth the tree has. Dental is three deep since DA-41 —
+   * Dental > Endodontics > Hand Files — and a response that stopped at two
+   * would quietly answer a different question to the one the storefront asks.
+   */
+  type Node = {
+    id: number;
+    name: string;
+    slug: string;
+    parentId?: number;
+    productCount: number;
+    children?: Node[];
+  };
+
+  const shape = (
+    node: { id: number; name: string; slug: string; children?: { id: number; name: string; slug: string; children?: unknown[] }[] },
+    parentId?: number
+  ): Node => ({
+    id: node.id,
+    name: node.name,
+    slug: node.slug,
+    ...(parentId === undefined ? {} : { parentId }),
+    productCount: facetCounts[node.id] ?? 0,
+    ...(node.children && node.children.length > 0
+      ? { children: node.children.map((child) => shape(child as never, node.id)) }
+      : {}),
+  });
+
+  const departments = (await getDepartments()).map((dept) => shape(dept));
 
   return NextResponse.json({
     departments,
-    totalCategories: departments.reduce(
-      (sum, d) => sum + 1 + d.children.length,
-      0
-    ),
+    // Counted through the whole tree, not the first two levels of it.
+    totalCategories: departments.reduce(function count(sum, node): number {
+      return (node.children ?? []).reduce(count, sum + 1);
+    }, 0),
   });
 }

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**228 items** · 67 outstanding · **14 outstanding P1**
+**230 items** · 67 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -69,6 +69,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-38 | The client's clinical category list was added | Dev | P2 | Done | The client supplied a surgical and ward-supply taxonomy — eighteen names covering theatre textiles, procedure packs, vascular access and nursing supplies — and asked for anything missing to be added as a department or a sub-category. |
 | DA-39 | Henry Schein's taxonomy added, dental made comprehensive | Dev | P2 | Done | The client asked for every category on henryschein.com.au, with the dental listings made comprehensive. Their tree is dental-first and three levels deep; ours is two, asserted by db:check and assumed by the breadcrumb, the Browse menu and the filter sidebar. |
 | DA-40 | SQLite's query-parameter limit broke every storefront page | Dev | P2 | Done | At 2,057 active products the catalogue load exceeded the number of parameters SQLite accepts in one query, and every page of the storefront answered 500 with Prisma P2029. It appeared the moment the dental tree was filled and nothing smaller would have shown it. |
+| DA-41 | The whole dental tree sits under one Dental department | Dev | P2 | Done | Promoting Henry Schein's top level to departments (DA-39) put twenty-four dental tiles on the front page beside Kitchen and Pet Care. The client asked for them grouped under one Dental category, detailed list and all. |
+| DA-42 | Categories were left answering to an awkward URL | Dev | P2 | Done | A slug is disambiguated with a numeric suffix when its plain form is taken, which was true when the dental disciplines were created and stopped being true when the old Dental shelves were absorbed an hour later. Endodontics answered to /products?category=endodontics-2 while the obvious address showed the not-stocked-yet page. |
 
 ## Legal
 

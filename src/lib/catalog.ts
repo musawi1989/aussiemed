@@ -8,7 +8,7 @@ import {
   type ProductQuery,
   type ProductQueryResult,
 } from "./query";
-import type { CategoryRef, Department, Product } from "./types";
+import type { Category, CategoryRef, Department, Product } from "./types";
 
 /**
  * The seam. Everything the storefront knows about the catalogue comes from
@@ -207,27 +207,49 @@ async function load() {
     }
   }
 
+  /**
+   * Built to whatever depth the tree actually has, rather than to two levels.
+   *
+   * Dental is three deep — Dental > Endodontics > Hand Files — because the
+   * client asked for one Dental department carrying Henry Schein's whole dental
+   * taxonomy, and that tree genuinely has three levels. Everything else is two,
+   * and stays two: children is optional and absent where there is nothing
+   * below.
+   *
+   * Every count includes everything beneath it. A department whose products all
+   * sit two levels down would otherwise read as empty and be hidden from the
+   * front page by the very rule meant to hide empty ones.
+   */
+  const branch = (parentId: string): Category[] =>
+    dbCategories
+      .filter((c) => c.parentId === parentId)
+      .map((node) => {
+        const below = branch(node.id);
+        const count =
+          (directCount.get(node.id) ?? 0) +
+          below.reduce((n, c) => n + c.productCount, 0);
+        return {
+          id: catNumeric.get(node.id)!,
+          name: node.name,
+          slug: node.slug,
+          parentId: catNumeric.get(parentId)!,
+          productCount: count,
+          ...(below.length > 0 ? { children: below } : {}),
+        };
+      });
+
   const departments: Department[] = dbCategories
     .filter((c) => c.parentId === null)
     .map((dept) => {
-      const children = dbCategories.filter((c) => c.parentId === dept.id);
+      const children = branch(dept.id);
       return {
         id: catNumeric.get(dept.id)!,
         name: dept.name,
         slug: dept.slug,
-        // A department counts everything beneath it, not only what is filed
-        // directly against it, or a department whose products all sit in its
-        // children would look empty.
         productCount:
           (directCount.get(dept.id) ?? 0) +
-          children.reduce((n, c) => n + (directCount.get(c.id) ?? 0), 0),
-        children: children.map((child) => ({
-          id: catNumeric.get(child.id)!,
-          name: child.name,
-          slug: child.slug,
-          parentId: catNumeric.get(dept.id)!,
-          productCount: directCount.get(child.id) ?? 0,
-        })),
+          children.reduce((n, c) => n + c.productCount, 0),
+        children,
       };
     });
 
@@ -241,11 +263,31 @@ async function load() {
   const prodIds = assignIds(dbProducts.map((p) => `prod:${p.slug}`));
 
   const products: Product[] = dbProducts.map((p) => {
+    /**
+     * Ordered by depth, so a breadcrumb reads Dental / Endodontics / Hand
+     * Files rather than in whatever order the links were written.
+     *
+     * The old comparator only knew how to put a department first, which was
+     * enough while every path was two long and wrong the moment dental went
+     * three deep — two children would compare equal and keep their insertion
+     * order.
+     */
+    const depthOf = (node: { parentId: number | null }): number => {
+      let depth = 0;
+      let current = node;
+      while (current.parentId !== null) {
+        const parent = categoryById.get(current.parentId);
+        if (!parent) break;
+        current = parent;
+        depth += 1;
+      }
+      return depth;
+    };
+
     const path = p.categories
       .map((pc) => categoryById.get(catNumeric.get(pc.categoryId)!))
       .filter((c): c is CategoryRef & { parentId: number | null } => Boolean(c))
-      // Parent first, so the breadcrumb reads department then category.
-      .sort((a, b) => (a.parentId === null ? -1 : b.parentId === null ? 1 : 0))
+      .sort((a, b) => depthOf(a) - depthOf(b))
       .map((c) => ({ id: c.id, name: c.name, slug: c.slug }));
 
     const packs = p.skus.map((s) => ({
