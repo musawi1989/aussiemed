@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**225 items** · 67 outstanding · **13 outstanding P1**
+**226 items** · 67 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -66,6 +66,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-35 | The duplicate Oral Care shelf was merged | Dev | P2 | Done | Beauty, Skin & Personal Care carried two categories both called Oral Care. It came in with the import and was invisible while one of them was empty; making the whole tree visible (DEC-27) and then filling it (DA-33) put the same shelf name twice in one department with different contents behind each. |
 | DA-36 | npm run db:seed had been broken since 16 August | Dev | P2 | Done | The seed threw on its first product because it still wrote ProductMaster.supplierId, a column BE-40 removed. Nobody noticed for two days because nobody re-seeded — and when somebody finally did, it had already deleted every product-category link before it crashed, leaving all 60 real products uncategorised. |
 | DA-37 | The seed re-created categories that had been deleted | Dev | P2 | Done | Every category an admin removed came back on the next re-seed, because the seed upserted the whole tree from catalog.json on every run. It re-created Piercing Supplies under Beauty on 18 Aug — a shelf that had been moved to Tattoo & Piercing, where a buyer would actually look for it, with the empty original removed on purpose. |
+| DA-38 | The client's clinical category list was added | Dev | P2 | Done | The client supplied a surgical and ward-supply taxonomy — eighteen names covering theatre textiles, procedure packs, vascular access and nursing supplies — and asked for anything missing to be added as a department or a sub-category. |
 
 ## Legal
 
