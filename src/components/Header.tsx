@@ -310,7 +310,12 @@ function SearchBox() {
             departments. Narrowing by category is what the filters on the
             products page are for, and they do it better because they show how
             many results each one holds. */}
-        <div className="relative flex items-stretch rounded-full border border-border-strong bg-surface">
+        {/* The focus ring sits on the pill, not on the input inside it.
+            The global focus-visible rule draws a rectangle with an offset,
+            which around a rounded-full box reads as a stray blue slab that
+            stops short of the button. Moving it out here lets it follow the
+            shape, and the input below opts out of drawing its own. */}
+        <div className="relative flex items-stretch rounded-full border border-border-strong bg-surface transition-colors focus-within:border-navy">
           <input
             type="search"
             value={term}
@@ -338,7 +343,7 @@ function SearchBox() {
             aria-autocomplete="list"
             placeholder="What can we help you find?"
             aria-label="Search products"
-            className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-text placeholder:text-text-subtle"
+            className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-text placeholder:text-text-subtle focus:outline-none focus-visible:outline-none"
           />
 
           <button

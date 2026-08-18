@@ -337,10 +337,19 @@
   color: hsl(var(--thumb-h) var(--thumb-ink-s) var(--thumb-ink-l));
 }
 
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-  border-radius: 2px;
+/* The keyboard focus ring, and it belongs in @layer base for the reason
+   stated at the top of this section: unlayered rules beat every layered
+   Tailwind utility, so this one could not be overridden by a component even
+   with focus-visible:outline-none on the element. That bit on the search box,
+   where a rectangular outline with an offset was drawn around an input sitting
+   inside a rounded-full pill — a blue slab that stopped short of the button.
+   Layered, a component can opt out and draw a ring that fits its own shape. */
+@layer base {
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
 
 /* Strip the spinners off quantity inputs — B2B buyers type quantities, and the
