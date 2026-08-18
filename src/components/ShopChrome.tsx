@@ -43,17 +43,25 @@ export async function ShopChrome({
    */
   withCatalogue?: boolean;
 }) {
-  const [departments, user, savedSlugs, cutoffHour] = await Promise.all([
+  const [departments, user, savedSlugs] = await Promise.all([
     getDepartments(),
     getSessionUser(),
     withCatalogue ? savedProductSlugs() : Promise.resolve([]),
-    getCutoffHour(),
   ]);
 
-  // Computed here so every page agrees, and from the same pure module the
-  // buying run uses — a countdown that disagreed with the run would be a
-  // promise broken by arithmetic.
-  const cutoff = cutoffState(new Date(), cutoffHour);
+  /**
+   * The countdown is for people who can act on it — SIGNED IN ONLY, at the
+   * client's request on 19 Aug 2026.
+   *
+   * A visitor who cannot order has nothing to do with "2h 40m left for today's
+   * run": it is a deadline for a purchase they are not able to make, and it
+   * asks them to hurry before it has told them they need an approved trade
+   * account. Anyone signed in — a buyer or a supplier — sees it.
+   *
+   * The cutoff hour is read only when it will be shown, so an anonymous visit
+   * costs one fewer settings query per page as well.
+   */
+  const cutoff = user ? cutoffState(new Date(), await getCutoffHour()) : null;
 
   // Translated here because the browser works in catalogue ids and the
   // database works in slugs. Doing it once on the server keeps that seam out
@@ -75,15 +83,18 @@ export async function ShopChrome({
             departments={departments}
             sessionUser={user ? { name: user.name, role: user.role } : null}
           />
-          {/* Directly under the header, on every storefront page. The cutoff
-              is the one thing a trade buyer needs to know before they decide
-              whether to order now or in the morning, so it is not somewhere
-              they have to go and find. */}
-          <CutoffBar
-            cutoffAtMs={cutoff.nextAt.getTime()}
-            label={cutoff.label}
-            today={cutoff.today}
-          />
+          {/* Directly under the header, on every storefront page a signed-in
+              buyer sees. The cutoff is the one thing a trade buyer needs before
+              deciding whether to order now or in the morning, so it is not
+              somewhere they have to go and find — but it is shown to nobody who
+              cannot act on it. */}
+          {cutoff && (
+            <CutoffBar
+              cutoffAtMs={cutoff.nextAt.getTime()}
+              label={cutoff.label}
+              today={cutoff.today}
+            />
+          )}
           <main id="main" className="flex-1">
             {children}
           </main>
