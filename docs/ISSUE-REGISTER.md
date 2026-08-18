@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**224 items** · 68 outstanding · **13 outstanding P1**
+**225 items** · 67 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -93,7 +93,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Done | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
 | FN-11 | Most categories are empty, and three departments are entirely empty | Dev | P2 | Done | 112 of the 135 leaf categories contain no products, and Kitchen, Office & Stationery Supplies and Pet Care contain nothing anywhere beneath them. Every one of those is reachable from Browse All Category, so a buyer can click a department on the front page and land on an empty result. |
 | FN-12 | Nothing shows which clients are overdue to reorder | Dev | P2 | Open | In a reorder-first business this is the single most useful signal there is: a clinic that buys gloves every three weeks and has not ordered in five needs a phone call. It is computable from order history alone once there are three orders per client — no new data capture required. |
-| FN-13 | The client account has no Buy Again | Dev | P2 | Open | A returning buyer has to search for products they have already bought. For a reorder-first marketplace this is the shortest path between the platform and revenue, and it needs no metrics work at all — just their own order history, sorted by how often they buy each line. |
+| FN-13 | The client account has no Buy Again | Dev | P2 | Done | A returning buyer has to search for products they have already bought. For a reorder-first marketplace this is the shortest path between the platform and revenue, and it needs no metrics work at all — just their own order history, sorted by how often they buy each line. |
 | FN-14 | The account had no way to repeat an order | Dev | P2 | Done | Reordering was a grid of every item ever bought, one tile each, which duplicated the order history and became unreadable as soon as anyone had ordered more than a few things. "The same as last time" means an order, not a pile of items. |
 | FN-15 | The account showed no account figures | Dev | P2 | Done | A trade buyer could see a list of orders but nothing about their own account: how much they spend, how often they order, whether they are overdue. |
 | FN-16 | Orders did not say who placed them or which site they were for | Dev | P2 | Done | A practice with several sites and several people ordering had one undifferentiated history, so "who ordered this and where did it go" could not be answered. |
@@ -270,6 +270,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-30 | Email stays plain text | Client | P3 | Done | Every message the platform sends is plain text. It was built that way because the alternative meant inventing a brand email look nobody had approved, and the question was left open rather than decided by default. |
 | DEC-31 | Stock is in or out, and quantities are never tracked | Client | P2 | Done | Products carry a single in-stock flag with no quantities anywhere, so there are no low-stock warnings and no backorders. Left open since the build began as a question about whether real stock levels were needed. |
 | DEC-32 | Postgres on managed hosting for production | Client | P2 | Done | The site runs on a SQLite file, which is right for building and wrong for a live storefront: one writer at a time, and nowhere to keep a file on hosting that replaces the disk on every restart. |
+| DEC-33 | Reordering is from a past order, not from a list of everything ever bought | Client | P2 | Done | The spec asked for a Buy Again list — every product the account has ordered, each with an add-to-cart. The client had already removed exactly that grid from the account area on 16 Aug 2026 in favour of reordering a specific past order. |
 
 ## Frontend
 
