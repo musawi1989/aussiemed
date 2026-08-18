@@ -12,7 +12,7 @@ import {
 
 import { useCatalog } from "./catalog-client";
 import { normaliseQty, packFor, totalsFor, type CartTotals } from "./money";
-import type { Pack, Product } from "./types";
+import type { SnapshotPack, SnapshotProduct } from "./types";
 
 // v2: cart entries gained a packId, so v1 carts are not readable.
 const CART_KEY = "aussiemed.cart.v2";
@@ -26,7 +26,7 @@ const VAT_PREF_KEY = "aussiemed.vatPref.v1";
  */
 type CartEntry = { productId: number; packId: string; qty: number };
 
-export type CartLine = CartEntry & { product: Product; pack: Pack };
+export type CartLine = CartEntry & { product: SnapshotProduct; pack: SnapshotPack };
 
 /** Uniquely identifies a cart line. */
 const keyOf = (productId: number, packId: string) => `${productId}::${packId}`;
@@ -131,7 +131,7 @@ export function StoreProvider({
   // cannot query Prisma.
   const { products } = useCatalog();
   const productsById = useMemo(() => {
-    const map = new Map<number, Product>();
+    const map = new Map<number, SnapshotProduct>();
     for (const product of products) map.set(product.id, product);
     return map;
   }, [products]);

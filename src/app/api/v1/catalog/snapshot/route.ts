@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAllProducts } from "@/lib/catalog";
+import { toSnapshotList } from "@/lib/catalog-snapshot";
 
 /**
  * GET /api/v1/catalog/snapshot
@@ -17,7 +18,11 @@ export async function GET() {
   // Products only. The supplier list used to travel with this payload, which
   // meant every visitor's browser held the name of every company AussieMed
   // buys from — see BE-38 and DEC-24.
-  const products = await getAllProducts();
+  //
+  // And only the fields the browser reads. Filling the category tree took this
+  // payload from 60 products to 787, and most of its weight was product prose
+  // that only the server-rendered page ever shows — see catalog-snapshot.ts.
+  const products = toSnapshotList(await getAllProducts());
 
   return NextResponse.json(
     { currency: "AED", products },

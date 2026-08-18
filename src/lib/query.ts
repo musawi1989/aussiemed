@@ -1,4 +1,4 @@
-import type { Product } from "./types";
+import type { Product, Searchable } from "./types";
 
 /**
  * Catalogue querying as pure functions over a product array.
@@ -68,7 +68,12 @@ export function categoryIdsFor(product: Product): number[] {
   return product.categoryPath.map((node) => node.id);
 }
 
-export function matchesSearch(product: Product, needle: string): boolean {
+/**
+ * Takes the structural subset rather than a Product, so the browser can run the
+ * same search over its slimmed snapshot (catalog-snapshot.ts) and cannot end up
+ * with a second implementation that matches different things.
+ */
+export function matchesSearch(product: Searchable, needle: string): boolean {
   const haystack = [
     product.name,
     product.brand ?? "",
@@ -175,11 +180,11 @@ export function queryProducts(
   };
 }
 
-export function suggestFrom(
-  products: Product[],
+export function suggestFrom<T extends Searchable>(
+  products: T[],
   term: string,
   limit = 6
-): Product[] {
+): T[] {
   const needle = term.trim();
   if (needle.length < 2) return [];
   return products.filter((p) => matchesSearch(p, needle)).slice(0, limit);

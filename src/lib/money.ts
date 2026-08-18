@@ -147,7 +147,11 @@ export function totalsFor(lines: PriceableLine[]): CartTotals {
 }
 
 /** Resolves the pack a buyer selected, falling back to the product default. */
-export function packFor(product: Product, packId?: string): Pack {
+export function packFor(
+  // Structural, so the browser can resolve a pack from its slimmed snapshot.
+  product: { packs: Pack[]; defaultPackId: string },
+  packId?: string
+): Pack {
   return (
     product.packs.find((p) => p.id === packId) ??
     product.packs.find((p) => p.id === product.defaultPackId) ??

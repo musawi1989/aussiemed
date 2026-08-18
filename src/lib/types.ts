@@ -112,6 +112,52 @@ export type Product = {
 };
 
 /**
+ * The catalogue as the BROWSER receives it — see catalog-snapshot.ts.
+ *
+ * Deliberately a separate type rather than Product with optional fields. Every
+ * visitor downloads one of these per product, so the cost of a field is paid
+ * 787 times; making the shape explicit means adding one is a decision somebody
+ * takes, not something that happens by inheritance.
+ */
+export type SnapshotCategoryRef = { id: number; name: string };
+
+export type SnapshotPack = Omit<Pack, never>;
+
+export type SnapshotProduct = {
+  id: number;
+  skuId: number;
+  slug: string;
+  sku: string;
+  name: string;
+  brand: string | null;
+  priceAED: number;
+  unit: string;
+  packSize: string | null;
+  outOfStock: boolean;
+  taxClass: TaxClass;
+  /** At most one image, for a cart line. The gallery is server-rendered. */
+  images: string[];
+  categoryPath: SnapshotCategoryRef[];
+  packs: SnapshotPack[];
+  defaultPackId: string;
+};
+
+/**
+ * What matchesSearch and suggestFrom need, and all they need.
+ *
+ * Written as a structural subset so the same search runs over a full Product on
+ * the server and a SnapshotProduct in the browser, and cannot drift into two
+ * implementations that disagree about what "gloves 100" matches.
+ */
+export type Searchable = {
+  name: string;
+  brand: string | null;
+  sku: string;
+  packSize: string | null;
+  categoryPath: SnapshotCategoryRef[];
+};
+
+/**
  * There is deliberately no Supplier type here, and no supplierId on a Product.
  *
  * This file describes the catalogue as customers receive it, and under DEC-24

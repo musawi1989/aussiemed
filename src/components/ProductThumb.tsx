@@ -1,5 +1,13 @@
 import Image from "next/image";
-import type { Product } from "@/lib/types";
+import type { Product, SnapshotProduct } from "@/lib/types";
+
+/**
+ * Structural, because the same tile is drawn on the server from a full Product
+ * and in the cart from the browser's slimmed snapshot — see catalog-snapshot.ts.
+ */
+type Thumbable = Pick<Product | SnapshotProduct, "id" | "name" | "brand" | "images"> & {
+  categoryPath: { id: number }[];
+};
 
 /**
  * The extraction carried almost no product photography, so most products have
@@ -11,7 +19,7 @@ import type { Product } from "@/lib/types";
  * is loaded, `images` populates and this path stops being used.
  */
 
-function monogram(product: Product): string {
+function monogram(product: Thumbable): string {
   const source = product.brand ?? product.name;
   const words = source.split(/\s+/).filter(Boolean);
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
@@ -19,7 +27,7 @@ function monogram(product: Product): string {
 }
 
 /** Stable hue per department so sibling products share a family tint. */
-function hueFor(product: Product): number {
+function hueFor(product: Thumbable): number {
   const seed = product.categoryPath[0]?.id ?? product.id;
   return (seed * 47) % 360;
 }
@@ -37,7 +45,7 @@ export function ProductThumb({
   priority = false,
   size = "md",
 }: {
-  product: Product;
+  product: Thumbable;
   className?: string;
   sizes?: string;
   priority?: boolean;

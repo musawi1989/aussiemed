@@ -6,6 +6,7 @@ import { getCutoffHour } from "@/lib/purchasing";
 import { getAllProducts, getDepartments } from "@/lib/catalog";
 import { savedProductSlugs } from "@/lib/account";
 import { CatalogProvider } from "@/lib/catalog-client";
+import { toSnapshotList } from "@/lib/catalog-snapshot";
 import { getSessionUser } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-client";
 import { StoreProvider } from "@/lib/store";
@@ -65,7 +66,7 @@ export async function ShopChrome({
     .map((product) => product.id);
 
   return (
-    <CatalogProvider initialProducts={products}>
+    <CatalogProvider initialProducts={toSnapshotList(products)}>
       <CartProvider>
         <StoreProvider savedProductIds={savedProductIds}>
           <a

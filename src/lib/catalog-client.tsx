@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { suggestFrom } from "./query";
-import type { Product } from "./types";
+import type { SnapshotProduct } from "./types";
 
 /**
  * Client-side view of the catalogue.
@@ -25,10 +25,10 @@ import type { Product } from "./types";
 
 type CatalogValue = {
   ready: boolean;
-  products: Product[];
-  getProductById: (id: number) => Product | undefined;
-  getProductBySlug: (slug: string) => Product | undefined;
-  suggest: (term: string, limit?: number) => Product[];
+  products: SnapshotProduct[];
+  getProductById: (id: number) => SnapshotProduct | undefined;
+  getProductBySlug: (slug: string) => SnapshotProduct | undefined;
+  suggest: (term: string, limit?: number) => SnapshotProduct[];
 };
 
 const CatalogContext = createContext<CatalogValue | null>(null);
@@ -37,10 +37,10 @@ export function CatalogProvider({
   initialProducts,
   children,
 }: {
-  initialProducts: Product[];
+  initialProducts: SnapshotProduct[];
   children: ReactNode;
 }) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<SnapshotProduct[]>(initialProducts);
   const [ready, setReady] = useState(initialProducts.length > 0);
 
   // Refresh in the background. Harmless when the snapshot is already current;
