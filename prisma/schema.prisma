@@ -1385,3 +1385,34 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
 }
+
+/// A failed sign-in, kept only long enough to slow a brute force — SEC-02.
+///
+/// Keyed on the identifier as typed rather than on a user id, because an
+/// attempt against an account that does not exist has to be counted too. The
+/// alternative is looking the identifier up before counting it, and that
+/// answers the very question the generic "those details do not match" refusal
+/// exists to avoid.
+///
+/// Rows are deleted once they are older than the window: this is a rate
+/// limiter, not an audit trail. Who signed in and when is AuditLog's job, and
+/// keeping every failed password attempt indefinitely would be keeping a list
+/// of people's mistyped passwords for no reason.
+model SignInAttempt {
+  id String @id @default(cuid())
+
+  /// Trimmed and lowercased, so three spellings of one account do not buy
+  /// three times the attempts.
+  key String
+
+  /// Where it came from, when the host gives us an address worth trusting.
+  /// Nullable on purpose: hosting is undecided (IN-01), and behind an unknown
+  /// proxy a forwarded header is a header anybody can set.
+  address String?
+
+  at DateTime @default(now())
+
+  @@index([key, at])
+  @@index([address, at])
+  @@index([at])
+}

@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSessionUser, signIn, signOut } from "@/lib/auth";
+import { lockoutMessage, retryAfterSeconds } from "@/lib/rate-limit";
+import {
+  addressFrom,
+  checkSignInAllowed,
+  clearSignInFailures,
+  recordSignInFailure,
+} from "@/lib/sign-in-limit";
 
 /**
  * POST   /api/v1/auth   { identifier, password, expectRole? }   sign in
@@ -39,8 +46,34 @@ export async function POST(request: Request) {
     );
   }
 
+  /**
+   * SEC-02. Checked before the password is looked at, so a locked-out attempt
+   * costs a count and not a password comparison — and so the answer cannot
+   * depend on whether the account exists.
+   */
+  const address = addressFrom(request);
+  const gate = await checkSignInAllowed(identifier, address);
+  if (!gate.allowed) {
+    // Recorded even though it was never tried, so knocking while locked out
+    // extends the wait rather than running the clock down.
+    await recordSignInFailure(identifier, address);
+    return NextResponse.json(
+      {
+        error: {
+          code: "too_many_attempts",
+          message: lockoutMessage(gate.retryAfterMs),
+        },
+      },
+      {
+        status: 429,
+        headers: { "retry-after": String(retryAfterSeconds(gate.retryAfterMs)) },
+      }
+    );
+  }
+
   const result = await signIn(identifier, password);
   if (!result.ok) {
+    await recordSignInFailure(identifier, address);
     // Generic for a wrong password — the form must not reveal which accounts
     // exist. Specific once the password was right and it is our own process
     // holding them up: an applicant told "those details do not match" while
@@ -57,6 +90,10 @@ export async function POST(request: Request) {
       { status: 401 }
     );
   }
+
+  // Two mistyped passwords followed by the right one is a person, not an
+  // attack, and they should not carry three strikes into tomorrow.
+  await clearSignInFailures(identifier);
 
   /**
    * Each role has its own door: buyers sign in at the account page, suppliers

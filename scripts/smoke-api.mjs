@@ -200,6 +200,47 @@ console.log(`\nAPI contract checks against ${BASE}\n`);
   check("the public suppliers endpoint is gone", res.status === 404);
 }
 
+/* --- sign-in rate limiting — SEC-02 ---------------------------------- *
+ *
+ * Run against an identifier no account will ever have, and a different one on
+ * every run, so this can never lock a real person out of the site it is
+ * checking. The limiter counts the identifier as typed, so an address nobody
+ * owns is its own bucket.
+ */
+{
+  const identifier = `smoke-${Date.now()}@example.invalid`;
+  const attempt = () =>
+    fetch(`${BASE}/api/v1/auth`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ identifier, password: "not-the-password" }),
+    });
+
+  const codes = [];
+  for (let i = 0; i < 6; i += 1) codes.push((await attempt()).status);
+
+  check(
+    "a wrong password is refused rather than rate limited straight away",
+    codes.slice(0, 5).every((code) => code === 401),
+    codes.join(", ")
+  );
+  check("the sixth attempt in a row is refused as too many", codes[5] === 429, codes.join(", "));
+
+  const locked = await attempt();
+  check(
+    "a rate-limited refusal says when to come back",
+    Number(locked.headers.get("retry-after")) > 0,
+    `retry-after: ${locked.headers.get("retry-after")}`
+  );
+
+  const { error } = await locked.json();
+  check(
+    "the refusal does not reveal whether the account exists",
+    typeof error?.message === "string" && !/account|user|email/i.test(error.message),
+    error?.message
+  );
+}
+
 /* --- summary ------------------------------------------------------- */
 
 if (failures > 0) {

@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**216 items** · 70 outstanding · **13 outstanding P1**
+**216 items** · 69 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -224,7 +224,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | ID | Item | Owner | Priority | Status | Why it matters |
 | --- | --- | --- | --- | --- | --- |
 | SEC-01 | Remove the test credentials before any deployment | Client | P1 | Open | Four accounts share the password 123456: admin, musawi1989@gmail.com, supplier1, supplier2. Fine on a laptop, unacceptable anywhere else. |
-| SEC-02 | Add rate limiting to sign-in | Dev | P2 | Open | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
+| SEC-02 | Add rate limiting to sign-in | Dev | P2 | Done | Nothing limits password attempts, so the sign-in endpoint can be brute forced. The spec asks for rate limiting on auth in the hardening phase. |
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
 | SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Done | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
