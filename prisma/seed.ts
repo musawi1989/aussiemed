@@ -93,13 +93,27 @@ console.log("\nSeeding from src/data/catalog.json\n");
  * Derived rows only — safe to replace
  * ------------------------------------------------------------------ */
 
-await prisma.skuOptionValue.deleteMany();
-await prisma.productOptionValue.deleteMany();
-await prisma.productOption.deleteMany();
-await prisma.priceTier.deleteMany();
-await prisma.productAttribute.deleteMany();
-await prisma.productImage.deleteMany();
-await prisma.productCategory.deleteMany();
+/**
+ * Everything here is rebuilt from catalog.json a few lines below, so wiping it
+ * first is how a removed tier or a re-filed category actually leaves.
+ *
+ * Sample products are the exception, and it has to be stated in every one of
+ * these: they are not in catalog.json, so nothing here would put their rows
+ * back. Their category links in particular — clearing those would leave 727
+ * products uncategorised, empty the 149 categories they fill, and fail
+ * db:check's "no product is left uncategorised", all from a command whose
+ * whole job is to be safe to re-run. See DA-33.
+ */
+const notSample = { product: { NOT: { slug: { startsWith: SAMPLE_SLUG_PREFIX } } } };
+const notSampleSku = { sku: { NOT: { skuCode: { startsWith: SAMPLE_SKU_PREFIX } } } };
+
+await prisma.skuOptionValue.deleteMany({ where: notSampleSku });
+await prisma.productOptionValue.deleteMany({ where: { option: notSample } });
+await prisma.productOption.deleteMany({ where: notSample });
+await prisma.priceTier.deleteMany({ where: notSampleSku });
+await prisma.productAttribute.deleteMany({ where: notSample });
+await prisma.productImage.deleteMany({ where: notSample });
+await prisma.productCategory.deleteMany({ where: notSample });
 
 /* ------------------------------------------------------------------ *
  * Settings
@@ -121,31 +135,69 @@ await prisma.setting.upsert({
  * Categories
  * ------------------------------------------------------------------ */
 
+/**
+ * The catalogue seeds the tree ONCE, on an empty database, and never touches it
+ * again.
+ *
+ * It used to upsert every category on every run, which quietly undid every
+ * deliberate edit made since the import. On 18 Aug it re-created "Piercing
+ * Supplies" under Beauty — a shelf that had been moved to Tattoo & Piercing
+ * where a buyer would actually look for it, and the empty original removed on
+ * purpose. Anything an admin deleted came back on the next re-seed, and there
+ * is no way for this file to tell "deleted deliberately" from "never existed".
+ *
+ * So the database owns the tree, which is the same conclusion DA-27 reached
+ * when db:check stopped comparing categories against this file: catalog.json is
+ * generated from a frozen scrape, and a frozen scrape cannot be the authority
+ * on a taxonomy people edit. A category in the file that is not in the database
+ * is reported rather than silently recreated — a product filed only under a
+ * removed shelf is something to look at.
+ */
 const categoryIdByNumeric = new Map<number, string>();
+const treeIsEmpty = (await prisma.category.count()) === 0;
+const missingCategories: string[] = [];
 
 for (const [i, dept] of catalog.departments.entries()) {
-  const created = await prisma.category.upsert({
-    where: { slug: dept.slug },
-    update: { name: dept.name, sortOrder: i, parentId: null },
-    create: { name: dept.name, slug: dept.slug, sortOrder: i },
-  });
+  const created = treeIsEmpty
+    ? await prisma.category.create({
+        data: { name: dept.name, slug: dept.slug, sortOrder: i },
+      })
+    : await prisma.category.findUnique({ where: { slug: dept.slug } });
+
+  if (!created) {
+    missingCategories.push(dept.slug);
+    continue;
+  }
   categoryIdByNumeric.set(dept.id, created.id);
 
   for (const [j, child] of dept.children.entries()) {
-    const kid = await prisma.category.upsert({
-      where: { slug: child.slug },
-      update: { name: child.name, parentId: created.id, sortOrder: j },
-      create: {
-        name: child.name,
-        slug: child.slug,
-        parentId: created.id,
-        sortOrder: j,
-      },
-    });
+    const kid = treeIsEmpty
+      ? await prisma.category.create({
+          data: {
+            name: child.name,
+            slug: child.slug,
+            parentId: created.id,
+            sortOrder: j,
+          },
+        })
+      : await prisma.category.findUnique({ where: { slug: child.slug } });
+
+    if (!kid) {
+      missingCategories.push(child.slug);
+      continue;
+    }
     categoryIdByNumeric.set(child.id, kid.id);
   }
 }
-console.log(`  categories        ${categoryIdByNumeric.size}`);
+console.log(
+  `  categories        ${categoryIdByNumeric.size}${treeIsEmpty ? " (created — empty database)" : " (matched; the database owns the tree)"}`
+);
+if (missingCategories.length > 0) {
+  console.log(
+    `  NOT IN DATABASE   ${missingCategories.length}: ${missingCategories.join(", ")}`
+  );
+  console.log("                    removed deliberately? products filed only there lose their link.");
+}
 
 /* ------------------------------------------------------------------ *
  * Suppliers
@@ -204,18 +256,24 @@ const seenSlugs = new Set<string>();
 const seenSkuCodes = new Set<string>();
 
 for (const product of catalog.products) {
-  const supplierId = supplierIdByNumeric.get(product.supplierId);
-  if (!supplierId) {
-    console.log(`  SKIP ${product.name} — unknown supplier`);
-    continue;
-  }
   seenSlugs.add(product.slug);
 
+  /**
+   * No supplier on the product, and no skipping a product whose supplier is
+   * unknown. Both were right when a product was owned by one supplier, and
+   * both broke the moment BE-40 removed ProductMaster.supplierId: this seed
+   * has thrown on its first product since 16 Aug, and nobody noticed because
+   * nobody re-seeded until the Oral Care merge on 18 Aug — which wiped the
+   * category links on its way to the crash.
+   *
+   * Supply is ProductSupply now: a primary, a backup, and a cost for each
+   * (DEC-25). It is not seeded from the catalogue at all, because who supplies
+   * a line is a commercial fact the catalogue file has no business asserting.
+   */
   const data = {
     name: product.name,
     description: product.description,
     brandId: product.brand ? brandIdByName.get(product.brand) : null,
-    supplierId,
     status: "Active",
     taxClass: (product.taxClass === "zero-rated" ? "ZeroRated" : "Standard") as string,
     variantGroup: product.variantGroup ?? null,
@@ -341,21 +399,22 @@ const retiredSkus = await prisma.productSku.updateMany({
   data: { isActive: false },
 });
 
-// Suppliers go the same way. They cannot be deleted either — an invoice names
-// the supplier it was raised against, and that stays true after they leave the
-// catalogue.
-const retiredSuppliers = await prisma.supplier.updateMany({
-  where: {
-    companyName: { notIn: catalog.suppliers.map((s) => s.name) },
-    status: "Active",
-  },
-  data: { status: "Inactive" },
-});
-if (retiredSuppliers.count > 0) {
-  console.log(
-    `  retired suppliers ${retiredSuppliers.count} (deactivated, not deleted)`
-  );
-}
+/**
+ * Suppliers are NOT swept, and that is a change.
+ *
+ * This used to suspend any supplier not named in catalog.json, which made
+ * sense while a product was owned by one supplier and the catalogue was the
+ * only place they came from. Since DEC-25 they are onboarded in the admin,
+ * they carry their own portal logins, their own supply terms and their own
+ * purchase orders — and catalog.json is built from a scrape that predates all
+ * of it.
+ *
+ * Left in, the sweep suspended two working suppliers on this database on
+ * 18 Aug, one of them with a portal login, eleven supply terms and two
+ * purchase orders against it. A JSON file built from an old scrape has no
+ * business deciding we have stopped buying from a company. Suspending a
+ * supplier is a decision somebody takes on /admin/suppliers.
+ */
 if (retiredSkus.count > 0) {
   console.log(`  retired skus      ${retiredSkus.count} (deactivated, not deleted)`);
 }

@@ -48,21 +48,43 @@ function buildCategoryTree(flat) {
   const departments = [];
   let current = null;
 
+  /**
+   * Source id -> the id it was folded into. Two categories with the SAME name
+   * under the SAME parent are one shelf, whatever the source says: "Oral Care"
+   * appeared twice under Beauty, and once the tree became fully visible
+   * (DEC-27) a buyer saw the name twice in one department with different
+   * contents behind each. The client's answer on 18 Aug was to merge them.
+   *
+   * Deliberately only among siblings. The same name under two DIFFERENT
+   * departments is not a duplicate — Bags under Kitchen and Bags under
+   * Cleaning are different goods, and merging those would file bin liners
+   * with sandwich bags.
+   */
+  const mergedInto = new Map();
+
   for (const row of flat) {
     const node = { id: row.id, name: row.name, slug: slugify(row.name) };
     if (DEPARTMENT_IDS.has(row.id)) {
       current = { ...node, children: [] };
       departments.push(current);
     } else if (current) {
+      const twin = current.children.find(
+        (c) => c.name.trim().toLowerCase() === node.name.trim().toLowerCase()
+      );
+      if (twin) {
+        // Anything filed under the later copy moves to the first one, so the
+        // merge never costs a product its category.
+        mergedInto.set(row.id, twin.id);
+        continue;
+      }
       current.children.push({ ...node, parentId: current.id });
     }
   }
 
   // Category slugs must be unique across the WHOLE tree, not just between
-  // siblings. The source repeats names both within a department ("Oral Care"
-  // twice under Beauty) and across departments ("Monitoring & Testing" under
-  // both Medical Consumables and Instruments & Diagnostics; likewise
-  // Dispensers, Bags, Medicine, Respiratory Management, Wound Care).
+  // siblings. The source repeats names across departments — "Monitoring &
+  // Testing" under both Medical Consumables and Instruments & Diagnostics,
+  // likewise Dispensers, Bags, Medicine, Respiratory Management, Wound Care.
   //
   // Deduping only among siblings leaves two categories sharing a slug, so one
   // becomes unreachable and the other answers to the wrong name — the same
@@ -79,7 +101,7 @@ function buildCategoryTree(flat) {
     for (const child of dept.children) claim(child);
   }
 
-  return departments;
+  return { departments, mergedInto };
 }
 
 /* ------------------------------------------------------------------ *
@@ -418,7 +440,7 @@ function buildAttributes({ brand, unit, packSize, categoryPath, taxClass }) {
 
 const rawCategories = read("extraction/data/categories.json");
 
-const departments = buildCategoryTree(rawCategories);
+const { departments, mergedInto } = buildCategoryTree(rawCategories);
 
 const categoryIndex = new Map();
 for (const dept of departments) {
@@ -426,7 +448,10 @@ for (const dept of departments) {
   for (const child of dept.children) categoryIndex.set(child.id, child);
 }
 
-const categoryPath = (id) => {
+const categoryPath = (rawId) => {
+  // A product filed under a merged-away duplicate belongs to the shelf it was
+  // merged into, not to nothing.
+  const id = mergedInto.get(rawId) ?? rawId;
   const node = categoryIndex.get(id);
   if (!node) return [];
   const parent = node.parentId ? categoryIndex.get(node.parentId) : null;
