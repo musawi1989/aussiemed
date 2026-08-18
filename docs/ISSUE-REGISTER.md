@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**226 items** · 67 outstanding · **13 outstanding P1**
+**228 items** · 67 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -67,6 +67,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-36 | npm run db:seed had been broken since 16 August | Dev | P2 | Done | The seed threw on its first product because it still wrote ProductMaster.supplierId, a column BE-40 removed. Nobody noticed for two days because nobody re-seeded — and when somebody finally did, it had already deleted every product-category link before it crashed, leaving all 60 real products uncategorised. |
 | DA-37 | The seed re-created categories that had been deleted | Dev | P2 | Done | Every category an admin removed came back on the next re-seed, because the seed upserted the whole tree from catalog.json on every run. It re-created Piercing Supplies under Beauty on 18 Aug — a shelf that had been moved to Tattoo & Piercing, where a buyer would actually look for it, with the empty original removed on purpose. |
 | DA-38 | The client's clinical category list was added | Dev | P2 | Done | The client supplied a surgical and ward-supply taxonomy — eighteen names covering theatre textiles, procedure packs, vascular access and nursing supplies — and asked for anything missing to be added as a department or a sub-category. |
+| DA-39 | Henry Schein's taxonomy added, dental made comprehensive | Dev | P2 | Done | The client asked for every category on henryschein.com.au, with the dental listings made comprehensive. Their tree is dental-first and three levels deep; ours is two, asserted by db:check and assumed by the breadcrumb, the Browse menu and the filter sidebar. |
+| DA-40 | SQLite's query-parameter limit broke every storefront page | Dev | P2 | Done | At 2,057 active products the catalogue load exceeded the number of parameters SQLite accepts in one query, and every page of the storefront answered 500 with Prisma P2029. It appeared the moment the dental tree was filled and nothing smaller would have shown it. |
 
 ## Legal
 
@@ -146,7 +148,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | BE-07 | Seed the database from the catalogue | Dev | P1 | Done | Done. 146 categories, 71 products, 94 SKUs, 173 price tiers and 4 suppliers loaded from src/data/catalog.json. |
 | BE-08 | Decide money representation before any data lands | Accountant | P2 | Open | Money is stored as integer fils rather than Decimal, because SQLite has no native decimal type and Prisma falls back to a float there. Confirm this is acceptable to the accountant. |
 | BE-09 | Point the storefront at the database | Dev | P1 | Done | Done. Every page and API route reads Prisma. Client components read a snapshot over HTTP because a browser cannot query the database. |
-| BE-10 | Retire the catalogue snapshot endpoint | Dev | P2 | Open | Client components fetch the whole catalogue from /api/v1/catalog/snapshot. Fine for 71 products; not for thousands. Goes away when the cart moves server-side. |
+| BE-10 | Retire the catalogue snapshot endpoint | Dev | P1 | Open | Client components fetch the whole catalogue from /api/v1/catalog/snapshot. Fine for 71 products; not for thousands. Goes away when the cart moves server-side. |
 | BE-12 | Merge a guest cart into the user cart on sign-in | Dev | P2 | Open | Carts are keyed by a cookie so a visitor can shop before signing in. The merge on sign-in is specified but cannot be built until auth exists. |
 | BE-13 | Expire abandoned guest carts | Dev | P3 | Open | Cart rows are never cleaned up. Every visitor who adds an item creates one that lives forever. |
 | BE-14 | Confirm the default order and invoice status | Client | P2 | Open | OUR DECISION: new orders are Pending and each supplier invoice is Pending. The real workflow â€” who moves an order to Processing, and when an invoice becomes Issued â€” is not defined. |

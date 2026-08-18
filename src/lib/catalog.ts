@@ -105,10 +105,45 @@ async function load() {
 
   const version = await storedVersion();
 
-  const [dbCategories, dbProducts] = await Promise.all([
-    db.category.findMany({ orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }] }),
+  /**
+   * Loaded in batches, not in one query — and this is not a micro-optimisation.
+   *
+   * Prisma resolves each of these relations with an IN clause carrying one
+   * parameter per product. At 2,057 active products that exceeded SQLite's
+   * parameter limit and every page of the storefront answered 500 with P2029:
+   * "The query parameter limit supported by your database is exceeded." It
+   * appeared the moment the dental tree was filled (DA-39) and nothing smaller
+   * would have shown it.
+   *
+   * A cursor keeps each round bounded regardless of how large the catalogue
+   * grows, so the wall moves from a hard failure to a few more round trips.
+   * The real answer is not holding the whole catalogue in memory at all —
+   * BE-10 — and this buys the time to do that properly rather than under a
+   * broken storefront.
+   *
+   * Ordered by id for the cursor, then sorted by name below, because a cursor
+   * needs a unique column and name is not one.
+   */
+  const PRODUCT_BATCH = 200;
+
+  const loadProducts = async () => {
+    const all: Awaited<ReturnType<typeof productPage>> = [];
+    let cursor: string | undefined;
+    for (;;) {
+      const batch = await productPage(cursor);
+      all.push(...batch);
+      if (batch.length < PRODUCT_BATCH) break;
+      cursor = batch[batch.length - 1].id;
+    }
+    return all.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const productPage = (cursor?: string) =>
     db.productMaster.findMany({
       where: { status: "Active" },
+      take: PRODUCT_BATCH,
+      orderBy: { id: "asc" },
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
         brand: true,
         images: { orderBy: { sortOrder: "asc" } },
@@ -130,8 +165,11 @@ async function load() {
           include: { tiers: { orderBy: { minQty: "asc" } } },
         },
       },
-      orderBy: { name: "asc" },
-    }),
+    });
+
+  const [dbCategories, dbProducts] = await Promise.all([
+    db.category.findMany({ orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }] }),
+    loadProducts(),
   ]);
 
   /* ---- categories ---- */
@@ -355,6 +393,25 @@ export async function getDepartments(): Promise<Department[]> {
 
 export async function getAllProducts(): Promise<Product[]> {
   return (await load()).products;
+}
+
+/**
+ * The browser's numeric ids for a set of slugs, without handing over the
+ * catalogue to get them.
+ *
+ * ShopChrome used to load every product just to translate a handful of saved
+ * slugs into ids, and then shipped that whole list down with the page. At 60
+ * products nobody noticed; at 2,057 the home page HTML reached 1.47MB and the
+ * browser fetched the same catalogue again on mount — about 2.6MB to render a
+ * page that shows eight tiles. Same lesson as BE-47: look at the payload, not
+ * at the markup.
+ */
+export async function productIdsForSlugs(slugs: string[]): Promise<number[]> {
+  if (slugs.length === 0) return [];
+  const { bySlug } = await load();
+  return slugs
+    .map((slug) => bySlug.get(slug)?.id)
+    .filter((id): id is number => typeof id === "number");
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {

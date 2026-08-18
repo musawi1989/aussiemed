@@ -3,10 +3,9 @@ import { Footer } from "@/components/Footer";
 import { CutoffBar } from "@/components/CutoffBar";
 import { cutoffState } from "@/lib/cutoff";
 import { getCutoffHour } from "@/lib/purchasing";
-import { getAllProducts, getDepartments } from "@/lib/catalog";
+import { getDepartments, productIdsForSlugs } from "@/lib/catalog";
 import { savedProductSlugs } from "@/lib/account";
 import { CatalogProvider } from "@/lib/catalog-client";
-import { toSnapshotList } from "@/lib/catalog-snapshot";
 import { getSessionUser } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart-client";
 import { StoreProvider } from "@/lib/store";
@@ -30,24 +29,22 @@ export async function ShopChrome({
 }: {
   children: React.ReactNode;
   /**
-   * Whether to send the catalogue snapshot down with the first render.
+   * Whether this chrome belongs to a signed-in shopper's page.
    *
-   * On for the storefront, where the search box should suggest immediately.
-   * Off for the root not-found, and that is not a micro-optimisation: Next
-   * includes the root not-found boundary in the payload of *every* page, so
-   * a chrome that loads the catalogue puts the whole catalogue — around
-   * 150KB of it — into every /admin and /business-portal response. The
-   * layout split was supposed to have stopped exactly that.
+   * It no longer decides whether the CATALOGUE travels with the render, because
+   * nothing does: the catalogue is fetched once by the browser and cached, and
+   * shipping it as well took the home page HTML to 1.47MB at 2,057 products
+   * while the fetch pulled the same 1.1MB again. BE-47 caught that shape of bug
+   * in the admin; this is the storefront's version of it.
    *
-   * Nothing breaks when it is off. CatalogProvider refetches the snapshot on
-   * mount anyway, so the only cost is that a search on a 404 page suggests
-   * nothing for the first moment, and nobody is mid-search on a 404.
+   * What it still controls is the saved-products lookup, which is a database
+   * read the root not-found boundary has no business doing — Next includes that
+   * boundary in the payload of every page, admin ones included.
    */
   withCatalogue?: boolean;
 }) {
-  const [departments, products, user, savedSlugs, cutoffHour] = await Promise.all([
+  const [departments, user, savedSlugs, cutoffHour] = await Promise.all([
     getDepartments(),
-    withCatalogue ? getAllProducts() : Promise.resolve([]),
     getSessionUser(),
     withCatalogue ? savedProductSlugs() : Promise.resolve([]),
     getCutoffHour(),
@@ -60,13 +57,12 @@ export async function ShopChrome({
 
   // Translated here because the browser works in catalogue ids and the
   // database works in slugs. Doing it once on the server keeps that seam out
-  // of every component with a heart on it.
-  const savedProductIds = products
-    .filter((product) => savedSlugs.includes(product.slug))
-    .map((product) => product.id);
+  // of every component with a heart on it — and only the ids travel, not the
+  // catalogue they were looked up in.
+  const savedProductIds = await productIdsForSlugs(savedSlugs);
 
   return (
-    <CatalogProvider initialProducts={toSnapshotList(products)}>
+    <CatalogProvider initialProducts={[]}>
       <CartProvider>
         <StoreProvider savedProductIds={savedProductIds}>
           <a

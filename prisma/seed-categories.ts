@@ -232,7 +232,250 @@ const CLINICAL: Source = {
   ],
 };
 
-const SOURCES: Source[] = [LIVINGSTONE, CLINICAL];
+/* ------------------------------------------------------------------ *
+ * Source 3 — henryschein.com.au, read 19 Aug 2026
+ *
+ * The client asked for their whole taxonomy with the dental listings made
+ * comprehensive. Henry Schein is dental-first and their tree is THREE levels
+ * deep — Instruments > Surgical > Bone Files — while ours is two, asserted by
+ * db:check and assumed by the breadcrumb, the Browse menu and the filter
+ * sidebar.
+ *
+ * The client's decision (19 Aug) was to promote their top level to
+ * departments, so their second level lands as our sub-categories and the detail
+ * survives. Their third level is not carried: "Hand Files" is one shelf rather
+ * than seven, which is where a buyer stops narrowing anyway.
+ *
+ * FIVE DEPARTMENTS ARE RENAMED, because their names are only unambiguous inside
+ * a dental-only catalogue and this one also sells laboratory science, office and
+ * kitchen goods: Laboratory -> Dental Laboratory (we already have a Laboratory
+ * department full of glassware and chemicals), Instruments -> Dental
+ * Instruments, Equipment -> Dental Equipment, X-Ray -> Dental X-Ray. Burs is
+ * split into Dental Burs and Laboratory Burs, which are their own second level,
+ * because their third level is the useful part and the two groups repeat names
+ * — Polishers and Steel Burs appear under both.
+ *
+ * NOT COPIED. Clearance, New Products and Price Drop are merchandising, not a
+ * way of describing goods. Nor are the brand shelves, for the reason Heine
+ * Products was left out of Livingstone's tree: Zany Jackets, Carriere Motion,
+ * Mini-Molds, Nitanium Molar Rotator, Nitanium Palatal Expander, TransForce and
+ * Twin Force Bite Corrector are products, and a category named after one stops
+ * making sense the day the supplier changes. AussieMed has a Brand field.
+ * ------------------------------------------------------------------ */
+
+const HENRY_SCHEIN: Source = {
+  label: "henryschein.com.au",
+  note: "read 19 Aug 2026, dental made comprehensive at the client's request",
+  groups: [
+    {
+      department: "Anaesthetic",
+      children: [
+        "Delivery Systems", "Dental Needles", "Hypodermic Needles",
+        "Local Anaesthetic", "Pharmaceuticals", "Sharps Disposal & Protection",
+        "Syringes", "Topical Anaesthetic",
+      ],
+    },
+    {
+      department: "Articulating",
+      children: [
+        "Articulators & Facebows", "Foil", "Forceps", "Occlusal Indicators",
+        "Paper", "Silk", "Sprays",
+      ],
+    },
+    {
+      department: "Dental Burs",
+      children: [
+        "Accessories", "Bur Kits", "Carbide Highspeed Burs",
+        "Carbide Slowspeed Burs", "Caries Excavation", "Ceramic Highspeed Burs",
+        "Ceramic Slowspeed Burs", "Crown Cutters", "Diamond Highspeed Burs",
+        "Diamond Slowspeed Burs", "Endodontics", "Filling Remover",
+        "Finishing & Polishing", "Implantology", "Oral Surgery Burs",
+        "Orthodontics", "Polishers", "Preparation", "Root Planing",
+        "Single Use Sterile Burs", "Sonic Tips", "Speciality Endodontics",
+        "Speciality Surgical", "Steel Burs",
+      ],
+    },
+    {
+      department: "Laboratory Burs",
+      children: [
+        "Carbide Burs", "Cutters", "Diamond Burs", "Discs",
+        "Grinding, Finishing & Polishing", "Lab Bur Kits", "Milling Burs",
+        "Polishers", "Separating & Contouring", "Steel Burs",
+        "Twist Drills & Mandrels",
+      ],
+    },
+    {
+      department: "CAD/CAM",
+      children: [
+        "Blocks", "Discs", "Finishing & Polishing", "Ingots",
+        "Milling Unit Accessories", "Sprays, Etchants & Primers",
+        "Stain, Glaze & Firing Accessories",
+      ],
+    },
+    {
+      department: "3D Printing",
+      children: ["3D Printers", "3D Printing Accessories"],
+    },
+    {
+      department: "Crown & Bridge",
+      children: [
+        "Accessories", "Cements", "Cleaners", "Core Material", "Crown Forms",
+        "Liners & Base", "Temporary Crown & Bridge",
+        "Varnish, Sealants & Conditioners",
+      ],
+    },
+    {
+      department: "Disposables",
+      children: [
+        "Bags & Bin Liners", "Barrier Products", "Bibs", "Cotton", "Cups",
+        "Dispensers, Towels & Tissues", "Dry Tips", "Evacuation", "Gauze",
+        "Gloves", "Gowns & Caps", "Masks", "Tissues", "Towels",
+      ],
+    },
+    {
+      department: "Education & Toys",
+      children: ["Books", "Patient Education", "Toys & Stickers"],
+    },
+    {
+      department: "Endodontics",
+      children: [
+        "Access", "Apex Locators", "Calcium Hydroxide", "Endo Motors",
+        "Finger Pluggers & Spreaders", "GP Points", "Hand Files",
+        "Irrigation Syringes & Needles", "Medicaments & Solutions",
+        "Obturation Material", "Obturation Units", "Organisers & Accessories",
+        "Paper Points", "Paste Carriers", "Primers, Sealers & Cements",
+        "Pulp Tester", "Rotary Files", "Sterile Rotary Files",
+        "Ultrasonic Tips",
+      ],
+    },
+    {
+      // Their Equipment plus their two-item Equipment Consumables, which is not
+      // worth a department of its own.
+      department: "Dental Equipment",
+      children: [
+        "Dental Chairs", "Digital Dentistry", "Imaging", "Plant",
+        "Sterilisation", "Suction System Accessories",
+        "Treatment Unit Accessories",
+      ],
+    },
+    {
+      department: "Finishing & Polishing",
+      children: ["Direct", "Indirect"],
+    },
+    {
+      department: "Handpieces",
+      children: [
+        "Air Motors", "Cleaners, Lubricants & Accessories",
+        "Electric Micromotors", "Endo Handpieces & Accessories", "High Speed",
+        "Lab Handpieces", "Low Speed", "Motor Adaptors & Couplings",
+        "Perio Handpieces & Tips", "Surgical Handpieces",
+      ],
+    },
+    {
+      department: "Impression",
+      children: [
+        "Accessories", "Alginate", "Bite Registration", "Compound",
+        "Impression Disinfectant", "Laboratory Putty", "Mixers & Mixing Bowls",
+        "Mixing Tips", "Polyether", "Polyvinylsiloxane", "Silicone",
+        "Syringes & Dispensers", "Trays",
+      ],
+    },
+    {
+      department: "Infection Control",
+      children: [
+        "Air Purification", "Barrier", "Disinfectants & Detergents", "Gloves",
+        "Hand Hygiene", "Masks", "Protective Apparel", "Steri Room",
+        "Ultrasonic Cleaning", "Waste Management", "Wipes",
+      ],
+    },
+    {
+      department: "Dental Instruments",
+      children: [
+        "Accessories", "Bundles", "Calipers & Gauges", "Diagnostic",
+        "Endodontics", "Instrument Maintenance", "Laboratory", "Orthodontics",
+        "Periodontics", "Restorative", "Surgical", "Trays & Cassettes",
+      ],
+    },
+    {
+      department: "Dental Laboratory",
+      children: [
+        "Abrasives", "Acrylics", "Alloy", "Articulation", "Brushes & Buffs",
+        "Burners & Torches", "Casting", "Ceramics & Porcelain",
+        "Denture Accessories", "Duplicating Material", "Furniture",
+        "Instruments", "Investment", "Lab Equipment", "Model Preparation",
+        "Polishing", "Shade Taking", "Stone & Plaster",
+        "Storage, Packing & Delivery", "Teeth", "Thermo & Pressure Forming",
+        "Waxes",
+      ],
+    },
+    {
+      department: "Oral Surgery",
+      children: [
+        "Electrosurgery", "Grafting Materials", "Implant Dentistry",
+        "Implant Stability Testing", "Interproximal Reduction", "Lasers",
+        "Oral Cancer Detection", "Piezo Surgery", "Post Operative Care",
+        "Sterile Gloves", "Surgical Accessories", "Surgical Drapes",
+        "Surgical Instruments", "Surgical Irrigation", "Sutures",
+        "Wound Management",
+      ],
+    },
+    {
+      department: "Orthodontics",
+      children: [
+        "Adhesives & Cements", "Archwires & Straight Lengths", "Bands",
+        "Brackets", "Buccal Tubes", "Elastomerics",
+        "Fixed Appliance Accessories", "Interproximal Reduction", "Laboratory",
+        "Lingual Arches & Palatal Bars", "Lingual Attachments & Wires",
+        "Mouthguard Cases & Retainers", "Orthodontic Instruments",
+        "Photographic Mirrors", "Springs", "Stops & Hooks",
+        "Storage & Dispensers",
+      ],
+    },
+    {
+      department: "Preventive",
+      children: [
+        "Appliance Care", "Caries & Crack Detection", "Disclosing", "Flossing",
+        "Fluoride Treatments", "Interdental Brushes", "Pit & Fissure", "Prophy",
+        "Rinses", "Speciality", "Tongue Cleaners & Toothpicks", "Toothbrushes",
+        "Toothpaste", "Ultrasonic Prophylaxis",
+      ],
+    },
+    {
+      department: "Restorative & Cosmetic",
+      children: [
+        "Accessories", "Amalgam & Alloys", "Bonds & Etch",
+        "Brushes & Applicators", "Compomer", "Composite", "Curing Lights",
+        "Dentin Conditioners", "Glass Ionomers", "Jewellery",
+        "Matrix Bands & Retainers", "Pins & Posts", "Shade Taking",
+        "Staining & Reinforcement", "Teeth Whitening",
+      ],
+    },
+    {
+      department: "Retraction",
+      children: [
+        "Cords, Twists & Braids", "Hemostatic Gels & Solutions",
+        "Pellets & Cotton", "Retraction Systems",
+      ],
+    },
+    {
+      department: "Rubber Dam",
+      children: [
+        "Clamps", "Frames", "Latex Dam", "Napkins", "Non-Latex Dam",
+        "Punches & Forceps", "Stabilising Cord", "Stamps & Templates",
+      ],
+    },
+    {
+      department: "Dental X-Ray",
+      children: [
+        "Aprons", "Bite Blocks", "Bite Wings, Tabs & Hangers",
+        "Film (Intra-oral)", "Film Position Holders", "Film Storage",
+        "Fixers & Developers", "Intra-Oral X-ray", "Sensors & Plates",
+      ],
+    },
+  ],
+};
+
+const SOURCES: Source[] = [LIVINGSTONE, CLINICAL, HENRY_SCHEIN];
 
 /* ------------------------------------------------------------------ */
 
