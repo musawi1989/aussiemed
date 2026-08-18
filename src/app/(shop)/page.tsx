@@ -49,9 +49,11 @@ export default async function HomePage() {
     queryProducts({ inStockOnly: true, sort: "relevance" }),
   ]);
   const withTiers = featured.items.filter((p) => p.tiers.length > 0).slice(0, 8);
-  // A tile that leads to an empty page is worse than one fewer tile: the
-  // category tree is far wider than the range that fills it. See FN-11.
-  const visibleDepartments = departments.filter((d) => d.productCount > 0);
+  // Every department, including the ones nothing is filed under yet. The client
+  // asked on 18 Aug 2026 for the full range to be visible while the catalogue
+  // is loaded (DEC-27, reversing DEC-16); an empty one lands on a page that
+  // says so and invites an enquiry, rather than on a bare grid. See FN-11.
+  const visibleDepartments = departments;
 
   return (
     <div>

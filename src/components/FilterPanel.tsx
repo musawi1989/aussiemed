@@ -24,6 +24,11 @@ export async function FilterPanel({
 }) {
   const departments = await getDepartments();
   const activeCategory = params.category;
+  // The same list does two jobs. While browsing it is the way around the site
+  // and shows the whole range (DEC-27), stocked or not. Once a search term or a
+  // brand is in play it is a filter, and a filter offering a choice that
+  // returns nothing is noise — so those it hides, as it always did.
+  const narrowed = Boolean(params.q?.trim()) || Boolean(params.brand);
 
   return (
     <div className="space-y-6">
@@ -69,13 +74,15 @@ export async function FilterPanel({
             const isActiveDept =
               activeCategory === dept.slug ||
               dept.children.some((c) => c.slug === activeCategory);
-            // Only expand the department the buyer is actually inside — 135
+            // Only expand the department the buyer is actually inside — 154
             // sub-categories at once is not navigable.
-            const visibleChildren = isActiveDept
-              ? dept.children.filter((c) => (facetCounts[c.id] ?? 0) > 0)
-              : [];
+            const visibleChildren = !isActiveDept
+              ? []
+              : narrowed
+                ? dept.children.filter((c) => (facetCounts[c.id] ?? 0) > 0)
+                : dept.children;
 
-            if (deptCount === 0 && !isActiveDept) return null;
+            if (narrowed && deptCount === 0 && !isActiveDept) return null;
 
             return (
               <li key={dept.id}>

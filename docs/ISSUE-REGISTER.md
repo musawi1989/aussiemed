@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**213 items** · 70 outstanding · **12 outstanding P1**
+**214 items** · 70 outstanding · **12 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -259,6 +259,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-24 | AussieMed is a cross-dock distributor, not a marketplace | Client | P1 | Done | Changes what the platform fundamentally is. Neither side of a transaction may see the other, which rules out the supplier-facing order model the build had grown. |
 | DEC-25 | Two suppliers per item, with automatic fallback | Client | P1 | Done | A single supplier per product makes every product only as reliable as one company, and in cross-dock a supplier who cannot supply means a customer waits a full cycle. |
 | DEC-26 | One consolidated purchase order per supplier per day | Client | P1 | Done | Sending a purchase order per customer order would flood suppliers and lose the buying power of pooled quantities. |
+| DEC-27 | The whole category tree is visible, stocked or not | Client | P2 | Done | The site should advertise the range AussieMed sells, not the 23 categories the 71 placeholder products happen to fill. Hiding the rest made a supplier of medical, dental, laboratory, cleaning, kitchen, office, pet and tattoo supplies look like a supplier of eight departments, and gave the client no way to see on the storefront the tree they had just approved. |
 
 ## Frontend
 

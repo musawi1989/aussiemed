@@ -10,7 +10,7 @@ import { bulkBuyAction, type EnquiryState } from "@/app/(shop)/enquiry-actions";
  * the highest-intent visitors on the site were lost on arrival. They are now
  * recorded and appear in the admin enquiry queue.
  */
-export function BulkBuyForm() {
+export function BulkBuyForm({ about }: { about?: string }) {
   const [state, submit, pending] = useActionState<EnquiryState, FormData>(
     bulkBuyAction,
     null
@@ -32,6 +32,10 @@ export function BulkBuyForm() {
       action={submit}
       className="space-y-4 rounded-panel border border-border-base bg-surface p-6 shadow-card"
     >
+      {/* What the buyer was looking at when they found nothing. Travels with
+          the enquiry rather than being typed again. */}
+      {about && <input type="hidden" name="about" value={about} />}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Clinic or company name" name="company" required />
         <Field label="Contact name" name="contact" required />

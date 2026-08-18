@@ -135,13 +135,13 @@ export function Header({
 
             {browseOpen && (
               <div className="absolute left-0 top-full z-40 max-h-[70vh] w-[min(92vw,20rem)] overflow-y-auto border border-border-base bg-surface py-1 shadow-raised">
-                {/* Only what a buyer can actually reach. The tree is far wider
-                    than the range that fills it, and a menu entry that leads
-                    to an empty page is worse than no entry. */}
+                {/* The whole range, whether or not it is stocked today. The
+                    client asked for the full tree on 18 Aug 2026 (DEC-27); an
+                    entry that leads nowhere is answered by the not-stocked-yet
+                    page rather than by hiding the category. */}
                 {departments
-                  .filter((dept) => dept.productCount > 0)
                   .map((dept) => {
-                    const children = dept.children.filter((c) => c.productCount > 0);
+                    const children = dept.children;
                     return (
                       <div key={dept.id} className="border-b border-border-base last:border-0">
                         <Link

@@ -6,6 +6,7 @@ import { ViewMore } from "@/components/ViewMore";
 import { ProductCard } from "@/components/ProductCard";
 import { SortSelect } from "@/components/SortSelect";
 import { getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
+import { emptyMessage, emptyReason } from "@/lib/empty-state";
 import { PAGE_SIZE } from "@/lib/query";
 import { logSearch } from "@/lib/search-log";
 
@@ -96,6 +97,23 @@ export default async function ProductsPage({
 
   const hasMore = result.items.length < result.total;
 
+  // Why the list is empty decides what the page says. A category the site
+  // advertises but does not stock yet is a different situation from filters
+  // narrowed to nothing, and telling the first buyer to clear filters they
+  // never set is how an empty page reads as broken. See DEC-27.
+  const nothing =
+    result.total === 0
+      ? emptyMessage(
+          emptyReason({
+            category: params.category,
+            q: params.q,
+            brand: params.brand,
+            inStock: params.inStock === "1",
+          }),
+          { categoryName: category?.name, q: params.q }
+        )
+      : null;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-text-muted">
@@ -126,8 +144,8 @@ export default async function ProductsPage({
             {heading}
           </h1>
           <p className="mt-1 text-sm text-text-muted tnum">
-            {result.total === 0
-              ? "No products match these filters"
+            {nothing
+              ? nothing.title
               : `${result.total} ${result.total === 1 ? "product" : "products"}`}
           </p>
         </div>
@@ -146,15 +164,30 @@ export default async function ProductsPage({
         </aside>
 
         <div>
-          {result.items.length === 0 ? (
+          {nothing ? (
             <div className="rounded-panel border border-border-base bg-surface p-10 text-center">
-              <p className="text-text">Nothing matched those filters.</p>
-              <Link
-                href="/products"
-                className="mt-3 inline-block text-sm font-medium text-brand hover:underline"
-              >
-                Clear all filters
-              </Link>
+              <h2 className="text-lg font-semibold text-text">{nothing.title}</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-text-muted">
+                {nothing.body}
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                {nothing.primary && (
+                  <Link
+                    href={nothing.primary.href}
+                    className="inline-block rounded-card bg-brand px-5 py-2.5 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover"
+                  >
+                    {nothing.primary.label}
+                  </Link>
+                )}
+                {nothing.secondary && (
+                  <Link
+                    href={nothing.secondary.href}
+                    className="text-sm font-medium text-brand hover:underline"
+                  >
+                    {nothing.secondary.label}
+                  </Link>
+                )}
+              </div>
             </div>
           ) : (
             <>

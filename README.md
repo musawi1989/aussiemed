@@ -120,7 +120,11 @@ Enforced by tests and database constraints, not by convention:
 ## What is real and what is not
 
 **Real** — the database, the orders, the pricing, the sign-in, the invoice
-split. 146 categories from the extraction.
+split. 166 categories: the Livingstone tree from the extraction, completed
+against their live site (DA-30). All of it is reachable on the storefront by
+the client's decision of 18 Aug 2026 (DEC-27), though only 23 categories hold a
+product until the real catalogue is uploaded — the rest say so and take an
+enquiry.
 
 **Seeded for testing** — 60 of the 71 products come from the public catalogues
 of Livingstone and Chemist Warehouse (DEC-06), with their photography (DEC-07).
