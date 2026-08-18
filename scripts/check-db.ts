@@ -14,6 +14,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { SAMPLE_SKU_PREFIX, SAMPLE_SLUG_PREFIX } from "../src/lib/sample-products.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
@@ -85,12 +86,37 @@ check(
   `${tooDeep.length} sit three levels down: ${tooDeep.map((c) => c.name).join(", ")}`
 );
 
+/**
+ * Sample products are excluded from every comparison below, not counted as
+ * drift.
+ *
+ * They are generated against the database's own category tree rather than
+ * emitted into catalog.json (DA-33), so counting them here would report 750
+ * failures for as long as they exist — which is exactly the trap DA-27 dug the
+ * project out of. They are reported instead, so nobody can lose track of the
+ * fact that most of the catalogue is invented.
+ */
+const notSample = { NOT: { slug: { startsWith: SAMPLE_SLUG_PREFIX } } };
+const notSampleSku = { NOT: { skuCode: { startsWith: SAMPLE_SKU_PREFIX } } };
+
+const sampleProducts = await prisma.productMaster.count({
+  where: { slug: { startsWith: SAMPLE_SLUG_PREFIX }, status: "Active" },
+});
+if (sampleProducts > 0) {
+  console.log(
+    `  NOTE  ${sampleProducts} sample product(s) present and excluded from these checks.`
+  );
+  console.log("        Remove with: npm run db:seed:samples -- --remove\n");
+}
+
 // Active only: retired products stay in the table because orders reference them.
+const realProducts = await prisma.productMaster.count({
+  where: { status: "Active", ...notSample },
+});
 check(
   "product count matches the catalogue",
-  (await prisma.productMaster.count({ where: { status: "Active" } })) ===
-    catalog.products.length,
-  `db=${await prisma.productMaster.count({ where: { status: "Active" } })} json=${catalog.products.length}`
+  realProducts === catalog.products.length,
+  `db=${realProducts} json=${catalog.products.length}`
 );
 
 const expectedSkus = catalog.products.reduce(
@@ -98,10 +124,13 @@ const expectedSkus = catalog.products.reduce(
   0
 );
 // Active only: retired SKUs stay in the table because orders reference them.
+const realSkus = await prisma.productSku.count({
+  where: { isActive: true, ...notSampleSku },
+});
 check(
   "every pack became a SKU",
-  (await prisma.productSku.count({ where: { isActive: true } })) === expectedSkus,
-  `db=${await prisma.productSku.count({ where: { isActive: true } })} json=${expectedSkus}`
+  realSkus === expectedSkus,
+  `db=${realSkus} json=${expectedSkus}`
 );
 
 /**
@@ -242,7 +271,7 @@ check("no price is fractional", fractional.length === 0, `${fractional.length} f
 /* ---------- tax ---------- */
 
 const zeroRated = await prisma.productMaster.count({
-  where: { taxClass: "ZeroRated", status: "Active" },
+  where: { taxClass: "ZeroRated", status: "Active", ...notSample },
 });
 const jsonZeroRated = catalog.products.filter(
   (p: any) => p.taxClass === "zero-rated"

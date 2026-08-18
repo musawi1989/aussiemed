@@ -126,10 +126,16 @@ the client's decision of 18 Aug 2026 (DEC-27), though only 23 categories hold a
 product until the real catalogue is uploaded — the rest say so and take an
 enquiry.
 
-**Seeded for testing** — 60 of the 71 products come from the public catalogues
-of Livingstone and Chemist Warehouse (DEC-06), with their photography (DEC-07).
+**Seeded for testing** — 60 products come from the public catalogues of
+Livingstone and Chemist Warehouse (DEC-06), with their photography (DEC-07).
 Both are unaffiliated third parties and must not appear on a live storefront —
 DA-17. Supplier names and emails are invented — DA-06, DA-19.
+
+**Invented outright** — the other 727 of the 787 products on the site are
+sample listings, five per sub-category, so the whole tree can be browsed before
+the real catalogue lands (DA-33). They say so on every page and their item codes
+start `SAMPLE-`. **Remove them before launch — DA-34, a P1 blocker:**
+`npm run db:seed:samples -- --remove`.
 
 **Deliberately empty** — Terms and Privacy. Legal wording must come from the
 business; nothing was invented.

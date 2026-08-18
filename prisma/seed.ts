@@ -18,6 +18,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { SAMPLE_SKU_PREFIX, SAMPLE_SLUG_PREFIX } from "../src/lib/sample-products.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
@@ -315,14 +316,28 @@ for (const product of catalog.products) {
  * This matters more than it looks: when packaging moved from separate carton
  * SKUs into named price breaks, 23 carton SKUs stopped being part of the
  * catalogue while still being referenced by existing orders.
+ *
+ * Sample products are exempt. They are never in catalog.json — they are
+ * generated against the database's own category tree by seed-samples.ts — so
+ * this sweep would switch all 750 of them off the moment anybody re-seeded the
+ * catalogue, and the storefront would empty out with nothing to explain it.
+ * See DA-33.
  */
 const retired = await prisma.productMaster.updateMany({
-  where: { slug: { notIn: [...seenSlugs] }, status: "Active" },
+  where: {
+    slug: { notIn: [...seenSlugs] },
+    status: "Active",
+    NOT: { slug: { startsWith: SAMPLE_SLUG_PREFIX } },
+  },
   data: { status: "Inactive" },
 });
 
 const retiredSkus = await prisma.productSku.updateMany({
-  where: { skuCode: { notIn: [...seenSkuCodes] }, isActive: true },
+  where: {
+    skuCode: { notIn: [...seenSkuCodes] },
+    isActive: true,
+    NOT: { skuCode: { startsWith: SAMPLE_SKU_PREFIX } },
+  },
   data: { isActive: false },
 });
 

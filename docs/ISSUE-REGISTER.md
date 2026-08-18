@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**214 items** · 70 outstanding · **12 outstanding P1**
+**216 items** · 71 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -61,6 +61,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-27 | db:check measured categories against the frozen import | Dev | P3 | Done | A check that goes red when somebody makes a legitimate edit is a check people learn to ignore, and then it stops catching the things it was written for. |
 | DA-31 | supplyStatus was defaulted over existing availability | Dev | P3 | Done | A supplier who had said they could not supply an item had that silently reversed on the new field, while the old one still said otherwise. |
 | DA-32 | The order seed crashed once a test order had shipped | Dev | P3 | Done | A re-seed that works only until the data gets interesting is not much of a re-seed, and the failure was a wall of Prisma internals rather than a reason. |
+| DA-33 | Every sub-category filled with sample products | Dev | P2 | Done | The client asked on 18 Aug 2026 for at least five products in every sub-category, so the whole tree can be browsed and tested before the real catalogue lands. There is no real range to fill it with yet (DA-01), so the filler is invented. |
+| DA-34 | Remove the sample products before launch | Dev | P1 | Open | 727 invented products are on the storefront. They are labelled as samples on every page, but a live site that lists them is a site advertising stock that does not exist, and a buyer can put one in a basket today. |
 
 ## Legal
 

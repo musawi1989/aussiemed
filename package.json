@@ -19,7 +19,8 @@
     "db:check": "node --experimental-strip-types scripts/check-db.ts",
     "db:seed:accounts": "node --experimental-strip-types prisma/seed-accounts.ts",
     "db:seed:orders": "node --experimental-strip-types prisma/seed-order-states.ts",
-    "db:seed:categories": "node --experimental-strip-types prisma/seed-category-gaps.ts"
+    "db:seed:categories": "node --experimental-strip-types prisma/seed-category-gaps.ts",
+    "db:seed:samples": "node --experimental-strip-types prisma/seed-samples.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
