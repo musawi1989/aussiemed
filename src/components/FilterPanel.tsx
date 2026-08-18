@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDepartments } from "@/lib/catalog";
+import { FilterScroll } from "./FilterScroll";
 
 type Params = Record<string, string | undefined>;
 
@@ -30,8 +31,38 @@ export async function FilterPanel({
   // returns nothing is noise — so those it hides, as it always did.
   const narrowed = Boolean(params.q?.trim()) || Boolean(params.brand);
 
+  /**
+   * The filter frames itself, rather than being framed by the page.
+   *
+   * It is one component rendered on one route, but that route is every category,
+   * every search and every brand view, so where the box is decided is where it
+   * stays consistent. A page that supplied its own border would be free to
+   * supply a different one tomorrow.
+   *
+   * Sticky and scrolling in its own right: the category tree is 445 entries and
+   * Dental alone opens fifty rows, which is longer than most screens. Scrolling
+   * it used to mean scrolling the products away.
+   */
   return (
-    <div className="space-y-6">
+    <div className="rounded-panel border border-border-base bg-surface shadow-card lg:sticky lg:top-40">
+      <div className="flex items-center justify-between gap-2 border-b border-border-base px-4 py-3">
+        <h2 className="text-sm font-bold tracking-tight text-text">Filter</h2>
+        {(activeCategory || params.brand || params.inStock === "1") && (
+          <Link
+            href={hrefWith(params, {
+              category: undefined,
+              brand: undefined,
+              inStock: undefined,
+            })}
+            className="text-xs font-semibold text-brand hover:underline"
+          >
+            Clear all
+          </Link>
+        )}
+      </div>
+
+      <FilterScroll>
+      <div className="space-y-6">
       <section>
         <h2 className="mb-2 text-sm font-semibold text-text">Availability</h2>
         <Link
@@ -60,14 +91,6 @@ export async function FilterPanel({
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-text">Category</h2>
-        {activeCategory && (
-          <Link
-            href={hrefWith(params, { category: undefined })}
-            className="mb-2 inline-block text-xs font-medium text-brand hover:underline"
-          >
-            Clear category filter
-          </Link>
-        )}
         <ul className="space-y-0.5">
           {departments.map((dept) => {
             const deptCount = facetCounts[dept.id] ?? 0;
@@ -94,6 +117,8 @@ export async function FilterPanel({
               <li key={dept.id}>
                 <Link
                   href={hrefWith(params, { category: dept.slug })}
+                  // What FilterScroll opens the box on.
+                  data-active={activeCategory === dept.slug ? "true" : undefined}
                   className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm transition-colors hover:text-text ${
                     activeCategory === dept.slug
                       ? "font-medium text-brand"
@@ -127,6 +152,7 @@ export async function FilterPanel({
                         <li key={child.id}>
                           <Link
                             href={hrefWith(params, { category: child.slug })}
+                            data-active={activeCategory === child.slug ? "true" : undefined}
                             className={`flex items-center justify-between gap-2 rounded-card px-1 py-1 text-sm transition-colors hover:text-text ${
                               activeCategory === child.slug
                                 ? "font-medium text-brand"
@@ -145,6 +171,9 @@ export async function FilterPanel({
                                 <li key={grandchild.id}>
                                   <Link
                                     href={hrefWith(params, { category: grandchild.slug })}
+                                    data-active={
+                                      activeCategory === grandchild.slug ? "true" : undefined
+                                    }
                                     className={`flex items-center justify-between gap-2 rounded-card px-1 py-1 text-xs transition-colors hover:text-text ${
                                       activeCategory === grandchild.slug
                                         ? "font-medium text-brand"
@@ -195,6 +224,8 @@ export async function FilterPanel({
           </ul>
         </section>
       )}
+      </div>
+      </FilterScroll>
     </div>
   );
 }

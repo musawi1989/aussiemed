@@ -155,7 +155,9 @@ export default async function ProductsPage({
       </div>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
-        <aside className="lg:sticky lg:top-40 lg:self-start">
+        {/* No framing here: the filter carries its own box and its own
+            scrolling, so every view it appears on gets the same one. */}
+        <aside className="lg:self-start">
           <FilterPanel
             params={params}
             facetCounts={result.facetCounts}

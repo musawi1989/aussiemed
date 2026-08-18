@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**230 items** · 67 outstanding · **14 outstanding P1**
+**231 items** · 67 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -285,6 +285,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-34 | The delivery address printed as raw JSON | Dev | P2 | Done | The address is stored as a JSON snapshot so editing an address book entry cannot alter where a historical order was sent. Two screens printed that string verbatim, including the delivery note the customer receives. |
 | FE-35 | Withdrawn: the first admin page after signing in was reported as showing the sign-in door | Dev | P3 | Done | Recorded on 16 Aug 2026 as a defect. It was not one — the finding was an artefact of the test that produced it, and the record is kept so nobody investigates it a second time. |
 | FE-36 | The 404 page rendered its header and footer twice | Dev | P2 | Done | Introduced by the (shop) route group split in c75b2b5 and live for one commit. An unmatched URL was fine; a notFound() thrown inside the storefront — an unlisted product, an order reference that is not yours — came out with two headers and two footers. |
+| FE-40 | The filter bar is a box of its own, opened where the buyer clicked | Dev | P2 | Done | The filter was an unframed column that scrolled with the page. At 445 categories, arriving from a front-page tile landed a buyer at the top of an alphabetical list with the category they had just chosen somewhere below the fold, and scrolling to find it scrolled the products away as well. |
 
 ## Note
 
