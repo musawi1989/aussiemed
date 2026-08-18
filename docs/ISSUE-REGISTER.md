@@ -226,8 +226,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | SEC-03 | Agree a password policy | Client | P2 | Open | No minimum length, complexity or reuse rule is enforced. 123456 was accepted because nothing rejects it. |
 | SEC-04 | Admin authorisation is enforced twice, deliberately | Dev | P2 | Done | A server action is a public HTTP endpoint. Hiding a button does not stop anyone posting to it, so the role is checked in the layout for rendering and again in the service layer for every write. |
 | SEC-05 | Customer identity must never reach a supplier | Dev | P1 | Done | The mirror of BE-38 and equally load-bearing. A supplier seeing which clinics buy what would hand them the client book. |
-| SEC-04 | Sign-in tells an applicant why they are being held up | Dev | P2 | Done | A generic refusal must not reveal which addresses have accounts. But after a correct password, the same generic message to somebody whose application is in a queue is a lie that produces a support call. |
-| SEC-05 | The replacement picker offered the whole catalogue | Dev | P2 | Done | A dropdown listing every pack we sell lets one supplier read our entire range, and infer from it what a competitor supplies. |
+| SEC-06 | Sign-in tells an applicant why they are being held up | Dev | P2 | Done | A generic refusal must not reveal which addresses have accounts. But after a correct password, the same generic message to somebody whose application is in a queue is a lie that produces a support call. |
+| SEC-07 | The replacement picker offered the whole catalogue | Dev | P2 | Done | A dropdown listing every pack we sell lets one supplier read our entire range, and infer from it what a competitor supplies. |
 
 ## Decision
 
