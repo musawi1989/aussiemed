@@ -115,14 +115,19 @@ export async function FilterPanel({
                   href={hrefWith(params, { category: dept.slug })}
                   // What FilterScroll opens the box on.
                   data-active={activeCategory === dept.slug ? "true" : undefined}
-                  className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm transition-colors hover:text-text ${
-                    activeCategory === dept.slug
-                      ? "font-medium text-brand"
-                      : "text-text-muted"
+                  // A department is a heading a buyer navigates by, not one of
+                  // the choices under it. Bold and in the full text colour, the
+                  // same weight the Browse All menu gives them, so the eye lands
+                  // on the fourteen departments rather than on 445 rows of equal
+                  // weight.
+                  className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm font-bold transition-colors hover:text-navy ${
+                    activeCategory === dept.slug ? "text-brand" : "text-text"
                   }`}
                 >
                   <span>{dept.name}</span>
-                  <span className="tnum text-xs text-text-subtle">{deptCount}</span>
+                  <span className="tnum text-xs font-semibold text-text-muted">
+                    {deptCount}
+                  </span>
                 </Link>
 
                 {visibleChildren.length > 0 && (
