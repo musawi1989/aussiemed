@@ -116,18 +116,16 @@ export async function FilterPanel({
                   // What FilterScroll opens the box on.
                   data-active={activeCategory === dept.slug ? "true" : undefined}
                   // A department is a heading a buyer navigates by, not one of
-                  // the choices under it. Bold and in the full text colour, the
-                  // same weight the Browse All menu gives them, so the eye lands
-                  // on the fourteen departments rather than on 445 rows of equal
-                  // weight.
-                  className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm font-bold transition-colors hover:text-navy ${
+                  // the choices under it, but the colour carries that on its own:
+                  // full text colour against the muted grey of the shelves under
+                  // it. Regular weight, at the client's request — bold on fourteen
+                  // rows read as shouting rather than as structure.
+                  className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm transition-colors hover:text-navy ${
                     activeCategory === dept.slug ? "text-brand" : "text-text"
                   }`}
                 >
                   <span>{dept.name}</span>
-                  <span className="tnum text-xs font-semibold text-text-muted">
-                    {deptCount}
-                  </span>
+                  <span className="tnum text-xs text-text-muted">{deptCount}</span>
                 </Link>
 
                 {visibleChildren.length > 0 && (
