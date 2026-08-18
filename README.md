@@ -134,9 +134,11 @@ DA-17. Supplier names and emails are invented — DA-06, DA-19.
 **Deliberately empty** — Terms and Privacy. Legal wording must come from the
 business; nothing was invented.
 
-**Not built** — admin management screens (BE-20), supplier editing and bulk
-upload (BE-21), emails, payment. Quote and bulk-buy forms submit nothing and
-say so on screen.
+**Not built** — payment, OAuth sign-in, and an SMTP provider to send through:
+all deferred by agreement until the end (DEC-04). Email itself is built and
+every message is recorded; it writes to a local outbox until a provider is
+chosen. Quote, bulk-buy and Notify Me all record and appear in the admin
+enquiry queue.
 
 ## Open questions
 
