@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { contains } from "@/lib/db-search";
 import { countryName } from "@/lib/geo";
 import { formatAED } from "@/lib/money";
 import { AdminFilters } from "@/components/AdminFilters";
@@ -36,10 +37,10 @@ export default async function AdminCustomersPage({
     where: q
       ? {
           OR: [
-            { name: { contains: q } },
-            { trn: { contains: q } },
-            { users: { some: { name: { contains: q } } } },
-            { users: { some: { email: { contains: q } } } },
+            { name: contains(q) },
+            { trn: contains(q) },
+            { users: { some: { name: contains(q) } } },
+            { users: { some: { email: contains(q) } } },
           ],
         }
       : {},
@@ -67,7 +68,7 @@ export default async function AdminCustomersPage({
     where: {
       role: "Customer",
       organisationId: null,
-      ...(q ? { OR: [{ name: { contains: q } }, { email: { contains: q } }] } : {}),
+      ...(q ? { OR: [{ name: contains(q) }, { email: contains(q) }] } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, email: true },

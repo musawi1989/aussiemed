@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { contains } from "@/lib/db-search";
 import { formatAED } from "@/lib/money";
 import { FilterBar, type ChipDef } from "@/components/admin/FilterBar";
 import { ColumnPicker } from "@/components/admin/ColumnPicker";
@@ -58,15 +59,15 @@ export default async function AdminOrdersPage({
     ...(q
       ? {
           OR: [
-            { reference: { contains: q } },
-            { poReference: { contains: q } },
-            { trackingNumber: { contains: q } },
-            { user: { email: { contains: q } } },
-            { user: { name: { contains: q } } },
-            { organisation: { name: { contains: q } } },
+            { reference: contains(q) },
+            { poReference: contains(q) },
+            { trackingNumber: contains(q) },
+            { user: { email: contains(q) } },
+            { user: { name: contains(q) } },
+            { organisation: { name: contains(q) } },
             // Searching an item code is how the warehouse finds the order a
             // particular line belongs to.
-            { items: { some: { skuCodeSnapshot: { contains: q } } } },
+            { items: { some: { skuCodeSnapshot: contains(q) } } },
           ],
         }
       : {}),

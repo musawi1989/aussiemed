@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { contains } from "@/lib/db-search";
 import { formatAED } from "@/lib/money";
 import { PRODUCT_STATUSES } from "@/lib/admin";
 import { AdminFilters } from "@/components/AdminFilters";
@@ -36,9 +37,9 @@ export default async function AdminProductsPage({
     ...(q
       ? {
           OR: [
-            { name: { contains: q } },
-            { slug: { contains: q } },
-            { skus: { some: { skuCode: { contains: q } } } },
+            { name: contains(q) },
+            { slug: contains(q) },
+            { skus: { some: { skuCode: contains(q) } } },
           ],
         }
       : {}),

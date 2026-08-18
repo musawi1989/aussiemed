@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**222 items** · 69 outstanding · **13 outstanding P1**
+**224 items** · 68 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -87,7 +87,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FN-03 | Bulk buy enquiries are not delivered | Dev | P1 | Done | Same as FN-02 and arguably worse: a clinic asking for a price on volume is the most valuable enquiry the site can receive, and it went nowhere. |
 | FN-04 | Notify Me does not register a subscription | Dev | P1 | Done | The worst of the three. It set a flag in the browser and told the customer "we will email you when it is back in stock" — a promise the system could not keep, because nothing was recorded anywhere. |
 | FN-07 | Size and colour switching is not wired | Dev | P2 | Open | The variant dropdown built on 15 Aug 2026 (DEC-12) switches between sibling products by size or volume, and that works. The separate Size and Colour chips on gloves and the scrub top are a different thing and still do nothing â€” no sibling SKU exists behind any of them. |
-| FN-08 | Stock is a boolean | Dev | P2 | Open | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
+| FN-08 | Stock is a boolean | Dev | P2 | Done | Products are either in or out of stock. There are no quantities, so no low-stock warnings and no backorder handling. |
 | FN-09 | Decide on expiry and short-dated stock | Client | P2 | Open | Medical stock expires. Livingstone sells short-dated lines at a discount. This needs batch and expiry tracking in the schema if wanted. |
 | FN-10 | Search is client-side only | Dev | P3 | Open | No synonyms, no typo tolerance, no ranking beyond term matching. |
 | FE-30 | Prices are still labelled Ex. VAT with no way to see inc-VAT | Dev | P2 | Done | The header toggle was removed before VAT was folded into the displayed price, so a buyer approving an invoice has no inc-VAT figure anywhere on the storefront. Checkout still adds VAT, so the total at the end is higher than every price shown. |
@@ -268,6 +268,8 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-28 | The cutoff runs every day, weekends included | Client | P2 | Done | The daily purchase-order cutoff had no weekend rule because none had been agreed, and the buyer-facing countdown sits on every storefront page. On a Saturday it counts down to a run nobody has agreed to work. |
 | DEC-29 | Customers get printable invoices, not spreadsheets | Client | P2 | Done | Asked on 18 Aug 2026 how bulk invoice downloads should work, given that a folder of PDFs would need two new dependencies. The client's answer was to remove the spreadsheets instead. |
 | DEC-30 | Email stays plain text | Client | P3 | Done | Every message the platform sends is plain text. It was built that way because the alternative meant inventing a brand email look nobody had approved, and the question was left open rather than decided by default. |
+| DEC-31 | Stock is in or out, and quantities are never tracked | Client | P2 | Done | Products carry a single in-stock flag with no quantities anywhere, so there are no low-stock warnings and no backorders. Left open since the build began as a question about whether real stock levels were needed. |
+| DEC-32 | Postgres on managed hosting for production | Client | P2 | Done | The site runs on a SQLite file, which is right for building and wrong for a live storefront: one writer at a time, and nowhere to keep a file on hosting that replaces the disk on every restart. |
 
 ## Frontend
 
