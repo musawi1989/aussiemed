@@ -1,17 +1,32 @@
 import Link from "next/link";
 import { getDepartments } from "@/lib/catalog";
+import { hrefWith, type FilterParams as Params } from "@/lib/filter-href";
 import { FilterScroll } from "./FilterScroll";
+import { FilterSection } from "./FilterSection";
+import { PriceFilter } from "./PriceFilter";
 
-type Params = Record<string, string | undefined>;
-
-function hrefWith(params: Params, patch: Params) {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...params, ...patch })) {
-    if (value) search.set(key, value);
-  }
-  search.delete("page"); // any filter change returns to page 1
-  const qs = search.toString();
-  return qs ? `/products?${qs}` : "/products";
+/** One tick-box row, so two of them cannot end up looking like two things. */
+function Toggle({ on, href, label }: { on: boolean; href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2.5 rounded-card px-1 py-1.5 text-sm text-text-muted hover:text-text"
+    >
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+          on ? "border-brand bg-brand text-on-brand" : "border-border-strong bg-surface"
+        }`}
+        aria-hidden="true"
+      >
+        {on && (
+          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5}>
+            <path d="m3 8 3.5 3.5L13 5" />
+          </svg>
+        )}
+      </span>
+      {label}
+    </Link>
+  );
 }
 
 export async function FilterPanel({
@@ -47,12 +62,20 @@ export async function FilterPanel({
     <div className="rounded-panel border border-border-base bg-surface shadow-card lg:sticky lg:top-40">
       <div className="flex items-center justify-between gap-2 border-b border-border-base px-4 py-3">
         <h2 className="text-sm font-bold tracking-tight text-text">Filter</h2>
-        {(activeCategory || params.brand || params.inStock === "1") && (
+        {(activeCategory ||
+          params.brand ||
+          params.inStock === "1" ||
+          params.breaks === "1" ||
+          params.minPrice ||
+          params.maxPrice) && (
           <Link
             href={hrefWith(params, {
               category: undefined,
               brand: undefined,
               inStock: undefined,
+              breaks: undefined,
+              minPrice: undefined,
+              maxPrice: undefined,
             })}
             className="text-xs font-semibold text-brand hover:underline"
           >
@@ -63,34 +86,33 @@ export async function FilterPanel({
 
       <FilterScroll>
       <div className="space-y-6">
-      <section>
-        <h2 className="mb-2 text-sm font-semibold text-text">Availability</h2>
-        <Link
-          href={hrefWith(params, {
-            inStock: params.inStock === "1" ? undefined : "1",
-          })}
-          className="flex items-center gap-2.5 rounded-card px-1 py-1.5 text-sm text-text-muted hover:text-text"
-        >
-          <span
-            className={`flex h-4 w-4 items-center justify-center rounded border ${
-              params.inStock === "1"
-                ? "border-brand bg-brand text-on-brand"
-                : "border-border-strong bg-surface"
-            }`}
-            aria-hidden="true"
-          >
-            {params.inStock === "1" && (
-              <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path d="m3 8 3.5 3.5L13 5" />
-              </svg>
-            )}
-          </span>
-          In stock only
-        </Link>
-      </section>
+      <FilterSection title="Availability">
+        <div className="space-y-0.5">
+          <Toggle
+            on={params.inStock === "1"}
+            href={hrefWith(params, {
+              inStock: params.inStock === "1" ? undefined : "1",
+            })}
+            label="In stock only"
+          />
+          {/* Volume pricing is the reason a trade buyer is on this site rather
+              than a pharmacy's, so "what gets cheaper by the box" is a question
+              worth being able to ask directly. */}
+          <Toggle
+            on={params.breaks === "1"}
+            href={hrefWith(params, {
+              breaks: params.breaks === "1" ? undefined : "1",
+            })}
+            label="Has volume price breaks"
+          />
+        </div>
+      </FilterSection>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold text-text">Category</h2>
+      <FilterSection title="Price">
+        <PriceFilter min={params.minPrice} max={params.maxPrice} params={params} />
+      </FilterSection>
+
+      <FilterSection title="Category">
         <ul className="space-y-0.5">
           {departments.map((dept) => {
             const deptCount = facetCounts[dept.id] ?? 0;
@@ -198,11 +220,23 @@ export async function FilterPanel({
             );
           })}
         </ul>
-      </section>
+      </FilterSection>
 
-      {brands.length > 1 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-text">Brand</h2>
+      {/* Shown while there is a choice to make — OR while a brand is chosen,
+          because filtering to one brand leaves one brand in the list and the
+          section used to disappear taking the buyer's own filter with it. */}
+      {(brands.length > 1 || params.brand) && (
+        /**
+         * Shut by default, and open when a brand is chosen so the filter in
+         * force is never hidden. On the full catalogue this is dozens of rows
+         * between the buyer and the bottom of the panel, and almost nobody
+         * browses a trade catalogue by brand first.
+         */
+        <FilterSection
+          title="Brand"
+          count={brands.length}
+          defaultOpen={Boolean(params.brand)}
+        >
           <ul className="space-y-0.5">
             {brands.map((brand) => (
               <li key={brand.name}>
@@ -222,7 +256,7 @@ export async function FilterPanel({
               </li>
             ))}
           </ul>
-        </section>
+        </FilterSection>
       )}
       </div>
       </FilterScroll>

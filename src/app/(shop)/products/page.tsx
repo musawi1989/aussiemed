@@ -59,7 +59,21 @@ export default async function ProductsPage({
     brand: one(raw.brand),
     q: one(raw.q),
     inStock: one(raw.inStock),
+    breaks: one(raw.breaks),
+    minPrice: one(raw.minPrice),
+    maxPrice: one(raw.maxPrice),
     sort: one(raw.sort),
+  };
+
+  /**
+   * A price off the query string is whatever somebody typed into the address
+   * bar. Anything that is not a number is dropped rather than passed on as NaN,
+   * which compares false against everything and empties the page.
+   */
+  const price = (value: string | undefined) => {
+    if (value === undefined || value.trim() === "") return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
   };
 
   // How many to show, not which page. Everything already seen stays on
@@ -74,6 +88,9 @@ export default async function ProductsPage({
     brand: params.brand,
     q: params.q,
     inStockOnly: params.inStock === "1",
+    minPriceAED: price(params.minPrice),
+    maxPriceAED: price(params.maxPrice),
+    withBreaksOnly: params.breaks === "1",
     sort: (params.sort as SortKey) ?? "relevance",
     offset: 0,
     limit: show,
@@ -108,7 +125,14 @@ export default async function ProductsPage({
             category: params.category,
             q: params.q,
             brand: params.brand,
-            inStock: params.inStock === "1",
+            // A price window or a breaks-only tick is narrowing just as much as
+            // a brand is, so an empty result reads as over-filtering rather
+            // than as a category nobody has stocked.
+            inStock:
+              params.inStock === "1" ||
+              params.breaks === "1" ||
+              Boolean(params.minPrice) ||
+              Boolean(params.maxPrice),
           }),
           { categoryName: category?.name, q: params.q }
         )

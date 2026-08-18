@@ -324,3 +324,94 @@ describe("related products", () => {
     assert.equal(related.length, 0); // bibs is alone under Dental
   });
 });
+
+describe("price window", () => {
+  const priced = (name: string, priceAED: number) =>
+    product({
+      name,
+      priceAED,
+      packs: [
+        {
+          id: "base",
+          sku: name,
+          label: "Each",
+          shortLabel: "Each",
+          eachesPerPack: 1,
+          priceAED,
+          tiers: [],
+          outOfStock: false,
+        },
+      ],
+    });
+
+  const cheap = priced("Cheap swab", 5);
+  const mid = priced("Mid glove", 50);
+  const dear = priced("Dear scanner", 500);
+  const shelf = [cheap, mid, dear];
+
+  const names = (query: Parameters<typeof queryProducts>[2]) =>
+    queryProducts(shelf, resolve, query).items.map((p) => p.name);
+
+  it("takes a floor, a ceiling, or both", () => {
+    assert.deepEqual(names({ minPriceAED: 10 }), ["Dear scanner", "Mid glove"]);
+    assert.deepEqual(names({ maxPriceAED: 100 }), ["Cheap swab", "Mid glove"]);
+    assert.deepEqual(names({ minPriceAED: 10, maxPriceAED: 100 }), ["Mid glove"]);
+  });
+
+  it("includes both ends, because a buyer typing 50 means 50", () => {
+    assert.deepEqual(names({ minPriceAED: 50, maxPriceAED: 50 }), ["Mid glove"]);
+  });
+
+  it("reads a window given backwards the way it was meant", () => {
+    // Typing 100 into "from" and 10 into "to" is a slip, not a request for
+    // nothing — and an empty page teaches people the filter is broken.
+    assert.deepEqual(names({ minPriceAED: 100, maxPriceAED: 10 }), ["Mid glove"]);
+  });
+
+  it("leaves the list alone when neither end is given", () => {
+    assert.equal(names({}).length, 3);
+  });
+});
+
+describe("volume price breaks", () => {
+  const withTiers = (name: string, tiers: { minQty: number; priceAED: number }[], onPack = tiers) =>
+    product({
+      name,
+      tiers,
+      packs: [
+        {
+          id: "base",
+          sku: name,
+          label: "Each",
+          shortLabel: "Each",
+          eachesPerPack: 1,
+          priceAED: 10,
+          tiers: onPack,
+          outOfStock: false,
+        },
+      ],
+    });
+
+  const flat = withTiers("Flat priced", []);
+  const broken = withTiers("Cheaper by ten", [{ minQty: 10, priceAED: 9 }]);
+  const cartonOnly = withTiers("Cheaper by the carton", [], [{ minQty: 4, priceAED: 8 }]);
+
+  it("keeps only what actually gets cheaper in quantity", () => {
+    const names = queryProducts([flat, broken, cartonOnly], resolve, {
+      withBreaksOnly: true,
+    }).items.map((p) => p.name);
+    assert.deepEqual(names.sort(), ["Cheaper by ten", "Cheaper by the carton"]);
+  });
+
+  it("counts a break on any pack, not only on the product", () => {
+    // The carton is where the discount usually lives.
+    assert.equal(
+      queryProducts([cartonOnly], resolve, { withBreaksOnly: true }).items.length,
+      1
+    );
+  });
+
+  it("does nothing unless asked", () => {
+    assert.equal(queryProducts([flat, broken], resolve, {}).items.length, 2);
+  });
+});

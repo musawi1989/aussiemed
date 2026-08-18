@@ -37,6 +37,17 @@ export type ProductQuery = {
   brand?: string;
   q?: string;
   inStockOnly?: boolean;
+  /**
+   * A price window in AED, either end optional.
+   *
+   * Compared against the price the buyer is actually shown — the default
+   * pack's — rather than a per-unit figure, because a filter that answers a
+   * different question to the one on the card is a filter that looks broken.
+   */
+  minPriceAED?: number;
+  maxPriceAED?: number;
+  /** Only lines that get cheaper by the box or the carton. */
+  withBreaksOnly?: boolean;
   sort?: SortKey;
   /**
    * A window, rather than a page number.
@@ -122,13 +133,42 @@ export function queryProducts(
   resolveCategory: CategoryResolver,
   query: ProductQuery = {}
 ): ProductQueryResult {
-  const { categorySlug, brand, q, inStockOnly, sort = "relevance" } = query;
+  const {
+    categorySlug,
+    brand,
+    q,
+    inStockOnly,
+    minPriceAED,
+    maxPriceAED,
+    withBreaksOnly,
+    sort = "relevance",
+  } = query;
 
   // Stage 1 — every filter EXCEPT the category facet.
   let base = products;
   if (q?.trim()) base = base.filter((p) => matchesSearch(p, q.trim()));
   if (brand) base = base.filter((p) => p.brand === brand);
   if (inStockOnly) base = base.filter((p) => !p.outOfStock);
+
+  /**
+   * Both ends are inclusive, and a window given backwards is read the way it
+   * was meant rather than returning nothing: somebody typing 100 into the
+   * "from" box and 50 into the "to" box wants what sits between them, and an
+   * empty page teaches them the filter is broken.
+   */
+  if (minPriceAED !== undefined || maxPriceAED !== undefined) {
+    const low = Math.min(minPriceAED ?? -Infinity, maxPriceAED ?? Infinity);
+    const high = Math.max(minPriceAED ?? -Infinity, maxPriceAED ?? Infinity);
+    base = base.filter((p) => p.priceAED >= low && p.priceAED <= high);
+  }
+
+  // A trade buyer asking for this is asking "what is worth ordering by the
+  // box", which is the whole reason volume pricing is on the site.
+  if (withBreaksOnly) {
+    base = base.filter(
+      (p) => p.tiers.length > 0 || p.packs.some((pack) => pack.tiers.length > 0)
+    );
+  }
 
   // Facet counts are derived from that same set, so a facet can never
   // advertise a number the list does not then deliver. This is the structural
