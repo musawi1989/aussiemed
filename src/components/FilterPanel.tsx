@@ -196,15 +196,22 @@ export async function FilterPanel({
         </ul>
       </FilterSection>
 
-      <FilterSection title="Availability">
-        <div className="space-y-0.5">
-          <Toggle
-            on={params.inStock === "1"}
-            href={hrefWith(params, {
-              inStock: params.inStock === "1" ? undefined : "1",
-            })}
-            label="In stock only"
-          />
+      {/*
+        There is no Availability section any more — the client removed the
+        in-stock filter on 19 Aug 2026. It asked a question this business cannot
+        answer honestly: nothing is held in stock, the flag means "a supplier
+        can supply it" (DEC-31), and a buyer ticking "in stock only" reasonably
+        reads it as a promise about a shelf somewhere.
+
+        The volume-breaks toggle it used to sit beside was always a pricing
+        question, so it moved here where it belongs. inStock=1 in a URL still
+        filters — the v1 API takes it and the parameter is unchanged — it is
+        simply not offered as a control.
+      */}
+      <FilterSection title="Price">
+        <PriceFilter min={params.minPrice} max={params.maxPrice} params={params} />
+
+        <div className="mt-3 border-t border-border-base pt-2">
           {/* Volume pricing is the reason a trade buyer is on this site rather
               than a pharmacy's, so "what gets cheaper by the box" is a question
               worth being able to ask directly. */}
@@ -216,10 +223,6 @@ export async function FilterPanel({
             label="Has volume price breaks"
           />
         </div>
-      </FilterSection>
-
-      <FilterSection title="Price">
-        <PriceFilter min={params.minPrice} max={params.maxPrice} params={params} />
       </FilterSection>
 
       {/* Shown while there is a choice to make — OR while a brand is chosen,
