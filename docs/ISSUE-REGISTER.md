@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**221 items** · 69 outstanding · **13 outstanding P1**
+**222 items** · 69 outstanding · **13 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -267,6 +267,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DEC-27 | The whole category tree is visible, stocked or not | Client | P2 | Done | The site should advertise the range AussieMed sells, not the 23 categories the 71 placeholder products happen to fill. Hiding the rest made a supplier of medical, dental, laboratory, cleaning, kitchen, office, pet and tattoo supplies look like a supplier of eight departments, and gave the client no way to see on the storefront the tree they had just approved. |
 | DEC-28 | The cutoff runs every day, weekends included | Client | P2 | Done | The daily purchase-order cutoff had no weekend rule because none had been agreed, and the buyer-facing countdown sits on every storefront page. On a Saturday it counts down to a run nobody has agreed to work. |
 | DEC-29 | Customers get printable invoices, not spreadsheets | Client | P2 | Done | Asked on 18 Aug 2026 how bulk invoice downloads should work, given that a folder of PDFs would need two new dependencies. The client's answer was to remove the spreadsheets instead. |
+| DEC-30 | Email stays plain text | Client | P3 | Done | Every message the platform sends is plain text. It was built that way because the alternative meant inventing a brand email look nobody had approved, and the question was left open rather than decided by default. |
 
 ## Frontend
 
