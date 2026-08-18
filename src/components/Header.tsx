@@ -349,7 +349,10 @@ function SearchBox() {
           <button
             type="submit"
             aria-label="Search"
-            className="flex w-12 shrink-0 items-center justify-center rounded-r-card bg-red text-on-red transition-colors hover:bg-red-hover"
+            /* rounded-r-FULL, matching the pill it sits in. With the card radius its
+                 corners squared off inside a fully rounded container, so the red
+                 pushed past the border and the border drew around it. */
+            className="flex w-12 shrink-0 items-center justify-center rounded-r-full bg-red text-on-red transition-colors hover:bg-red-hover"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
               <circle cx="11" cy="11" r="7" />
