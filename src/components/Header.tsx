@@ -189,25 +189,39 @@ export function Header({
               )}
             </div>
 
-            {MAIN_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-card px-3 py-2 text-sm font-semibold text-navy transition-colors hover:bg-navy-soft"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {/* The links wait for a wide screen. Between lg and xl the bar
+                carries the logo, Shop, the search box and the account, which is
+                the set a buyer uses — the rest is in the Shop menu and the
+                footer. */}
+            <span className="hidden items-center gap-1 xl:flex">
+              {MAIN_NAV.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-card px-3 py-2 text-sm font-semibold text-navy transition-colors hover:bg-navy-soft"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </span>
           </nav>
+
+          {/* ---------- the search box itself, in the bar ---------- */}
+          <div className="hidden min-w-0 flex-1 md:block lg:max-w-xl">
+            <Suspense fallback={<div className="h-11" />}>
+              <SearchBox />
+            </Suspense>
+          </div>
 
           {/* ---------- search, basket, account ---------- */}
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+            {/* Phones only: the box is in the bar on anything wider. */}
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search products"
               aria-expanded={searchOpen}
-              className="rounded-card p-2 text-navy transition-colors hover:bg-navy-soft"
+              className="rounded-card p-2 text-navy transition-colors hover:bg-navy-soft md:hidden"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
                 <circle cx="11" cy="11" r="7" />
@@ -247,7 +261,7 @@ export function Header({
         {/* ---------- search, when it is asked for ---------- */}
         {searchOpen && (
           <div
-            className="mt-2 rounded-2xl bg-surface p-3 shadow-card lg:rounded-full lg:px-4"
+            className="mt-2 rounded-2xl bg-surface p-3 shadow-card md:hidden"
             onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
           >
             <Suspense fallback={<div className="h-11" />}>
