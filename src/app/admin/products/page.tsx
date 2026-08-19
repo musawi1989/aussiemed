@@ -5,6 +5,8 @@ import { formatAED } from "@/lib/money";
 import { PRODUCT_STATUSES } from "@/lib/admin";
 import { AdminFilters } from "@/components/AdminFilters";
 import { StatusPill } from "@/components/StatusPill";
+import { SectionTabs } from "@/components/admin/SectionTabs";
+import { PRODUCT_TABS } from "./tabs";
 
 const PAGE_SIZE = 25;
 const aed = (fils: number) => formatAED(fils / 100);
@@ -118,6 +120,8 @@ export default async function AdminProductsPage({
           </Link>
         </div>
       </div>
+
+      <SectionTabs tabs={PRODUCT_TABS} />
 
       <AdminFilters
         basePath="/admin/products"

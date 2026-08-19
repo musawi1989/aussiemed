@@ -5,6 +5,12 @@ import { requireAdmin } from "./admin";
 import { historiesOf } from "./status-events";
 import { onTimeRate, summarise, timeBetween, type Summary } from "./lifecycle";
 import { bucketByMonth, isAbandoned, type MonthBucket } from "./reporting";
+import { lineMargin } from "./margin";
+import {
+  performanceByProduct,
+  type ProductPerformance,
+  type SoldLine,
+} from "./own-brand";
 
 /**
  * The figures behind the report screens — BE-27, BE-28.
@@ -402,4 +408,99 @@ export async function supplierReport(): Promise<SupplierReport> {
       unknownCostOrders: everyOrder.filter((po) => po.totalCostFils === null).length,
     },
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * What to make our own — FE-45
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every sold line, reduced to what the merchandising report needs.
+ *
+ * Cancelled orders are excluded: they are not sales, and counting them would
+ * point a private-label decision at something nobody actually bought. Cost
+ * comes from the allocations, exactly as the order screen computes it, so this
+ * report and that screen cannot disagree about what a line earned.
+ */
+export async function productPerformance(): Promise<{
+  performance: ProductPerformance[];
+  orderCount: number;
+}> {
+  await requireAdmin();
+
+  const orders = await db.order.findMany({
+    where: { status: { not: "Cancelled" } },
+    select: {
+      reference: true,
+      organisationId: true,
+      items: {
+        select: {
+          nameSnapshot: true,
+          qty: true,
+          lineTotalFils: true,
+          vatFils: true,
+          allocations: {
+            select: {
+              qty: true,
+              purchaseOrderLine: { select: { unitCostFilsSnapshot: true } },
+            },
+          },
+          sku: {
+            select: {
+              product: {
+                select: {
+                  slug: true,
+                  name: true,
+                  brand: { select: { name: true } },
+                  categories: {
+                    select: { category: { select: { name: true, parentId: true } } },
+                  },
+                },
+              },
+              supplies: { select: { id: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const lines: SoldLine[] = [];
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      const product = item.sku?.product;
+      const margin = lineMargin(
+        item.lineTotalFils,
+        item.qty,
+        item.allocations.map((a) => ({
+          qty: a.qty,
+          unitCostFilsSnapshot: a.purchaseOrderLine.unitCostFilsSnapshot,
+        }))
+      );
+
+      // The deepest category a product sits in is the one worth grouping by:
+      // "Gloves" is what somebody browses for, "Medical Consumables" is not.
+      const deepest =
+        product?.categories.find((c) => c.category.parentId !== null)?.category.name ??
+        product?.categories[0]?.category.name ??
+        null;
+
+      lines.push({
+        productSlug: product?.slug ?? item.nameSnapshot,
+        productName: product?.name ?? item.nameSnapshot,
+        brand: product?.brand?.name ?? null,
+        category: deepest,
+        qty: item.qty,
+        // Ex-VAT, so the figures agree with every other money column here.
+        revenueFils: item.lineTotalFils - item.vatFils,
+        costFils: margin.costFils,
+        orderReference: order.reference,
+        organisationId: order.organisationId ?? "unattached",
+        supplierCount: item.sku?.supplies.length ?? 0,
+      });
+    }
+  }
+
+  return { performance: performanceByProduct(lines), orderCount: orders.length };
 }

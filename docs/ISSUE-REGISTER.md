@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**235 items** · 68 outstanding · **14 outstanding P1**
+**236 items** · 68 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -290,6 +290,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-42 | Filter sections fold, and price and volume breaks were added | Dev | P2 | Done | The brand list is every brand in whatever the buyer is looking at — twenty-six on the full catalogue — sitting open between them and the bottom of the panel. And the only things that could be filtered were category, brand and in-stock, on a trade site whose whole argument is volume pricing. |
 | FE-43 | The header is one bar, and it gets out of the way | Dev | P2 | Done | The header was two stacked rows — a white utility bar above a navy nav bar — taking about 140 pixels off every screen before a buyer saw a product, and staying there for the whole scroll. |
 | FE-44 | Filter by business or practice | Dev | P2 | Done | The client supplied the eighteen trades they sell to, with codes, and asked for them as a filter. A dental clinic and a cafe buy from almost disjoint halves of a 2,057-product catalogue, and neither wants to start at Medical Consumables and work it out. |
+| FE-45 | A product performance report, and what to make our own | Dev | P2 | Done | The client asked what earns the most on margin and sales, what is bought most, and anything similar that would help decide what to put an AussieMed label on. Nothing reported on products at all: the existing reports cover customers and suppliers. |
 
 ## Note
 
