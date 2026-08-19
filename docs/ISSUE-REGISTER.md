@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**232 items** · 67 outstanding · **14 outstanding P1**
+**233 items** · 67 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -287,6 +287,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-36 | The 404 page rendered its header and footer twice | Dev | P2 | Done | Introduced by the (shop) route group split in c75b2b5 and live for one commit. An unmatched URL was fine; a notFound() thrown inside the storefront — an unlisted product, an order reference that is not yours — came out with two headers and two footers. |
 | FE-41 | The filter bar is a box of its own, opened where the buyer clicked | Dev | P2 | Done | The filter was an unframed column that scrolled with the page. At 445 categories, arriving from a front-page tile landed a buyer at the top of an alphabetical list with the category they had just chosen somewhere below the fold, and scrolling to find it scrolled the products away as well. |
 | FE-42 | Filter sections fold, and price and volume breaks were added | Dev | P2 | Done | The brand list is every brand in whatever the buyer is looking at — twenty-six on the full catalogue — sitting open between them and the bottom of the panel. And the only things that could be filtered were category, brand and in-stock, on a trade site whose whole argument is volume pricing. |
+| FE-43 | The header is one bar, and it gets out of the way | Dev | P2 | Done | The header was two stacked rows — a white utility bar above a navy nav bar — taking about 140 pixels off every screen before a buyer saw a product, and staying there for the whole scroll. |
 
 ## Note
 
