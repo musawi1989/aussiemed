@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDepartments } from "@/lib/catalog";
+import { BUSINESS_TYPES, businessTypeByCode } from "@/lib/business-types";
 import { hrefWith, type FilterParams as Params } from "@/lib/filter-href";
 import { FilterScroll } from "./FilterScroll";
 import { FilterSection } from "./FilterSection";
@@ -41,10 +42,12 @@ export async function FilterPanel({
   const departments = await getDepartments();
   const activeCategory = params.category;
   // The same list does two jobs. While browsing it is the way around the site
-  // and shows the whole range (DEC-27), stocked or not. Once a search term or a
-  // brand is in play it is a filter, and a filter offering a choice that
-  // returns nothing is noise — so those it hides, as it always did.
-  const narrowed = Boolean(params.q?.trim()) || Boolean(params.brand);
+  // and shows the whole range (DEC-27), stocked or not. Once a search term, a
+  // brand or a trade is in play it is a filter, and a filter offering a choice
+  // that returns nothing is noise — so those it hides. A dental clinic should
+  // see Dental, PPE and Cleaning, not eleven departments reading zero.
+  const narrowed =
+    Boolean(params.q?.trim()) || Boolean(params.brand) || Boolean(params.business);
 
   /**
    * The filter frames itself, rather than being framed by the page.
@@ -64,6 +67,7 @@ export async function FilterPanel({
         <h2 className="text-sm font-bold tracking-tight text-text">Filter</h2>
         {(activeCategory ||
           params.brand ||
+          params.business ||
           params.inStock === "1" ||
           params.breaks === "1" ||
           params.minPrice ||
@@ -72,6 +76,7 @@ export async function FilterPanel({
             href={hrefWith(params, {
               category: undefined,
               brand: undefined,
+              business: undefined,
               inStock: undefined,
               breaks: undefined,
               minPrice: undefined,
@@ -193,6 +198,46 @@ export async function FilterPanel({
                     })}
                   </ul>
                 )}
+              </li>
+            );
+          })}
+        </ul>
+      </FilterSection>
+
+      {/**
+        * Who is buying, as a way into 2,057 products.
+        *
+        * A dental clinic and a café shop in almost disjoint halves of this
+        * catalogue, and neither wants to start at Medical Consumables and work
+        * it out. Shut by default because it is a shortcut rather than a step,
+        * and open when one is chosen so the filter in force is visible.
+        *
+        * What each trade buys is our first pass and the client's to correct —
+        * see business-types.ts.
+        */}
+      <FilterSection
+        title="Business / practice"
+        count={BUSINESS_TYPES.length}
+        defaultOpen={Boolean(params.business)}
+      >
+        <ul className="space-y-0.5">
+          {BUSINESS_TYPES.map((type) => {
+            const on = businessTypeByCode(params.business)?.code === type.code;
+            return (
+              <li key={type.code}>
+                <Link
+                  href={hrefWith(params, {
+                    // Clicking the one already chosen turns it off, so the only
+                    // way back to everything is not the Clear all button.
+                    business: on ? undefined : type.code,
+                  })}
+                  className={`flex items-center justify-between gap-2 rounded-card px-1 py-1.5 text-sm transition-colors hover:text-navy ${
+                    on ? "font-medium text-brand" : "text-text-muted"
+                  }`}
+                >
+                  <span>{type.label}</span>
+                  {on && <span className="text-xs font-semibold text-brand">clear</span>}
+                </Link>
               </li>
             );
           })}

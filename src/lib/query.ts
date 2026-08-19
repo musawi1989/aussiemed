@@ -48,6 +48,15 @@ export type ProductQuery = {
   maxPriceAED?: number;
   /** Only lines that get cheaper by the box or the carton. */
   withBreaksOnly?: boolean;
+  /**
+   * Narrow to products sitting under ANY of these categories.
+   *
+   * Where categorySlug is one shelf a buyer clicked, this is a set — the
+   * departments a trade shops in (business-types.ts). Undefined means no
+   * narrowing; an empty array would mean "match nothing", and the two must not
+   * be confused or a filter empties the catalogue silently.
+   */
+  anyOfCategorySlugs?: string[];
   sort?: SortKey;
   /**
    * A window, rather than a page number.
@@ -141,6 +150,7 @@ export function queryProducts(
     minPriceAED,
     maxPriceAED,
     withBreaksOnly,
+    anyOfCategorySlugs,
     sort = "relevance",
   } = query;
 
@@ -168,6 +178,20 @@ export function queryProducts(
     base = base.filter(
       (p) => p.tiers.length > 0 || p.packs.some((pack) => pack.tiers.length > 0)
     );
+  }
+
+  /**
+   * Applied before the facet counts, so the category list shows what a trade
+   * actually buys rather than the whole tree with most of it reading zero.
+   */
+  if (anyOfCategorySlugs && anyOfCategorySlugs.length > 0) {
+    const allowed = anyOfCategorySlugs
+      .map((slug) => resolveCategory(slug)?.id)
+      .filter((id): id is number => typeof id === "number");
+
+    base = allowed.length === 0
+      ? base
+      : base.filter((p) => categoryIdsFor(p).some((id) => allowed.includes(id)));
   }
 
   // Facet counts are derived from that same set, so a facet can never

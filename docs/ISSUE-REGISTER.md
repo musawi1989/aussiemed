@@ -2,7 +2,7 @@
 
 Generated from `docs/issue-register.csv`. Edit the CSV, not this file, then run `npm run register`.
 
-**233 items** · 67 outstanding · **14 outstanding P1**
+**235 items** · 68 outstanding · **14 outstanding P1**
 
 A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 
@@ -71,6 +71,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | DA-40 | SQLite's query-parameter limit broke every storefront page | Dev | P2 | Done | At 2,057 active products the catalogue load exceeded the number of parameters SQLite accepts in one query, and every page of the storefront answered 500 with Prisma P2029. It appeared the moment the dental tree was filled and nothing smaller would have shown it. |
 | DA-41 | The whole dental tree sits under one Dental department | Dev | P2 | Done | Promoting Henry Schein's top level to departments (DA-39) put twenty-four dental tiles on the front page beside Kitchen and Pet Care. The client asked for them grouped under one Dental category, detailed list and all. |
 | DA-42 | Categories were left answering to an awkward URL | Dev | P2 | Done | A slug is disambiguated with a numeric suffix when its plain form is taken, which was true when the dental disciplines were created and stopped being true when the old Dental shelves were absorbed an hour later. Endodontics answered to /products?category=endodontics-2 while the obvious address showed the not-stocked-yet page. |
+| DA-43 | What each trade buys is our guess, not the client's | Client | P2 | Open | The eighteen business types are the client's. The departments each one shops in were mapped by reasoning about the trade, because nothing in the catalogue says which business a product suits — there is no attribute, and 1,997 of the 2,057 products are invented samples anyway. |
 
 ## Legal
 
@@ -288,6 +289,7 @@ A spreadsheet version is at `docs/Things That Need Attention.xlsx`.
 | FE-41 | The filter bar is a box of its own, opened where the buyer clicked | Dev | P2 | Done | The filter was an unframed column that scrolled with the page. At 445 categories, arriving from a front-page tile landed a buyer at the top of an alphabetical list with the category they had just chosen somewhere below the fold, and scrolling to find it scrolled the products away as well. |
 | FE-42 | Filter sections fold, and price and volume breaks were added | Dev | P2 | Done | The brand list is every brand in whatever the buyer is looking at — twenty-six on the full catalogue — sitting open between them and the bottom of the panel. And the only things that could be filtered were category, brand and in-stock, on a trade site whose whole argument is volume pricing. |
 | FE-43 | The header is one bar, and it gets out of the way | Dev | P2 | Done | The header was two stacked rows — a white utility bar above a navy nav bar — taking about 140 pixels off every screen before a buyer saw a product, and staying there for the whole scroll. |
+| FE-44 | Filter by business or practice | Dev | P2 | Done | The client supplied the eighteen trades they sell to, with codes, and asked for them as a filter. A dental clinic and a cafe buy from almost disjoint halves of a 2,057-product catalogue, and neither wants to start at Medical Consumables and work it out. |
 
 ## Note
 

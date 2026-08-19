@@ -6,6 +6,7 @@ import { ViewMore } from "@/components/ViewMore";
 import { ProductCard } from "@/components/ProductCard";
 import { SortSelect } from "@/components/SortSelect";
 import { getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
+import { departmentsFor } from "@/lib/business-types";
 import { emptyMessage, emptyReason } from "@/lib/empty-state";
 import { PAGE_SIZE } from "@/lib/query";
 import { logSearch } from "@/lib/search-log";
@@ -59,6 +60,7 @@ export default async function ProductsPage({
     brand: one(raw.brand),
     q: one(raw.q),
     inStock: one(raw.inStock),
+    business: one(raw.business),
     breaks: one(raw.breaks),
     minPrice: one(raw.minPrice),
     maxPrice: one(raw.maxPrice),
@@ -91,6 +93,7 @@ export default async function ProductsPage({
     minPriceAED: price(params.minPrice),
     maxPriceAED: price(params.maxPrice),
     withBreaksOnly: params.breaks === "1",
+    anyOfCategorySlugs: departmentsFor(params.business),
     sort: (params.sort as SortKey) ?? "relevance",
     offset: 0,
     limit: show,
@@ -131,6 +134,7 @@ export default async function ProductsPage({
             inStock:
               params.inStock === "1" ||
               params.breaks === "1" ||
+              Boolean(params.business) ||
               Boolean(params.minPrice) ||
               Boolean(params.maxPrice),
           }),
