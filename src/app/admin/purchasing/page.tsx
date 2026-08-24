@@ -65,6 +65,15 @@ export default async function PurchasingPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Beside the build controls, because a short delivery is the other
+              half of the same job: what today's run could not source, and what
+              a supplier has since said they cannot send. */}
+          <Link
+            href="/admin/purchasing/backorders"
+            className="rounded-card border border-border-strong bg-surface px-3 py-2 text-sm font-bold text-text transition-colors hover:border-navy hover:text-navy"
+          >
+            Back orders
+          </Link>
           <AutoSendToggle on={autoSend} />
           <BuildButton cutoffLabel={`${dubai(cutoffAt)} Dubai`} />
         </div>

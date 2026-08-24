@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
+import { PurchaseOrderPayment } from "@/components/admin/PurchaseOrderPayment";
+import { paymentStatusOf } from "@/lib/status-tone";
 import { CancelDraftButton, SendButton } from "@/components/admin/PurchasingControls";
 import { GoodsInForm } from "@/components/admin/GoodsInForm";
 import { historyOf } from "@/lib/status-events";
@@ -69,6 +71,11 @@ export default async function PurchaseOrderPage({
           <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
             {po.poNumber}
             <StatusPill axis="fulfilment" status={po.status} />
+            {/* Goods and money, side by side. They move independently. */}
+            <StatusPill
+              axis="payment"
+              status={paymentStatusOf(po, new Date())}
+            />
           </h1>
           <p className="mt-1 text-sm text-text-muted">
             {po.supplier.companyName} &middot; {po.supplier.primaryEmail}
@@ -275,6 +282,22 @@ export default async function PurchaseOrderPage({
               )}
             </section>
           )}
+
+          {/* Money out. Below the goods rather than beside them, because
+              receiving is the job somebody usually came here to do and paying
+              is the one they come back for. */}
+          <PurchaseOrderPayment
+            id={po.id}
+            paymentStatus={po.paymentStatus}
+            derivedStatus={paymentStatusOf(po, new Date())}
+            paidAED={aed(po.paidFils)}
+            totalAED={po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
+            paymentDueOn={
+              po.paymentDueOn
+                ? po.paymentDueOn.toISOString().slice(0, 10)
+                : ""
+            }
+          />
         </div>
       </div>
     </>

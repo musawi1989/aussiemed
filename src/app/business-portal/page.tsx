@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { listPurchaseOrders } from "@/lib/supplier-portal";
 import { StatusPill } from "@/components/StatusPill";
+import { paymentStatusOf } from "@/lib/status-tone";
+import { BackorderList } from "@/components/portal/BackorderList";
+import { supplierBackorders } from "@/lib/backorders";
 import { AcknowledgeButton } from "@/components/portal/PurchaseOrderActions";
 
 const dubai = (d: Date) =>
@@ -52,6 +55,16 @@ export default async function BusinessPortalPage() {
     }),
     listPurchaseOrders(),
   ]);
+
+  // Always loaded, so the section can say "nothing outstanding" rather than
+  // vanishing — a panel that only exists when something is wrong is one nobody
+  // learns the location of.
+  const backorders = await supplierBackorders(user.supplierId);
+
+  // One clock for the whole render. Two calls a millisecond apart can put an
+  // invoice on one side of its due date in one pill and the other side in the
+  // next.
+  const now = new Date();
 
   const open = orders.filter((po) => po.status !== "Received" && po.status !== "Cancelled");
   const awaitingAck = open.filter((po) => !po.acknowledgedAt);
@@ -119,9 +132,24 @@ export default async function BusinessPortalPage() {
                 (supplier?.ackSlaHours ?? 24) * 3_600_000;
 
             return (
+              /*
+                THE WHOLE CARD OPENS THE ORDER.
+
+                Done with a stretched link rather than by wrapping the card in
+                an anchor: there is a button inside it, and a button inside a
+                link is invalid HTML that browsers resolve by breaking one of
+                them. So the PO number stays the only real link and its ::after
+                is stretched over the card, while the Acknowledge button is
+                lifted above that overlay and keeps working.
+
+                One consequence worth knowing: text inside the card is no
+                longer selectable by dragging, because the overlay is on top.
+                That is the accepted trade for a card-sized target, and the
+                reason the reference itself is still a visible link.
+              */
               <li
                 key={po.id}
-                className={`rounded-card border bg-surface p-4 shadow-card ${
+                className={`relative rounded-card border bg-surface p-4 shadow-card transition-colors hover:border-navy-border hover:bg-navy-soft/40 ${
                   late ? "border-danger" : "border-border-base"
                 }`}
               >
@@ -130,11 +158,22 @@ export default async function BusinessPortalPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/business-portal/orders/${po.poNumber}`}
-                        className="text-sm font-bold tnum text-navy hover:underline"
+                        className="text-sm font-bold tnum text-navy after:absolute after:inset-0 after:content-[''] hover:underline"
                       >
                         {po.poNumber}
                       </Link>
                       <StatusPill axis="fulfilment" status={po.status} />
+                      {/* Whether WE have paid THEM. Two questions on one line,
+                          and they move independently: an order can be received
+                          in full and unpaid for another month. Derived rather
+                          than read straight off the column, so an invoice that
+                          fell due yesterday reads Overdue today without a
+                          nightly job having to run. */}
+                      <StatusPill
+                        axis="payment"
+                        status={paymentStatusOf(po, now)}
+                        size="small"
+                      />
                       {late && (
                         <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
                           acknowledgement overdue
@@ -151,7 +190,14 @@ export default async function BusinessPortalPage() {
                   </div>
 
                   {!po.acknowledgedAt && (
-                    <AcknowledgeButton id={po.id} poNumber={po.poNumber} />
+                    /* Above the stretched link, or the card would swallow the
+                       click and open the order instead of acknowledging it.
+                       A plain block comment rather than a JSX one, because
+                       this sits inside a JS expression where a JSX comment
+                       would be a second expression and a syntax error. */
+                    <span className="relative z-10">
+                      <AcknowledgeButton id={po.id} poNumber={po.poNumber} />
+                    </span>
                   )}
                 </div>
               </li>
@@ -159,6 +205,7 @@ export default async function BusinessPortalPage() {
           })}
         </ul>
       )}
+      <BackorderList lines={backorders} />
     </>
   );
 }

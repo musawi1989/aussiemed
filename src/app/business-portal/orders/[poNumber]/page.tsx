@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPurchaseOrder } from "@/lib/supplier-portal";
 import { StatusPill } from "@/components/StatusPill";
+import { paymentStatusOf } from "@/lib/status-tone";
+import { ConfirmQuantities } from "@/components/portal/ConfirmQuantities";
+import { courierOptions } from "@/lib/couriers";
 import {
   AcknowledgeButton,
   DispatchForm,
@@ -30,6 +33,11 @@ export default async function SupplierPurchaseOrderPage({
 
   if (!po) notFound();
 
+  // After the guard: no point listing couriers for a purchase order that does
+  // not exist. Carries whatever this PO already names, so an archived courier
+  // on an old dispatch is still selectable rather than silently blanked.
+  const couriers = await courierOptions(po.courier);
+
   const units = po.lines.reduce((n, l) => n + l.qtyOrdered, 0);
   const done = po.status === "Received" || po.status === "Cancelled";
 
@@ -47,6 +55,11 @@ export default async function SupplierPurchaseOrderPage({
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
             {po.poNumber}
             <StatusPill axis="fulfilment" status={po.status} />
+            {/* Where the goods are, and where the money is. They move
+                independently — an order received in full can be unpaid for
+                another month — so both are on the heading rather than one
+                standing in for the other. */}
+            <StatusPill axis="payment" status={paymentStatusOf(po, new Date())} />
           </h1>
           <p className="mt-1 text-sm text-text-muted tnum">
             {po.lines.length} line{po.lines.length === 1 ? "" : "s"} &middot;{" "}
@@ -65,6 +78,26 @@ export default async function SupplierPurchaseOrderPage({
           <h2 className="text-base font-bold tracking-tight text-text">
             What we need
           </h2>
+
+          {/* What they can actually send, before the table of what we asked
+              for. It is the question this page exists to have answered, and a
+              form below a table is a form that gets scrolled past.
+
+              Hidden once the order is closed: there is nothing left to promise
+              on an order already received or cancelled. */}
+          {!done && (
+            <ConfirmQuantities
+              id={po.id}
+              poNumber={po.poNumber}
+              lines={po.lines.map((line) => ({
+                id: line.id,
+                code: line.supplierPartNumberSnapshot ?? line.skuCodeSnapshot,
+                name: line.nameSnapshot,
+                qtyOrdered: line.qtyOrdered,
+                qtyConfirmed: line.qtyConfirmed,
+              }))}
+            />
+          )}
 
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[30rem] border-collapse text-sm [&_.tnum]:whitespace-nowrap [&_td]:align-top [&_th]:whitespace-nowrap">
@@ -104,6 +137,7 @@ export default async function SupplierPurchaseOrderPage({
                 id={po.id}
                 poNumber={po.poNumber}
                 courier={po.courier}
+                courierOptions={couriers}
                 trackingNumber={po.trackingNumber}
               />
             </div>

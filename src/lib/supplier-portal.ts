@@ -202,7 +202,19 @@ export async function listMySupplies() {
     orderBy: [{ isAvailable: "asc" }, { sku: { skuCode: "asc" } }],
     select: {
       id: true,
-      rank: true,
+      /*
+       * NO rank. Whether this supplier is our primary or our backup on an item
+       * is our commercial position, not theirs. It was on this screen until
+       * 24 Aug 2026 on the reasoning that it explained a quiet month; the
+       * client's decision is that a supplier should not know where they stand.
+       * A backup who knows they are the backup prices and prioritises
+       * differently, and one who is demoted learns it from a screen rather
+       * than from us.
+       *
+       * Not selected, rather than selected and dropped — this file's standing
+       * rule. A column that is never read cannot be leaked by the next person
+       * who adds a field to the returned object.
+       */
       costFils: true,
       supplierPartNumber: true,
       leadTimeDays: true,
@@ -243,10 +255,6 @@ export async function listMySupplies() {
 
   return supplies.map((supply) => ({
     id: supply.id,
-    // Their standing with us on this item. Shown because it changes what a
-    // supplier should expect: a backup only receives orders when the primary
-    // cannot supply, so a quiet month is not necessarily a lost customer.
-    rank: supply.rank,
     skuCode: supply.sku.skuCode,
     productName: supply.sku.product.name,
     unitLabel: supply.sku.unitLabel,
@@ -506,4 +514,72 @@ export async function applySupplyUpload(
     problems: parsed.problems,
     notSupplied: notSupplied.map((row) => row.skuCode),
   });
+}
+
+/**
+ * What a supplier says they can actually send, line by line.
+ *
+ * Three quantities and three different facts. qtyOrdered is what we asked for,
+ * qtyConfirmed is what they promise, qtyReceived is what turns up. Before this
+ * existed a supplier could only acknowledge the whole order or say nothing, so
+ * "I can do eight of the ten" had to happen on the phone and never reached the
+ * screen the buying run reads.
+ *
+ * NOT DEFAULTED. A line they have not touched stays null, which means "they
+ * have not said" — different from a confirmed zero, which means "none of
+ * these, stop waiting". Filling every line in silently would put a promise in
+ * their mouth on every order.
+ *
+ * Refuses more than was ordered rather than clamping it: a supplier typing 100
+ * against an order for 10 has misread something, and quietly storing 10 hides
+ * the misunderstanding until the delivery arrives.
+ */
+export async function confirmQuantities(
+  purchaseOrderId: string,
+  quantities: { lineId: string; qty: number | null }[]
+): Promise<Result> {
+  const { supplierId } = await requireSupplier();
+
+  // The supplier id is part of the lookup, so another supplier's order simply
+  // does not resolve — the same rule getPurchaseOrder follows.
+  const po = await db.purchaseOrder.findFirst({
+    where: { id: purchaseOrderId, supplierId },
+    include: { lines: { select: { id: true, qtyOrdered: true, nameSnapshot: true } } },
+  });
+  if (!po) return { ok: false, error: "That purchase order is not yours." };
+
+  if (po.status === "Received" || po.status === "Cancelled") {
+    return {
+      ok: false,
+      error: "This order is closed, so what you can supply no longer changes it.",
+    };
+  }
+
+  const byId = new Map(po.lines.map((l) => [l.id, l]));
+
+  for (const { lineId, qty } of quantities) {
+    const line = byId.get(lineId);
+    if (!line) return { ok: false, error: "That line is not on this order." };
+    if (qty === null) continue;
+    if (!Number.isInteger(qty) || qty < 0) {
+      return { ok: false, error: "A quantity has to be a whole number, zero or more." };
+    }
+    if (qty > line.qtyOrdered) {
+      return {
+        ok: false,
+        error: `${line.nameSnapshot}: we only ordered ${line.qtyOrdered}. Enter that or fewer.`,
+      };
+    }
+  }
+
+  await db.$transaction(
+    quantities.map(({ lineId, qty }) =>
+      db.purchaseOrderLine.update({
+        where: { id: lineId },
+        data: { qtyConfirmed: qty },
+      })
+    )
+  );
+
+  return { ok: true, value: undefined };
 }
