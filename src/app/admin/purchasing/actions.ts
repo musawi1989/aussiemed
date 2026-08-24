@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { resourceShortfalls } from "@/lib/backorders";
 import {
   buildPurchaseOrders,
   cancelDraftPurchaseOrder,
@@ -9,6 +10,7 @@ import {
   receivePurchaseOrder,
   sendPurchaseOrder,
   setAutoSend,
+  setPurchaseOrderPayment,
 } from "@/lib/purchasing";
 import type { FormState } from "@/components/AdminForm";
 
@@ -148,4 +150,70 @@ export async function setAutoSendAction(
             : "Auto-send off. Purchase orders wait for you.",
       }
     : { ok: false, error: result.error };
+}
+
+/**
+ * What we have paid this supplier against this order.
+ *
+ * The amount is typed in AED and stored in fils, like every other figure that
+ * reaches the database — the conversion happens here so nothing downstream
+ * ever sees a decimal.
+ */
+export async function setPurchaseOrderPaymentAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const due = text(data, "paymentDueOn");
+  const parsed = due ? new Date(`${due}T00:00:00Z`) : null;
+
+  const aed = Number(text(data, "paidAED") || "0");
+  if (!Number.isFinite(aed) || aed < 0) {
+    return { ok: false, error: "Paid so far must be a number, zero or more." };
+  }
+
+  const result = await setPurchaseOrderPayment({
+    id: text(data, "id"),
+    paymentStatus: text(data, "paymentStatus"),
+    paidFils: Math.round(aed * 100),
+    // An unparseable date is treated as none rather than as 1970.
+    paymentDueOn: parsed && !Number.isNaN(parsed.getTime()) ? parsed : null,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/purchasing");
+  // The supplier sees this too, so their copy has to be refreshed with ours.
+  revalidatePath("/business-portal");
+  return { ok: true, message: "Payment saved. The supplier sees this." };
+}
+
+/**
+ * Move the selected shortfalls to a different supplier.
+ *
+ * Raises a DRAFT order, deliberately: raising an order is one decision and
+ * sending it is another, and this screen is where the first happens. It then
+ * appears in Purchasing like any other draft and goes out the same way.
+ */
+export async function resourceBackordersAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const lineIds = data.getAll("lineId").map(String).filter(Boolean);
+  const supplierId = text(data, "supplierId");
+
+  if (!supplierId) return { ok: false, error: "Choose who to order these from." };
+
+  const result = await resourceShortfalls(lineIds, supplierId);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/purchasing");
+  revalidatePath("/admin/purchasing/backorders");
+  // The supplier's own back order list changes too: the demand has moved off
+  // their line.
+  revalidatePath("/business-portal");
+
+  const { poNumber, lineCount, units } = result.value;
+  return {
+    ok: true,
+    message: `${poNumber} raised as a draft — ${units} ${units === 1 ? "unit" : "units"} across ${lineCount} ${lineCount === 1 ? "line" : "lines"}. Send it from Purchasing when you are ready.`,
+  };
 }
