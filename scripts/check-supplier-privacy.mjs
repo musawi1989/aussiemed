@@ -428,6 +428,32 @@ for (const path of PUBLIC_PATHS) {
     .all()
     .map((s) => s.companyName)
     .filter(Boolean);
+
+  /*
+   * Product names, so a BRAND that shares a supplier's name is not read as a
+   * disclosure of who supplies it.
+   *
+   * "Livingstone" is both one of our suppliers and a brand on 16 products. A
+   * plain substring search therefore failed the moment a customer ordered a
+   * Livingstone pipette, because their own order confirmation listed the item
+   * they had just chosen — a name printed on the storefront, on the box, and
+   * in the search results they found it through. That is not a leak, and a
+   * check that calls it one is a check people learn to ignore.
+   *
+   * ⚠ THIS IS A NARROW CARVE-OUT, NOT A RELAXATION. Only occurrences INSIDE a
+   * product name from our own catalogue are forgiven. The name is removed from
+   * the body and whatever is left is still searched, so "supplied by
+   * Livingstone" on a customer email fails exactly as it did before — which is
+   * the sentence this check exists to catch.
+   */
+  const productNames = db
+    .prepare(`select "name" from "ProductMaster"`)
+    .all()
+    .map((r) => r.name)
+    .filter((name) => name && supplierNames.some((s) => name.includes(s)))
+    // Longest first, so a longer title is stripped before a shorter one that
+    // is a prefix of it and cannot leave a fragment behind.
+    .sort((a, b) => b.length - a.length);
   db.close();
 
   if (supplierMail.length === 0 && customerMail.length === 0) {
@@ -448,7 +474,12 @@ for (const path of PUBLIC_PATHS) {
 
     let backwards = 0;
     for (const mail of customerMail) {
-      const found = supplierNames.filter((name) => mail.body.includes(name));
+      // What the email says once the names of the items they ordered are
+      // taken out of it. See the note where productNames is built.
+      let remainder = mail.body;
+      for (const product of productNames) remainder = remainder.split(product).join(" ");
+
+      const found = supplierNames.filter((name) => remainder.includes(name));
       if (found.length > 0) {
         fail(`a customer email names supplier ${[...new Set(found)].join(", ")}`);
         backwards++;
