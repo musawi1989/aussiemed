@@ -51,7 +51,10 @@ export function SignInMenu({
             reads as this storefront rather than the account signed in. */}
         <Link
           href={home}
-          className="max-w-[12rem] truncate rounded-card bg-navy px-4 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
+          // Pills, like Request access and Sign in beside them. The header
+          // used to change shape when somebody signed in, because this pair
+          // sits in the slot those two occupy when signed out.
+          className="max-w-[12rem] truncate rounded-full bg-navy px-4 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
           title={user.name}
         >
           {user.name}
@@ -59,7 +62,22 @@ export function SignInMenu({
         {/* Sign out sits in the slot the Sign in button occupies when signed
             out, so it is in the same place on every page rather than only on
             the dashboard someone happens to be looking at. */}
-        <SignOutButton sizeClassName="shrink-0 px-[0.9rem] py-3 text-[1.05rem]" />
+        {/*
+          The same size as the name beside it, and the same size as the Sign in
+          button this pair replaces when somebody signs in — so the header is
+          one height in both states rather than growing nine pixels at the
+          moment of signing in.
+
+          THIS REVERSES THE "A FIFTH LARGER" SIZING, which was itself a client
+          request. They asked for these two to match on 24 Aug 2026, and two
+          buttons cannot match without one of them moving. Levelling down was
+          the direction that also matched the signed-out header; levelling up
+          would have made this pair the only large thing on the bar.
+        */}
+        <SignOutButton
+          shapeClassName="rounded-full"
+          sizeClassName="shrink-0 px-4 py-2.5 text-sm"
+        />
       </div>
     );
   }
@@ -71,7 +89,10 @@ export function SignInMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 rounded-card bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
+        // rounded-full to match Request access, which sits immediately
+        // beside it: two buttons in one group with two different corner radii
+        // read as two unrelated controls.
+        className="flex items-center gap-2 rounded-full bg-navy px-5 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
       >
         Sign in
         <svg
