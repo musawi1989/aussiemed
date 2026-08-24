@@ -47,12 +47,23 @@ export default async function SuppliesPage() {
           </p>
         </div>
 
-        <Link
-          href="/business-portal/supplies/upload"
-          className="rounded-card bg-navy px-4 py-2 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
-        >
-          Update by spreadsheet
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Adding one item and re-pricing hundreds are different jobs, so
+              they are different buttons. The primary one is Add, because a
+              supplier who has just been set up has nothing to update yet. */}
+          <Link
+            href="/business-portal/supplies/add"
+            className="rounded-card bg-navy px-4 py-2 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
+          >
+            Add items
+          </Link>
+          <Link
+            href="/business-portal/supplies/upload"
+            className="rounded-card border border-border-strong bg-surface px-4 py-2 text-sm font-bold text-text transition-colors hover:border-navy hover:text-navy"
+          >
+            Update by spreadsheet
+          </Link>
+        </div>
       </div>
 
       <div className="mt-5">
@@ -79,8 +90,10 @@ export default async function SuppliesPage() {
 
       {supplies.length === 0 ? (
         <p className="mt-5 rounded-card border border-border-base bg-surface px-4 py-12 text-center text-sm text-text-muted shadow-card">
-          Nothing is set up against your account yet. AussieMed decides which
-          items each supplier covers — get in touch and we will add them.
+          Nothing here yet. Tell us what you stock with
+          <span className="font-semibold text-text"> Add items</span> above,
+          or send us a spreadsheet. Which supplier we buy each item from is
+          still set by AussieMed.
         </p>
       ) : (
         <ul className="mt-5 space-y-2">

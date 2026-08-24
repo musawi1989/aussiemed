@@ -2,10 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  addToMySupply,
+  offersNeedApproval,
+  removeFromMySupply,
+} from "@/lib/supply-offers";
+import {
   acknowledgePurchaseOrder,
   markDispatched,
   setMyAvailability,
   updateMySupply,
+  confirmQuantities,
 } from "@/lib/supplier-portal";
 import type { FormState } from "@/components/AdminForm";
 
@@ -92,4 +98,80 @@ export async function setAvailabilityAction(
           : "Marked as unable to supply. Nothing will be ordered from you until you turn this back on.",
       }
     : { ok: false, error: result.error };
+}
+
+/**
+ * What this supplier can send of each line.
+ *
+ * The form posts one lineId and one qty per row, in step, which is how the
+ * receive form on the admin side does it too. An empty box is null — "not
+ * said" — rather than zero, because those are different promises.
+ */
+export async function confirmQuantitiesAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const purchaseOrderId = String(data.get("id") ?? "");
+  const lineIds = data.getAll("lineId").map(String);
+  const raw = data.getAll("qtyConfirmed").map(String);
+
+  const quantities = lineIds.map((lineId, index) => {
+    const value = (raw[index] ?? "").trim();
+    return { lineId, qty: value === "" ? null : Number(value) };
+  });
+
+  const result = await confirmQuantities(purchaseOrderId, quantities);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  const said = quantities.filter((q) => q.qty !== null).length;
+
+  revalidatePath("/business-portal");
+  revalidatePath(`/business-portal/orders/${String(data.get("poNumber") ?? "")}`);
+  // Ours too: the buying run and the order screen both read these.
+  revalidatePath("/admin/purchasing");
+
+  return {
+    ok: true,
+    message:
+      said === 0
+        ? "Cleared. We will take it none of these are confirmed yet."
+        : `Thank you — ${said} ${said === 1 ? "line" : "lines"} confirmed.`,
+  };
+}
+
+/** Add one catalogue item to this supplier's own list. */
+export async function addToMySupplyAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await addToMySupply(String(data.get("skuId") ?? ""));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/business-portal/supplies");
+  // The browse page re-renders after any server action regardless, so the row
+  // just added now shows as theirs instead of vanishing.
+  revalidatePath("/business-portal/supplies/add");  // Ours too: an offer is a candidate the Cover screen can now allocate.
+  revalidatePath("/admin/suppliers/cover");
+  revalidatePath("/admin/products/unallocated");
+
+  const pending = await offersNeedApproval();
+  return {
+    ok: true,
+    message: pending
+      ? "Added — we will confirm it shortly."
+      : "Added to your list.",
+  };
+}
+
+/** Take an offer back off it. Cover we agreed cannot be dropped from here. */
+export async function removeFromMySupplyAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await removeFromMySupply(String(data.get("supplyId") ?? ""));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/business-portal/supplies");
+  revalidatePath("/admin/products/unallocated");
+  return { ok: true, message: "Removed from your list." };
 }

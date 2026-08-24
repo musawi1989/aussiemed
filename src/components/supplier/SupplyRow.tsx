@@ -93,18 +93,9 @@ export function SupplyRow({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          {/* Their standing, because it explains a quiet month: a backup only
-              receives orders when the primary cannot supply. */}
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-              supply.rank === "Primary"
-                ? "bg-navy-soft text-navy"
-                : "bg-surface-sunken text-text-muted"
-            }`}
-          >
-            {supply.rank}
-          </span>
-
+          {/* No standing pill. Whether they are our primary or our backup on
+              this item is ours, not theirs — see the note in listMySupplies,
+              which no longer even asks the database for it. */}
           {!supply.isAvailable && (
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
