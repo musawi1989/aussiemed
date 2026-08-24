@@ -11,9 +11,10 @@ import { CountryFields } from "@/components/CountryFields";
  * One form for creating and editing, because the rules are identical and two
  * copies would drift.
  *
- * The second email is required and marked so. Both addresses receive order
- * notifications: a supplier with one contact is a supplier whose orders go
- * unread while that person is away.
+ * The second email is optional. Both addresses receive order notifications
+ * where there are two, which is worth having — a supplier with one contact is
+ * one whose orders go unread while that person is away — but not worth
+ * refusing a supplier over, and a required field invites an invented one.
  */
 export function SupplierForm({
   supplier,
@@ -65,8 +66,7 @@ export function SupplierForm({
               name="secondaryEmail"
               type="email"
               defaultValue={supplier?.secondaryEmail}
-              required
-              hint="Also receives every notification. Required, and must differ from the first."
+              hint="Optional. If given it also receives every notification, and must differ from the first."
             />
           </div>
 

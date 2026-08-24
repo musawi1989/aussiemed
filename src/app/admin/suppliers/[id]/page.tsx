@@ -4,6 +4,13 @@ import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { SupplierForm } from "@/components/SupplierForm";
+import { TrnDocument } from "@/components/admin/TrnDocument";
+import { ACCEPTED_DOCUMENTS, MAX_DOCUMENT_BYTES } from "@/lib/document-file";
+import {
+  RETIRED,
+  deepestCategory,
+  groupByCategory,
+} from "@/lib/supply-grouping";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
@@ -30,7 +37,33 @@ export default async function AdminSupplierPage({
             select: {
               skuCode: true,
               unitLabel: true,
-              product: { select: { id: true, name: true, status: true } },
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  status: true,
+                  // Three levels, because that is how deep the tree goes
+                  // (DA-41) and the grouping walks parents rather than
+                  // trusting the order this relation comes back in.
+                  categories: {
+                    select: {
+                      category: {
+                        select: {
+                          id: true,
+                          name: true,
+                          parent: {
+                            select: {
+                              id: true,
+                              name: true,
+                              parent: { select: { id: true, name: true } },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -50,6 +83,29 @@ export default async function AdminSupplierPage({
   });
 
   if (!supplier) notFound();
+
+  /*
+   * Grouped for reading rather than left flat.
+   *
+   * Twelve packs is a list; a real supplier's two hundred is a wall, and the
+   * question an admin has is "do they cover gloves" rather than "what is item
+   * 147". The rank ordering inside each group is the query's — primary first,
+   * which is the one that matters.
+   */
+  const packs = groupByCategory(supplier.supplies, (supply) =>
+    /*
+     * A retired product is filed as retired, not as uncategorised.
+     *
+     * Retiring a product deliberately drops its category links — the seed
+     * rebuilds those from the catalogue and a retired product is no longer in
+     * it — so without this they all land under "Uncategorised", which reads as
+     * a data fault and sends somebody looking for one that is not there. This
+     * supplier had eleven of them, which is how it was noticed.
+     */
+    supply.sku.product.status === "Active"
+      ? deepestCategory(supply.sku.product.categories.map((c) => c.category))
+      : { id: "__retired", name: RETIRED },
+  );
 
   return (
     <>
@@ -90,6 +146,25 @@ export default async function AdminSupplierPage({
         />
 
         <div className="space-y-5">
+          {/* Beside the form rather than inside it: a file input among text
+              fields means re-choosing the file to correct a phone number, and
+              there is nothing to attach a document to until the record
+              exists. */}
+          <TrnDocument
+            kind="supplier"
+            id={supplier.id}
+            document={
+              supplier.trnDocumentName && supplier.trnDocumentUploadedAt
+                ? {
+                    name: supplier.trnDocumentName,
+                    uploadedAt: supplier.trnDocumentUploadedAt,
+                  }
+                : null
+            }
+            maxMb={MAX_DOCUMENT_BYTES / 1024 / 1024}
+            accepted={ACCEPTED_DOCUMENTS}
+          />
+
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
             <h2 className="text-base font-bold tracking-tight text-text">
               Packs they supply ({supplier.supplies.length})
@@ -99,41 +174,77 @@ export default async function AdminSupplierPage({
                 Nothing is sourced from this supplier yet.
               </p>
             ) : (
-              <ul className="mt-3 max-h-80 space-y-1.5 overflow-y-auto pr-1">
-                {supplier.supplies.map((supply) => (
-                  <li
-                    key={`${supply.sku.skuCode}-${supply.rank}`}
-                    className="flex items-center gap-2"
-                  >
-                    <Link
-                      href={`/admin/products/${supply.sku.product.id}`}
-                      className="flex-1 truncate text-sm text-navy hover:underline"
-                    >
-                      {supply.sku.product.name}
-                      <span className="ml-1 text-xs text-text-subtle tnum">
-                        {supply.sku.unitLabel}
+              <div className="mt-3 max-h-96 space-y-4 overflow-y-auto pr-1">
+                {packs.map((group) => (
+                  <div key={`${group.department} ${group.subCategory ?? ""}`}>
+                    {/* Department, then the shelf within it. The count is on
+                        the heading because "do they cover gloves, and how
+                        much of it" is one question, not two. */}
+                    <p className="sticky top-0 z-10 -mx-1 bg-surface px-1 pb-1 text-[11px] font-bold uppercase tracking-wide text-text-subtle">
+                      {group.department}
+                      {group.subCategory && (
+                        <>
+                          <span className="mx-1 text-border-strong">
+                            &rsaquo;
+                          </span>
+                          <span className="text-text-muted">
+                            {group.subCategory}
+                          </span>
+                        </>
+                      )}
+                      <span className="ml-1.5 font-semibold text-text-subtle tnum">
+                        ({group.items.length})
                       </span>
-                    </Link>
-                    <span className="shrink-0 text-xs tnum text-text-muted">
-                      {supply.costFils === null ? "no cost" : aed(supply.costFils)}
-                    </span>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                        supply.rank === "Primary"
-                          ? "bg-navy-soft text-navy"
-                          : "bg-surface-sunken text-text-muted"
-                      }`}
-                    >
-                      {supply.rank}
-                    </span>
-                    {!supply.isAvailable && (
-                      <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
-                        unavailable
-                      </span>
-                    )}
-                  </li>
+                    </p>
+
+                    <ul className="space-y-1.5 border-l border-border-base pl-2">
+                      {group.items.map((supply) => (
+                        <li
+                          key={`${supply.sku.skuCode}-${supply.rank}`}
+                          className="flex items-center gap-2"
+                        >
+                          <Link
+                            href={`/admin/products/${supply.sku.product.id}`}
+                            className="flex-1 truncate text-sm text-navy hover:underline"
+                          >
+                            {supply.sku.product.name}
+                            <span className="ml-1 text-xs text-text-subtle tnum">
+                              {supply.sku.unitLabel}
+                            </span>
+                          </Link>
+                          <span className="shrink-0 text-xs tnum text-text-muted">
+                            {supply.costFils === null
+                              ? "no cost"
+                              : aed(supply.costFils)}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                              supply.rank === "Primary"
+                                ? "bg-navy-soft text-navy"
+                                : "bg-surface-sunken text-text-muted"
+                            }`}
+                          >
+                            {supply.rank}
+                          </span>
+                          {supply.sku.product.status !== "Active" && (
+                            /* On the row as well as in the heading: a
+                               supplier's list is read a line at a time, and a
+                               heading two screens up is not context. */
+                            <span className="shrink-0 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-bold text-text-subtle">
+                              retired
+                            </span>
+                          )}
+                          {!supply.isAvailable && (
+                            <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
+                              unavailable
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 
@@ -161,7 +272,9 @@ export default async function AdminSupplierPage({
                     <span className="flex items-center gap-2">
                       <StatusPill axis="fulfilment" status={po.status} />
                       <span className="font-semibold tnum text-text">
-                        {po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
+                        {po.totalCostFils === null
+                          ? "—"
+                          : aed(po.totalCostFils)}
                       </span>
                     </span>
                   </li>
