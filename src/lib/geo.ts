@@ -46,7 +46,9 @@ export type SubdivisionLabel =
   | "Governorate"
   | "County"
   | "Prefecture"
-  | "Territory";
+  | "Territory"
+  | "Canton"
+  | "Department";
 
 /* ------------------------------------------------------------------ *
  * Countries
@@ -379,6 +381,57 @@ const SUBDIVISIONS: Record<string, SubdivisionSet> = {
 /** When a country has no list, this is what its subdivision is called. */
 const DEFAULT_LABEL: SubdivisionLabel = "State";
 
+/**
+ * What the OTHER countries call the thing under them.
+ *
+ * The seventeen above carry their own label beside their list. Every other
+ * country now gets a list too — generated into src/data/subdivisions.json and
+ * served one at a time — and a list needs a word above it. Without this, a
+ * French buyer saw "State" over a list of régions and a Japanese supplier saw
+ * "State" over forty-seven prefectures, which is exactly the carelessness the
+ * note on SubdivisionLabel is about.
+ *
+ * Not exhaustive, and deliberately so: these are the countries a UAE medical
+ * supplier plausibly ships to or buys from, named with the word that country
+ * actually uses. Anything not listed falls back to "State", which is the
+ * commonest answer worldwide and an honest default rather than a wrong claim.
+ */
+const LABELS: Record<string, SubdivisionLabel> = {
+  // Governorate — the Arab world beyond the GCC entries above.
+  IQ: "Governorate", LB: "Governorate", SY: "Governorate", YE: "Governorate",
+  TN: "Governorate", LY: "Governorate", DJ: "Region", MA: "Region", DZ: "Province",
+
+  // Province.
+  CA: "Province", NL: "Province", BE: "Province", ES: "Province", ZA: "Province",
+  ID: "Province", PH: "Province", TH: "Province", VN: "Province", KR: "Province",
+  LK: "Province", NP: "Province", KH: "Province", LA: "Province", MN: "Province",
+  AR: "Province", EC: "Province", PA: "Province", CR: "Province", AO: "Province",
+  MZ: "Province", ZM: "Province", ZW: "Province", CD: "Province", RW: "Province",
+  BI: "Province", PG: "Province", SB: "Province", AF: "Province", IR: "Province",
+
+  // Region.
+  FR: "Region", IT: "Region", PT: "Region", GR: "Region", CL: "Region",
+  PE: "Region", GH: "Region", TZ: "Region", UG: "Region", MG: "Region",
+  SN: "Region", CI: "Region", CM: "Region", ET: "Region", BF: "Region",
+  DK: "Region", FI: "Region", MT: "Region", NZ: "Region", SG: "Region",
+
+  // County.
+  IE: "County", NO: "County", SE: "County", HU: "County", RO: "County",
+  LT: "County", KE: "County", TW: "County",
+
+  // Prefecture, Canton, Department.
+  JP: "Prefecture", GN: "Prefecture",
+  CH: "Canton",
+  BO: "Department", CO: "Department", UY: "Department", PY: "Department",
+  GT: "Department", HN: "Department", NI: "Department", SV: "Department",
+  HT: "Department",
+
+  // State — named rather than left to the default, because these are ones a
+  // reader might otherwise assume were an oversight.
+  BR: "State", MX: "State", NG: "State", VE: "State", AT: "State",
+  SS: "State",
+};
+
 /* ------------------------------------------------------------------ *
  * Reading it
  * ------------------------------------------------------------------ */
@@ -404,13 +457,41 @@ export function dialCode(code: string | null | undefined): string | null {
   return countryByCode(code)?.dial ?? null;
 }
 
+/**
+ * Where to find the country's flag.
+ *
+ * AN IMAGE, NOT AN EMOJI. The obvious implementation is the flag emoji, which
+ * is just the country code written in regional indicator symbols and needs no
+ * files at all. It was written that way first and then thrown away: Windows
+ * ships no glyphs for those symbols, so Segoe UI Emoji draws the two letters
+ * instead — a UAE flag renders as "AE". A trade buyer is overwhelmingly likely
+ * to be at an office desktop, so the version that needed no files would have
+ * shown letters to most of the people it was meant to help, and a pair of
+ * stray letters beside a phone number reads as something that failed to load.
+ *
+ * The files are copied from flag-icons by scripts/build-flags.mjs, which is a
+ * devDependency and never reaches the browser. One flag is on screen at a
+ * time, so exactly one small SVG is fetched, and cached.
+ *
+ * Null rather than a guess for a country we do not hold, so the caller shows
+ * the dialling code on its own instead of a broken image.
+ */
+export function flagSrc(code: string | null | undefined): string | null {
+  const country = countryByCode(code);
+  if (!country) return null;
+  return `/flags/${country.code.toLowerCase()}.svg`;
+}
+
 export function subdivisionsOf(code: string | null | undefined): string[] {
   const set = SUBDIVISIONS[(code ?? "").trim().toUpperCase()];
   return set ? [...set.items] : [];
 }
 
 export function subdivisionLabel(code: string | null | undefined): SubdivisionLabel {
-  return SUBDIVISIONS[(code ?? "").trim().toUpperCase()]?.label ?? DEFAULT_LABEL;
+  const key = (code ?? "").trim().toUpperCase();
+  // Curated first: those seventeen carry the word beside their own list, and
+  // that is the one the form and the API must agree on.
+  return SUBDIVISIONS[key]?.label ?? LABELS[key] ?? DEFAULT_LABEL;
 }
 
 /** Whether this country offers a list, or wants a free-text box. */

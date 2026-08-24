@@ -20,12 +20,15 @@
     "db:seed:accounts": "node --experimental-strip-types prisma/seed-accounts.ts",
     "db:seed:orders": "node --experimental-strip-types prisma/seed-order-states.ts",
     "db:seed:categories": "node --experimental-strip-types prisma/seed-categories.ts",
-    "db:seed:samples": "node --experimental-strip-types prisma/seed-samples.ts"
+    "db:seed:samples": "node --experimental-strip-types prisma/seed-samples.ts",
+    "flags:build": "node --experimental-strip-types scripts/build-flags.mjs",
+    "subdivisions:build": "node --experimental-strip-types scripts/build-subdivisions.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "next": "^16.3.0",
+    "playwright": "^1.62.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "server-only": "^0.0.1"
@@ -35,8 +38,9 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "country-region-data": "^4.1.0",
     "exceljs": "^4.4.0",
-    "playwright": "^1.62.1",
+    "flag-icons": "^7.5.0",
     "postcss": "^8.5.26",
     "prisma": "^7.9.1",
     "tailwindcss": "^4.3.3",

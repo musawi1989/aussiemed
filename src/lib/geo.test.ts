@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
@@ -5,6 +7,7 @@ import {
   DEFAULT_COUNTRY,
   countryByCode,
   countryName,
+  flagSrc,
   dialCode,
   hasSubdivisions,
   joinPhone,
@@ -66,6 +69,36 @@ describe("the country list", () => {
     assert.equal(dialCode("SA"), "+966");
     assert.equal(dialCode("IN"), "+91");
     assert.equal(dialCode("GB"), "+44");
+  });
+
+  it("points at the flag file for a country", () => {
+    assert.equal(flagSrc("AE"), "/flags/ae.svg");
+    assert.equal(flagSrc("GB"), "/flags/gb.svg");
+  });
+
+  it("takes a lowercase or padded code, like every other lookup here", () => {
+    assert.equal(flagSrc("ae"), "/flags/ae.svg");
+    assert.equal(flagSrc(" au "), "/flags/au.svg");
+  });
+
+  it("gives every country in the list a flag that exists on disk", () => {
+    // A broken image beside a phone number reads as a fault. This is the check
+    // that scripts/build-flags.mjs was actually run after a country was added.
+    for (const country of COUNTRIES) {
+      const src = flagSrc(country.code);
+      assert.ok(src, country.name + " (" + country.code + ") has no flag");
+      assert.ok(
+        existsSync(join("public", src!)),
+        country.code + " has no file at " + src + " — run npm run flags:build"
+      );
+    }
+  });
+
+  it("returns nothing for a country it does not hold", () => {
+    // The caller shows the dialling code on its own rather than a broken image.
+    assert.equal(flagSrc("XX"), null);
+    assert.equal(flagSrc(null), null);
+    assert.equal(flagSrc(""), null);
   });
 });
 
