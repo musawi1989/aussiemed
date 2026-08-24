@@ -67,19 +67,53 @@ export default async function OrderPage({ params }: { params: Params }) {
             {order.poReference ? ` · PO ${order.poReference}` : ""}
           </p>
         </div>
-        {/* The customer's word for it, not the warehouse's — "Pending" reads
-            as "we might not do this" to the person waiting on the box. */}
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-bold ${
-            progress.cancelled
-              ? "bg-danger-soft text-danger"
-              : progress.closed
-                ? "bg-success-soft text-success"
-                : "bg-accent-soft text-accent"
-          }`}
-        >
-          {progress.headline}
-        </span>
+        <div className="flex flex-col items-end gap-3">
+          {/* The customer's word for it, not the warehouse's — "Pending" reads
+              as "we might not do this" to the person waiting on the box. */}
+          <span
+            className={`rounded-full px-3 py-1 text-sm font-bold ${
+              progress.cancelled
+                ? "bg-danger-soft text-danger"
+                : progress.closed
+                  ? "bg-success-soft text-success"
+                  : "bg-accent-soft text-accent"
+            }`}
+          >
+            {progress.headline}
+          </span>
+
+          {/*
+            A plain link to the PDF, which saves on click.
+
+            Not target="_blank" and not window.print(). The route this points
+            at answers with Content-Disposition: attachment, and a browser
+            handling an attachment downloads it WITHOUT navigating — so the
+            buyer stays on the order they were reading and gets a file, rather
+            than a new tab and a print dialogue to work through.
+
+            The HTML document is still there at /document for anyone who wants
+            to print rather than save, and it is what the PDF is rendered from.
+          */}
+          <a
+            href={`/orders/${order.reference}/document/pdf`}
+            className="inline-flex items-center gap-2 rounded-card border border-border-strong bg-surface px-3 py-2 text-sm font-bold text-text transition-colors hover:border-navy hover:text-navy"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+              <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            Download PDF
+          </a>
+        </div>
       </div>
 
       <section className="mt-6 rounded-card border border-border-base bg-surface p-5 shadow-card">
