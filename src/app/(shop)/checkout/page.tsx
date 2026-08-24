@@ -48,6 +48,10 @@ export default async function CheckoutPage() {
         staff={staff.map((s) => ({ id: s.id, name: s.name }))}
         company={identity?.organisationName ?? ""}
         email={identity?.email ?? ""}
+        // A guest is Prepaid — no account means no credit — and sees the card
+        // option priced but not the account terms of somebody else.
+        paymentTerms={identity?.paymentTerms ?? "Prepaid"}
+        signedIn={Boolean(identity)}
       />
     </div>
   );

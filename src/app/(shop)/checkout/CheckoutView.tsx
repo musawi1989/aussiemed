@@ -5,6 +5,14 @@ import { CountryFields } from "@/components/CountryFields";
 import { useState } from "react";
 import { aed, useCart } from "@/lib/cart-client";
 import { formatAED } from "@/lib/money";
+import {
+  CARD_PAYMENT_AVAILABLE,
+  cardFeeDescription,
+  cardFeeFils,
+  dueWording,
+  paymentDueOn,
+  totalWithCardFeeFils,
+} from "@/lib/payment-options";
 
 /**
  * Places a real order.
@@ -29,6 +37,8 @@ export function CheckoutView({
   staff = [],
   company = "",
   email = "",
+  paymentTerms = "Prepaid",
+  signedIn = false,
 }: {
   branches?: CheckoutBranch[];
   staff?: { id: string; name: string }[];
@@ -37,6 +47,9 @@ export function CheckoutView({
    *  ordering for a sister site should not have to fight a locked field. */
   company?: string;
   email?: string;
+  /** This account's agreed terms. A guest is Prepaid. */
+  paymentTerms?: string;
+  signedIn?: boolean;
 }) {
   const { cart, ready, refresh } = useCart();
   const [placed, setPlaced] = useState<{
@@ -60,6 +73,26 @@ export function CheckoutView({
       </div>
     );
   }
+
+  /*
+   * What the two payment options cost this buyer, on this order.
+   *
+   * Computed after the loading guard so cart totals are real rather than zero,
+   * and computed from payment-options.ts so the fee quoted here is produced by
+   * the same function that will charge it once Stripe is connected. A figure
+   * on a checkout screen that a later implementation recalculates differently
+   * is how a customer ends up disputing a card statement.
+   *
+   * Dubai time, because that is where the buyer and the invoice both are, and
+   * a due date that lands a day early in a browser set to London is a due date
+   * somebody chases early.
+   */
+  const settleBy = paymentDueOn(paymentTerms, new Date()).toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dubai" }
+  );
+  const cardFee = cardFeeFils(cart.totalFils);
+  const due = dueWording(paymentTerms, settleBy);
 
   if (placed) {
     return (
@@ -257,8 +290,13 @@ export function CheckoutView({
               subdivision={branch?.emirate}
               phone={branch?.phone}
               required
-              inputClassName="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
-              labelClassName="block text-xs font-bold uppercase tracking-wide text-text-subtle"
+              /* The same strings the Field below this uses. They used to be the
+                 admin forms' styles, borrowed: uppercase grey labels over 38px
+                 boxes, directly above a normal-case bold label over a 40px one.
+                 Country, Emirate and Phone now match Purchase order reference,
+                 which is the field they sit next to. */
+              inputClassName="h-10 w-full rounded-card border border-border-strong bg-surface px-3 text-sm text-text"
+              labelClassName="mb-1 block text-sm font-bold text-text"
             />
             <Field label="Purchase order reference" name="poReference" />
           </div>
@@ -266,15 +304,91 @@ export function CheckoutView({
 
         <fieldset className="rounded-card border border-border-base bg-surface p-5 shadow-card">
           <legend className="px-1 text-sm font-bold text-text">Payment</legend>
-          <label className="mt-3 flex items-start gap-3 rounded-card border border-navy-border bg-navy-soft p-3">
-            <input type="radio" name="paymentMethod" value="OfflinePurchaseOrder" defaultChecked className="mt-0.5" />
+
+          {/*
+            Two options, and only one of them can actually take money today.
+            The card option is shown anyway, priced against THIS order, because
+            a buyer weighing up whether to open an account should be able to see
+            what the alternative costs before choosing — not after Stripe is
+            wired in and the total changes under them.
+          */}
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-card border border-navy-border bg-navy-soft p-3">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="OfflinePurchaseOrder"
+              defaultChecked
+              className="mt-0.5 cursor-pointer"
+            />
             <span>
               <span className="block text-sm font-bold text-text">
-                Offline / Purchase order
+                On account
               </span>
-              <span className="mt-0.5 block text-sm text-text-muted">
-                We&rsquo;ll invoice your account. Card and online payment are a
-                later decision.
+              <span className="mt-1 block text-sm text-text-muted">
+                We dispatch the order and invoice you. Nothing is taken now, and
+                there is no card fee.
+              </span>
+              {/* The date this buyer's own terms produce. Asserting "two weeks"
+                  at an account agreed on Net30 would be telling them their
+                  invoice is due a fortnight before it is. */}
+              <span className="mt-2 block rounded-card bg-surface px-3 py-2 text-sm text-text">
+                <span className="font-bold">{due.headline}</span>
+                <span className="block text-text-muted">{due.detail}</span>
+              </span>
+              <span className="mt-2 block text-xs leading-relaxed text-text-subtle">
+                {signedIn
+                  ? "Your invoice is issued when the order ships, and settles against this account. Terms are set when your account is approved and can be changed by arrangement."
+                  : "Account terms are agreed when your trade account is approved. Until then an order is confirmed by us before it ships."}
+              </span>
+            </span>
+          </label>
+
+          <label
+            className={`mt-3 flex items-start gap-3 rounded-card border border-border-base p-3 ${
+              CARD_PAYMENT_AVAILABLE ? "cursor-pointer" : "cursor-not-allowed bg-surface-sunken"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="Card"
+              disabled={!CARD_PAYMENT_AVAILABLE}
+              className="mt-0.5 disabled:cursor-not-allowed"
+            />
+            <span>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-text">Card</span>
+                {!CARD_PAYMENT_AVAILABLE && (
+                  <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
+                    Not available yet
+                  </span>
+                )}
+              </span>
+              <span className="mt-1 block text-sm text-text-muted">
+                Pay by card through Stripe. We are not connected to Stripe yet,
+                so this cannot be selected today.
+              </span>
+              {/* Priced against this order rather than described in the
+                  abstract: "2.9% + AED 1.00" is a rate, and what a buyer wants
+                  to know is what it costs them on what is in front of them. */}
+              <span className="mt-2 block rounded-card border border-border-base bg-surface px-3 py-2 text-sm">
+                <span className="block text-text">
+                  <span className="font-bold">Card fee {cardFeeDescription()}</span>
+                  <span className="text-text-muted">
+                    {" "}&mdash; {formatAED(aed(cardFee))} on this order.
+                  </span>
+                </span>
+                <span className="mt-1 block text-text-muted">
+                  Total by card would be{" "}
+                  <span className="font-bold tnum text-text">
+                    {formatAED(aed(totalWithCardFeeFils(cart.totalFils)))}
+                  </span>
+                </span>
+              </span>
+              <span className="mt-2 block text-xs leading-relaxed text-text-subtle">
+                The card fee is added to your total and paid by you &mdash;
+                AussieMed does not absorb it. Paying on account avoids it
+                entirely.
               </span>
             </span>
           </label>
