@@ -11,6 +11,7 @@ import {
   orderTones,
   paymentStatusOf,
   spaceOut,
+  paymentFilterWhere,
   statusMeaning,
   statusTone,
   type Axis,
@@ -201,13 +202,45 @@ describe("where the parcel is", () => {
  * ------------------------------------------------------------------ */
 
 describe("whether the money is late", () => {
-  it("is calm when nothing is due yet", () => {
+  it("shows unpaid as unpaid, whether or not it is due yet", () => {
+    // The STATUS is still calm — nothing is overdue with thirty days to run,
+    // and paymentStatusOf must not promote it.
     const status = paymentStatusOf(
       { paymentStatus: "Unpaid", paymentDueOn: inDays(30) },
       NOW
     );
     assert.equal(status, "Unpaid");
-    assert.equal(statusTone("payment", status), "resting");
+  });
+
+  it("reads the payment axis as a temperature", () => {
+    // Set by the client on 24 Aug 2026, and the reason AC-18 is closed: owed
+    // is orange, late is red, settled is green, returned is blue. The pairing
+    // that matters is the first two — Unpaid and Overdue must NOT share a
+    // colour, or the state that needs chasing looks like the one that does
+    // not.
+    assert.equal(statusTone("payment", "Unpaid"), "attention");
+    assert.equal(statusTone("payment", "Overdue"), "stopped");
+    assert.equal(statusTone("payment", "Paid"), "complete");
+    assert.equal(statusTone("payment", "Refunded"), "active");
+    assert.notEqual(
+      statusTone("payment", "Unpaid"),
+      statusTone("payment", "Overdue")
+    );
+  });
+
+  it("drops the glyph only where the label is carrying the meaning", () => {
+    // Paid and Unpaid are words on a coloured chip; the tick and the cross
+    // were saying the same thing twice. Overdue keeps its cross because it is
+    // the one payment state somebody must act on, and the one that has to
+    // survive a mono printer.
+    assert.equal(statusMeaning("payment", "Paid").glyph, "");
+    assert.equal(statusMeaning("payment", "Unpaid").glyph, "");
+    assert.equal(statusMeaning("payment", "Refunded").glyph, "");
+    assert.equal(statusMeaning("payment", "Overdue").glyph, undefined);
+    // Everything outside this axis is untouched: an unset glyph means the
+    // tone's own, which is what all the other pills in the system use.
+    assert.equal(statusMeaning("fulfilment", "Cancelled").glyph, undefined);
+    assert.equal(statusMeaning("delivery", "Delivered").glyph, undefined);
   });
 
   it("goes overdue on the date, with no nightly job to forget", () => {
@@ -295,6 +328,45 @@ describe("the three axes together", () => {
     assert.equal(tones.payment.tone, "stopped");
   });
 
+  it("keeps a plain unpaid invoice out of the action queue", () => {
+    // Unpaid is COLOURED for a customer and CALM for operations, and those
+    // are two different questions. Left coupled, giving the pill a tone on
+    // 23 Aug 2026 put every open invoice in the business into this list at
+    // once — a queue holding everything is a queue nobody reads. The colour
+    // has changed twice since; the decoupling is what stopped it mattering.
+    const openInvoice = {
+      status: "Processing",
+      paymentStatus: "Unpaid",
+      paymentDueOn: inDays(30),
+      deliveredAt: null,
+      dispatchedAt: null,
+    } as never;
+
+    assert.equal(statusTone("payment", "Unpaid"), "attention");
+    assert.deepEqual(needsAttention(openInvoice, NOW), []);
+  });
+
+  it("still chases the invoices that are actually late", () => {
+    // The exception is narrow: only the plain not-yet-due Unpaid is let past.
+    const late = {
+      status: "Processing",
+      paymentStatus: "Unpaid",
+      paymentDueOn: inDays(-1),
+      deliveredAt: null,
+      dispatchedAt: null,
+    } as never;
+    const dueSoon = {
+      status: "Processing",
+      paymentStatus: "Unpaid",
+      paymentDueOn: inDays(2),
+      deliveredAt: null,
+      dispatchedAt: null,
+    } as never;
+
+    assert.ok(needsAttention(late, NOW).length > 0, "overdue must be chased");
+    assert.ok(needsAttention(dueSoon, NOW).length > 0, "due soon must be flagged");
+  });
+
   it("says nothing needs attention on a healthy order", () => {
     assert.deepEqual(
       needsAttention(
@@ -331,5 +403,134 @@ describe("the three axes together", () => {
       NOW
     );
     assert.equal(reasons.length, 2); // fulfilment and delivery both stopped
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The query form, and whether it agrees with the function
+ * ------------------------------------------------------------------ */
+
+/**
+ * A tiny evaluator for the where-clause shapes paymentFilterWhere produces.
+ *
+ * Only the operators that function uses: OR, in, not, lt, gt, gte, lte, and a
+ * literal. It exists so the test can ask "would the database have returned
+ * this row" without a database, which is what makes it possible to drive every
+ * combination.
+ */
+function matchesWhere(clause: unknown, row: Record<string, unknown>): boolean {
+  if (clause === null || typeof clause !== "object") return false;
+  const node = clause as Record<string, unknown>;
+
+  return Object.entries(node).every(([key, expected]) => {
+    if (key === "OR") {
+      return (expected as unknown[]).some((c) => matchesWhere(c, row));
+    }
+
+    const actual = row[key];
+
+    if (expected !== null && typeof expected === "object") {
+      const ops = expected as Record<string, unknown>;
+      return Object.entries(ops).every(([op, value]) => {
+        switch (op) {
+          case "in":
+            return (value as unknown[]).includes(actual);
+          case "not":
+            return value === null ? actual !== null : actual !== value;
+          case "lt":
+            return actual !== null && (actual as Date) < (value as Date);
+          case "gt":
+            return actual !== null && (actual as Date) > (value as Date);
+          case "gte":
+            return actual !== null && (actual as Date) >= (value as Date);
+          case "lte":
+            return actual !== null && (actual as Date) <= (value as Date);
+          default:
+            throw new Error("unhandled operator " + op);
+        }
+      });
+    }
+
+    return actual === expected;
+  });
+}
+
+describe("the payment filter agrees with the payment pill", () => {
+  /**
+   * Every stored word against every interesting position of the due date.
+   *
+   * This is the test that makes it safe to state one rule twice. Change
+   * paymentStatusOf without changing paymentFilterWhere and this fails, which
+   * is the whole point — the admin list filtered on the stored column for
+   * months and nobody noticed that Overdue matched nothing.
+   */
+  const stored = ["Unpaid", "PartiallyPaid", "Paid", "Overdue", "Refunded"];
+  const dues: [string, Date | null][] = [
+    ["no due date", null],
+    ["long past", inDays(-90)],
+    ["yesterday", inDays(-1)],
+    ["today-ish", inDays(0)],
+    ["in 3 days", inDays(3)],
+    ["in 7 days", inDays(DUE_SOON_DAYS)],
+    ["in 30 days", inDays(30)],
+  ];
+
+  const rows = stored.flatMap((paymentStatus) =>
+    dues.map(([label, paymentDueOn]) => ({
+      label: `${paymentStatus} / ${label}`,
+      paymentStatus,
+      paymentDueOn,
+    }))
+  );
+
+  for (const wanted of [
+    "Unpaid",
+    "DueSoon",
+    "PartiallyPaid",
+    "Overdue",
+    "Paid",
+    "Refunded",
+  ]) {
+    it(`filtering by ${wanted} returns exactly the rows that show ${wanted}`, () => {
+      const where = paymentFilterWhere([wanted], NOW);
+      assert.ok(where, "a filter was asked for and none was built");
+
+      for (const row of rows) {
+        const shown = paymentStatusOf(row, NOW);
+        const matched = matchesWhere(where, row);
+        assert.equal(
+          matched,
+          shown === wanted,
+          `${row.label}: the pill says ${shown}, the ${wanted} filter ${matched ? "matched" : "did not match"}`
+        );
+      }
+    });
+  }
+
+  it("asks for nothing when nothing was chosen", () => {
+    // Not a clause matching everything: the caller leaves the condition out.
+    assert.equal(paymentFilterWhere([], NOW), null);
+  });
+
+  it("matches nothing on a word it does not know", () => {
+    // A filter that silently widens is worse than one that returns nothing.
+    const where = paymentFilterWhere(["Banana"], NOW);
+    assert.ok(where);
+    for (const row of rows) {
+      assert.equal(matchesWhere(where, row), false, row.label);
+    }
+  });
+
+  it("combines two choices without losing either", () => {
+    const where = paymentFilterWhere(["Paid", "Overdue"], NOW);
+    assert.ok(where);
+    for (const row of rows) {
+      const shown = paymentStatusOf(row, NOW);
+      assert.equal(
+        matchesWhere(where, row),
+        shown === "Paid" || shown === "Overdue",
+        row.label
+      );
+    }
   });
 });

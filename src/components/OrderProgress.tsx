@@ -1,5 +1,5 @@
 import { orderProgress } from "@/lib/order-progress";
-import { TONES, type Tone } from "@/lib/status-tone";
+import { TONES } from "@/lib/status-tone";
 
 /**
  * Where an order has got to, drawn as the journey it is on.
@@ -9,15 +9,43 @@ import { TONES, type Tone } from "@/lib/status-tone";
  * what is still to come. Cancelled leaves the track rather than colouring it,
  * because it is not a stage on the way to delivery.
  *
- * The track used to be navy from end to end, which made it a picture of
- * position and not of health — a delivered order and one sitting in a
- * warehouse looked the same colour. It now reads in the same five tones as
- * every pill on the site: green behind, blue where it is now, grey ahead, red
- * if it stopped. Somebody who has learned the colours on the orders list can
- * read this without learning anything else.
+ * THE TRACK IS COLOURED BY STAGE, NOT BY STATE — the client's request of
+ * 23 Aug 2026: red on arrival, orange while it is being prepared, light green
+ * once it is moving, solid green when it lands. It reads as a thing ripening.
+ *
+ * That is a different question from the one the five tones answer, and it is
+ * why the ramp is its own set of variables rather than a remapping of them. In
+ * the tone system red means STOPPED, and status-tone.ts is deliberate that the
+ * mapping is meaning rather than preference. A new order is not stopped; it is
+ * at the beginning. Folding the two together would have made red mean both.
+ *
+ * THE WHOLE REACHED PORTION TAKES THE CURRENT STAGE'S COLOUR, rather than each
+ * segment keeping its own. "Solid green as delivered" is the test: a delivered
+ * order has to read green all the way across, and a fixed per-segment ramp
+ * would have left it starting in red for ever.
+ *
+ * Colour is never the only carrier. Roughly one man in twelve cannot separate
+ * red from green, so the current step is the only one in bold, it is the only
+ * one with a glyph, and the stage is written out in words underneath.
  *
  * A server component — nothing here changes without a page load.
  */
+
+/**
+ * The ramp, in track order. Indexed by position rather than by status key so
+ * that a track of a different length still gets a sensible colour, and the
+ * last stage is always the settled green.
+ */
+const STAGES = [
+  { bar: "bg-[var(--stage-1-bar)]", text: "text-[var(--stage-1-text)]" },
+  { bar: "bg-[var(--stage-2-bar)]", text: "text-[var(--stage-2-text)]" },
+  { bar: "bg-[var(--stage-3-bar)]", text: "text-[var(--stage-3-text)]" },
+  { bar: "bg-[var(--stage-4-bar)]", text: "text-[var(--stage-4-text)]" },
+] as const;
+
+const stageAt = (index: number) =>
+  STAGES[Math.min(index, STAGES.length - 1)] ?? STAGES[0]!;
+
 export function OrderProgress({
   status,
   compact = false,
@@ -43,42 +71,39 @@ export function OrderProgress({
     );
   }
 
+  // Where the order actually is. "current" is the stage it sits in; an order
+  // whose every step is done is delivered, so it takes the last stage.
+  const currentIndex = Math.max(
+    0,
+    progress.steps.findIndex((step) => step.state === "current")
+  );
+  const stage = stageAt(
+    progress.steps.some((step) => step.state === "current")
+      ? currentIndex
+      : progress.steps.length - 1
+  );
+
   return (
     <div>
       <ol className="flex items-start gap-1" aria-label="Order progress">
         {progress.steps.map((step, index) => {
-          /**
-           * Behind is finished, here is moving, ahead is nothing yet. The last
-           * step is the exception: once an order is delivered "here" is not
-           * in progress, it is done, and drawing it blue would suggest
-           * something is still to come.
-           */
-          const tone: Tone =
-            step.state === "done"
-              ? "complete"
-              : step.state === "current"
-                ? progress.closed
-                  ? "complete"
-                  : "active"
-                : "resting";
-
           const reached = step.state !== "todo";
 
           return (
             <li key={step.key} className="flex-1">
-              {/* The bar carries the progress; the label says which stage.
-                  Colour alone would not do it — the current step is the only
-                  one in bold, and the tone's own glyph sits beside it. */}
+              {/* The bar carries how far along; the label says which stage.
+                  Every reached segment wears the CURRENT stage's colour, so
+                  the whole track moves through the ramp together. */}
               <span
                 className={`block h-1.5 rounded-full print-tone ${
-                  reached ? TONES[tone].rail : "bg-surface-sunken"
+                  reached ? stage.bar : "bg-surface-sunken"
                 }`}
-                data-tone={tone}
+                data-stage={reached ? currentIndex + 1 : undefined}
               />
               <span
                 className={`mt-1.5 flex items-baseline gap-1 text-[11px] leading-tight ${
                   step.state === "current"
-                    ? `font-bold ${TONES[tone].text}`
+                    ? `font-bold ${stage.text}`
                     : reached
                       ? "font-medium text-text-muted"
                       : "text-text-subtle"
@@ -87,7 +112,13 @@ export function OrderProgress({
                 {step.state === "current" && (
                   <>
                     <span className="sr-only">Currently: </span>
-                    <span aria-hidden="true">{TONES[tone].glyph}</span>
+                    {/* The glyph still comes from the tone system: it says
+                        "in progress" or "done", which is the thing colour
+                        cannot say on a mono printer or to a reader who
+                        cannot separate these hues. */}
+                    <span aria-hidden="true">
+                      {progress.closed ? TONES.complete.glyph : TONES.active.glyph}
+                    </span>
                   </>
                 )}
                 <span>{step.label}</span>

@@ -25,6 +25,10 @@ export function StatusPill({
 }) {
   const meaning = statusMeaning(axis, status);
   const tone = TONES[meaning.tone];
+  // A status may override its tone's glyph, including with "" for none.
+  // ?? rather than || so an intentional "" is honoured instead of falling
+  // straight back to the tone's — which is the whole point of setting it.
+  const glyph = meaning.glyph ?? tone.glyph;
 
   return (
     <span
@@ -36,11 +40,16 @@ export function StatusPill({
       } ${tone.pill} print-tone`}
       data-tone={meaning.tone}
     >
-      {/* Shape as well as colour: this is the only signal that survives a mono
-          printer, or a reader who cannot separate red from green. */}
-      <span aria-hidden="true" className="text-[0.9em] leading-none">
-        {tone.glyph}
-      </span>
+      {/* Shape as well as colour: for most statuses this is the only signal
+          that survives a mono printer, or a reader who cannot separate red
+          from green. A status may set glyph: "" to drop it — see the note on
+          StatusMeaning — and where one does, the label is carrying the meaning
+          on its own and is always present. */}
+      {glyph && (
+        <span aria-hidden="true" className="text-[0.9em] leading-none">
+          {glyph}
+        </span>
+      )}
       {meaning.label}
     </span>
   );
@@ -49,6 +58,11 @@ export function StatusPill({
 /**
  * The bare dot, for a table dense enough that a row of pills becomes stripes.
  * Same tones, same glyph, no fill.
+ *
+ * A status that drops its glyph gets a filled circle here instead of nothing.
+ * The dot has no label beside it, so with the glyph gone there would be
+ * literally nothing to see — which is a different thing from a status with no
+ * glyph on a pill, where the word is still there doing the work.
  */
 export function StatusDot({
   status,
@@ -69,7 +83,7 @@ export function StatusDot({
         className={`text-xs leading-none ${tone.text} print-tone`}
         data-tone={meaning.tone}
       >
-        {tone.glyph}
+        {meaning.glyph === "" ? "●" : (meaning.glyph ?? tone.glyph)}
       </span>
       {withLabel && (
         <span className={`text-sm font-semibold ${tone.text}`}>

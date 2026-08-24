@@ -116,6 +116,23 @@ export type StatusMeaning = {
   label: string;
   /** One sentence, for a legend or the title attribute on a pill. */
   meaning: string;
+  /**
+   * A glyph of this status's own, or "" for none. Left out, the tone's glyph
+   * is used, which is the right default and what nearly everything wants.
+   *
+   * It exists because the payment axis stopped needing it. The glyph is the
+   * signal that survives a mono printer and a reader who cannot separate red
+   * from green — but it earns that keep only where colour is doing the work
+   * alone. On the payment pills the WORD is always there beside it, and once
+   * that axis had four distinct colours the tick on "Paid" and the cross on
+   * "Unpaid" were saying, twice, what the label already said. The client asked
+   * for them off on 24 Aug 2026.
+   *
+   * Overdue keeps its cross deliberately. It is the one payment state where
+   * somebody must act, and it is the one worth being legible on a printed
+   * statement that has been through a mono laser.
+   */
+  glyph?: string;
 };
 
 type Table = Record<string, StatusMeaning>;
@@ -268,11 +285,24 @@ const DELIVERY: Table = {
  * later. An order can sit green on delivery and red on payment at the same
  * time, and that pairing is exactly the one somebody needs to see.
  */
+/*
+ * The colours here were set by the client on 24 Aug 2026, and they settle
+ * AC-18. The axis now reads as a temperature rather than a binary: orange
+ * while the money is owed, red once it is late, green when it is in, blue
+ * when it went back.
+ *
+ * That is an improvement on the arrangement it replaces. For one day Unpaid
+ * was red and Due soon amber, which had the more urgent of the two looking
+ * the calmer — and Unpaid shared its red with Overdue, so the state that
+ * needs chasing was indistinguishable from the state that does not.
+ */
 const PAYMENT: Table = {
   Unpaid: {
-    tone: "resting",
+    // Orange: owed, not late. The distinction Overdue's red now carries alone.
+    tone: "attention",
     label: "Unpaid",
-    meaning: "Not paid, and not yet due. Nothing is wrong.",
+    meaning: "The money is not in yet.",
+    glyph: "",
   },
   DueSoon: {
     tone: "attention",
@@ -288,16 +318,29 @@ const PAYMENT: Table = {
     tone: "complete",
     label: "Paid",
     meaning: "Settled in full.",
+    glyph: "",
   },
   Overdue: {
+    // Keeps its cross: the one payment state where somebody must act, and the
+    // one that has to stay legible on a mono printout.
     tone: "stopped",
     label: "Overdue",
     meaning: "Past its due date and still owing. Chase it.",
   },
   Refunded: {
-    tone: "resting",
+    /*
+     * Blue. It was grey, which put it with "nothing is happening" when what
+     * actually happened is money moving the other way — a thing worth seeing
+     * on a statement.
+     *
+     * No glyph rather than the tone's: blue is the "under way and on track"
+     * tone and its arrow would read as a refund still in progress, which is
+     * the opposite of what this word means.
+     */
+    tone: "active",
     label: "Refunded",
     meaning: "The money went back. Nothing is owed either way.",
+    glyph: "",
   },
 };
 
@@ -627,10 +670,129 @@ export function orderTones(order: OrderFacts, now: Date): OrderTones {
  * Whether an order should be pulled out of a list for someone to look at, and
  * why. Amber and red are the two tones that mean a person is needed, so this
  * is the definition of "needs attention" rather than a second opinion about it.
+ *
+ * WITH ONE EXCEPTION, AND IT IS AN EXCEPTION ON PURPOSE. "Unpaid" is coloured
+ * — red on 23 Aug 2026, orange since the 24th — because a customer should see
+ * at a glance where their invoice stands. It is not a statement that an
+ * invoice with thirty days left to run needs chasing, and the exception has
+ * survived both colours precisely because it was never about the colour.
+ *
+ * Left to the tone alone, this list would have named every open invoice in the
+ * business the moment the colour changed, and an action queue that contains
+ * everything is one nobody reads. The axis already distinguishes the case that
+ * DOES need a person: DueSoon is amber and Overdue is red, and both still come
+ * through here. Only the plain not-yet-due Unpaid is let past.
+ *
+ * The lesson is worth keeping: this queue answers "does somebody have to do
+ * something", and that question is not the same as "what colour is the pill",
+ * however convenient it was while the two agreed.
  */
 export function needsAttention(order: OrderFacts, now: Date): string[] {
   const tones = orderTones(order, now);
   return [tones.fulfilment, tones.delivery, tones.payment]
     .filter((t) => t.tone === "attention" || t.tone === "stopped")
+    .filter((t) => t.key !== "Unpaid")
     .map((t) => t.meaning);
+}
+
+/**
+ * The same payment rules, shaped as a database filter.
+ *
+ * WHY THIS EXISTS. paymentStatusOf turns a stored word plus a due date into
+ * what a person actually sees — Overdue, Due soon — and every screen that
+ * shows a pill uses it. The admin orders list could not: it pages and sorts in
+ * the database, so filtering in memory afterwards would hand back short pages
+ * and wrong counts. It filtered on the stored column instead, and the result
+ * was a screen where "Overdue" matched nothing at all while ten invoices sat
+ * overdue in front of it, and "Unpaid" quietly included every one of them.
+ *
+ * So the rules are expressed twice: once as a function, once as a query. That
+ * is a real risk — two statements of one rule are two things to keep in step —
+ * and the mitigation is that they live side by side and a test drives every
+ * combination through both, asserting they agree. If you change one, that test
+ * fails until you change the other.
+ *
+ * Returns a plain object, not a Prisma type: this module stays pure and
+ * importable by tests. Prisma reads it as a where clause because a where
+ * clause IS a plain object.
+ *
+ * An empty list means no payment filter, and returns null so the caller can
+ * leave the clause out rather than sending a condition matching everything.
+ */
+/** A where clause, shaped for Prisma without importing it. */
+export type PaymentWhere = { OR?: PaymentWhere[] } & Record<string, unknown>;
+
+export function paymentFilterWhere(
+  statuses: readonly string[],
+  now: Date
+  // Deliberately loose: a stricter shape here (unknown[]) collapsed Prisma's
+  // inference at the call site and the query result lost every relation it
+  // includes. This module must not import Prisma, so the type stays open and
+  // the query keeps its own.
+): PaymentWhere | null {
+  if (statuses.length === 0) return null;
+
+  const soon = new Date(now.getTime() + DUE_SOON_DAYS * DAY_MS);
+
+  // A stored word that is never reinterpreted: Paid stays Paid whatever the
+  // date says.
+  const asStored = (value: string) => ({ paymentStatus: value });
+
+  const clauses: PaymentWhere[] = [];
+
+  for (const status of statuses) {
+    switch (status) {
+      case "Paid":
+      case "Refunded":
+        clauses.push(asStored(status));
+        break;
+
+      /* Past its date, or marked overdue by a person. Both Unpaid and
+         PartiallyPaid fall in here once the date passes — a part payment does
+         not stop the balance being late. */
+      case "Overdue":
+        clauses.push({
+          OR: [
+            asStored("Overdue"),
+            {
+              paymentStatus: { in: ["Unpaid", "PartiallyPaid"] },
+              paymentDueOn: { not: null, lt: now },
+            },
+          ],
+        });
+        break;
+
+      /* Within the week and not yet past. PartiallyPaid is deliberately absent:
+         paymentStatusOf keeps it as Part paid, because "Due soon" would be a
+         downgrade from a state that already wants a person. */
+      case "DueSoon":
+        clauses.push({
+          paymentStatus: "Unpaid",
+          paymentDueOn: { not: null, gte: now, lte: soon },
+        });
+        break;
+
+      /* Nothing due yet, or due far enough out to be nobody's problem. */
+      case "Unpaid":
+        clauses.push({
+          paymentStatus: "Unpaid",
+          OR: [{ paymentDueOn: null }, { paymentDueOn: { gt: soon } }],
+        });
+        break;
+
+      case "PartiallyPaid":
+        clauses.push({
+          paymentStatus: "PartiallyPaid",
+          OR: [{ paymentDueOn: null }, { paymentDueOn: { gte: now } }],
+        });
+        break;
+
+      default:
+        // An unknown word matches nothing rather than everything. A filter
+        // that silently widens is worse than one that returns nothing.
+        clauses.push({ id: "__no_such_order__" });
+    }
+  }
+
+  return { OR: clauses };
 }

@@ -250,6 +250,31 @@
 
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: "Gilroy", var(--font-body), ui-sans-serif, sans-serif;
+
+  /* Type scale, lifted at the heading end on 23 Aug 2026.
+   *
+   * The catalogue's page titles were smaller than the product names beneath
+   * them — /products?category=dental set "Dental" in 24px over rows of 14px,
+   * which reads as a label rather than as the name of the thing you are
+   * looking at. The client asked for the confidence KAD3D's pages have, and
+   * that is carried by size and air, not by colour: the navy and the red stay
+   * exactly as they were (DEC-02).
+   *
+   * ONLY THE HEADING STEPS MOVE. text-xs, text-sm and text-base are untouched
+   * because they carry the dense part of a trade catalogue — codes, prices,
+   * pack sizes, counts — and a catalogue that has to be scrolled twice as far
+   * is not a kinder one. Every step keeps a line-height, because Tailwind pairs
+   * one with each size and omitting it silently inherits the old ratio. */
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.9rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.2rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.65rem;
+  --text-4xl: 2.75rem;
+  --text-4xl--line-height: 3.1rem;
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 4rem;
 }
 
 /* ------------------------------------------------------------------ *
@@ -401,6 +426,72 @@ input[type="number"] {
   --tone-complete-soft: var(--success-soft);
   --tone-stopped: var(--danger);
   --tone-stopped-soft: var(--danger-soft);
+}
+
+/* ------------------------------------------------------------------
+   The order track's own ramp, at the client's request (23 Aug 2026):
+   red received, orange being prepared, light green on the way, solid
+   green delivered.
+
+   SEPARATE FROM THE FIVE TONES ABOVE, ON PURPOSE. Those answer "what
+   state is this in" and their meaning is fixed — amber is "somebody
+   must act", red is "stopped" — which is why tone-colours.ts refuses to
+   let an admin remap them. This ramp answers a different question:
+   HOW FAR ALONG. A brand-new order is red here because it is at the
+   start of a journey, not because anything is wrong, and folding that
+   into the tones would have made red mean two opposite things.
+
+   The track is the only place it is used, and a cancelled order leaves
+   the track rather than colouring it, so red-at-the-start and red-for-
+   cancelled never appear on the same control.
+
+   Two values per stage because a 6px bar and 11px text have different
+   jobs: the bar can be light enough to read as "light green", the
+   label has to stay legible on white. --stage-3 is the pair that makes
+   that obvious.
+   ------------------------------------------------------------------ */
+:root {
+  --stage-1-bar: #d64045;
+  --stage-1-text: #c9161b;
+  --stage-2-bar: #ed9121;
+  --stage-2-text: #b45309;
+  --stage-3-bar: #74c69d;
+  --stage-3-text: #1b7a4b;
+  --stage-4-bar: #146c43;
+  --stage-4-text: #146c43;
+}
+
+/* Lifted for dark ground: the same four hues, but a dark green rail
+   disappears on navy and a dark red text fails contrast against it.
+
+   TWO BLOCKS, MATCHING THE REST OF THIS FILE — the media query for a reader
+   whose system is dark, and the attribute for one who chose it. They were
+   written as a single selector first, which is a trap that looks fine: on its
+   own ":root:not([data-theme=light])" matches a page with NO theme set, so
+   the dark values applied in the light theme too and every rail came out
+   washed. Found by measuring the rendered colour, not by looking. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  --stage-1-bar: #e8595e;
+  --stage-1-text: #ff9a9d;
+  --stage-2-bar: #f5a742;
+  --stage-2-text: #ffc16b;
+  --stage-3-bar: #8ed9b0;
+  --stage-3-text: #8ed9b0;
+  --stage-4-bar: #35b06b;
+  --stage-4-text: #5fd18d;
+  }
+}
+
+:root[data-theme="dark"] {
+  --stage-1-bar: #e8595e;
+  --stage-1-text: #ff9a9d;
+  --stage-2-bar: #f5a742;
+  --stage-2-text: #ffc16b;
+  --stage-3-bar: #8ed9b0;
+  --stage-3-text: #8ed9b0;
+  --stage-4-bar: #35b06b;
+  --stage-4-text: #5fd18d;
 }
 
 /* ==================================================================
