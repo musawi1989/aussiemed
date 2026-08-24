@@ -1,4 +1,4 @@
-import { PrintableDoc } from "@/components/admin/PrintableDoc";
+import { PrintableDoc } from "@/components/PrintableDoc";
 import { sellerIdentity } from "@/lib/seller-identity";
 import { PLACEHOLDER_NOTICE, formatTrn, invoiceCompliance } from "@/lib/trn";
 import { DocTable, SellerBlock, aed, day, loadOrderForDocs } from "@/lib/order-docs";

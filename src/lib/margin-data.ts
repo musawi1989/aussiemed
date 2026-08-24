@@ -62,6 +62,12 @@ export async function productMargins(productId: string): Promise<SkuMargin[]> {
       isActive: true,
       priceFils: true,
       supplies: {
+        /*
+         * COVER ONLY, like the buying run. A null rank is a supplier offering
+         * an item, not supplying it: they have no agreed cost with us on it
+         * and including them would put a stranger's figure on a margin report.
+         */
+        where: { rank: { not: null } },
         orderBy: { rank: "asc" },
         select: {
           rank: true,
@@ -76,7 +82,8 @@ export async function productMargins(productId: string): Promise<SkuMargin[]> {
 
   return skus.map((sku) => {
     const supplies: SupplyCost[] = sku.supplies.map((supply) => ({
-      rank: supply.rank,
+      // Non-null by the where above; the report has no row for an offer.
+      rank: supply.rank ?? "",
       supplierName: supply.supplier.companyName,
       costFils: supply.costFils,
       // Both switches matter: the company can be off, or just this item.

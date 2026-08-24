@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { toneStyleBlock } from "@/lib/tone-colours";
-import { Figtree } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 
 /**
@@ -19,13 +19,17 @@ import "./globals.css";
 
 /**
  * Body typeface. Gilroy Regular/Medium were never delivered with the theme, so
- * body copy needs a stand-in; Figtree is a close geometric sans. Headings use
- * real Gilroy (Bold/Black), self-hosted from public/fonts.
+ * body copy needs a stand-in. Headings use real Gilroy (Bold/Black), self-hosted
+ * from public/fonts — that is the brand and it stays (DEC-02).
+ *
+ * The stand-in became Roboto on 23 Aug 2026, from Figtree, to sit with KAD3D:
+ * the client runs both and wanted them to read as related. It is a change of
+ * stand-in, not of brand — the typeface carrying AussieMed is still Gilroy.
  *
  * When licensed Gilroy Regular/Medium arrive, add them as @font-face in
  * globals.css and point --font-body at Gilroy. Nothing else changes.
  */
-const bodyFont = Figtree({
+const bodyFont = Roboto({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",

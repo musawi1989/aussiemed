@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminForm, Field, Select, TextArea } from "@/components/AdminForm";
+import { CourierPicker } from "@/components/CourierPicker";
 import {
   setDeliveryAction,
   setInternalNotesAction,
@@ -23,6 +24,7 @@ export function OrderSidebar({
   payment,
   paymentStatuses,
   delivery,
+  courierOptions,
   internalNotes,
   closed,
 }: {
@@ -43,6 +45,8 @@ export function OrderSidebar({
     trackingNumber: string;
     estimatedShipmentOn: string;
   };
+  /** From courierOptions() on the server. Empty falls back to a text box. */
+  courierOptions: string[];
   internalNotes: string;
   closed: boolean;
 }) {
@@ -135,7 +139,12 @@ export function OrderSidebar({
               defaultValue={delivery.estimatedShipmentOn}
               hint="What the warehouse is working to. Filterable from the orders list."
             />
-            <Field label="Courier" name="courier" defaultValue={delivery.courier} />
+            <CourierPicker
+              value={delivery.courier}
+              options={courierOptions}
+              labelClassName="block text-xs font-bold uppercase tracking-wide text-text-subtle"
+              inputClassName="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
+            />
             <Field
               label="Tracking number"
               name="trackingNumber"

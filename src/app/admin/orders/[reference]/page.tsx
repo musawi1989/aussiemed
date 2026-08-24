@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { deliveryStatusOf, paymentStatusOf } from "@/lib/status-tone";
 import { OrderLineCard } from "@/components/admin/OrderLineCard";
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
+import { courierOptions } from "@/lib/couriers";
 import { OrderMarginPanel } from "@/components/admin/OrderMarginPanel";
 import { EmailInvoiceForm } from "@/components/admin/EmailInvoiceForm";
 import { invoiceRecipient } from "@/lib/invoice-email";
@@ -75,6 +76,10 @@ export default async function AdminOrderPage({
   // Fetched on its own, admin-guarded. Cost is never carried by a query that
   // something customer-facing might come to reuse.
   const margin = await orderMargin(order.reference);
+
+  // Carries whatever this order already names, so an archived courier on an
+  // old order stays selectable rather than being blanked on the next save.
+  const couriers = await courierOptions(order.courier);
   // Who the invoice would go to, and whether it can call itself compliant.
   const invoice = await invoiceRecipient(order.reference);
 
@@ -368,6 +373,7 @@ export default async function AdminOrderPage({
               trackingNumber: order.trackingNumber ?? "",
               estimatedShipmentOn: day(order.estimatedShipmentOn),
             }}
+            courierOptions={couriers}
             internalNotes={order.internalNotes ?? ""}
           />
 

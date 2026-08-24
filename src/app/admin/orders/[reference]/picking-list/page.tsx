@@ -1,4 +1,4 @@
-import { PrintableDoc } from "@/components/admin/PrintableDoc";
+import { PrintableDoc } from "@/components/PrintableDoc";
 import { DocTable, day, loadOrderForDocs } from "@/lib/order-docs";
 
 /**

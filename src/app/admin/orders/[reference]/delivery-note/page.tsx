@@ -1,4 +1,4 @@
-import { PrintableDoc } from "@/components/admin/PrintableDoc";
+import { PrintableDoc } from "@/components/PrintableDoc";
 import { sellerIdentity } from "@/lib/seller-identity";
 import { DocTable, SellerBlock, day, loadOrderForDocs } from "@/lib/order-docs";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";

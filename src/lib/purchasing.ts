@@ -132,6 +132,18 @@ export async function outstandingDemand(cutoffAt: Date): Promise<DemandLine[]> {
       sku: {
         select: {
           supplies: {
+            /*
+             * COVER ONLY. A supply row with a null rank is a supplier saying
+             * "I can supply this" — an offer, not cover — and it must never
+             * reach the buying run.
+             *
+             * Without this filter the mapping below turned it into a primary:
+             * it read `rank === "Backup" ? "Backup" : "Primary"`, so anything
+             * that was not the string "Backup" became "Primary", and null is
+             * not the string "Backup". A supplier adding an item to their own
+             * list would have started receiving our purchase orders for it.
+             */
+            where: { rank: { not: null } },
             select: {
               rank: true,
               costFils: true,
@@ -163,6 +175,9 @@ export async function outstandingDemand(cutoffAt: Date): Promise<DemandLine[]> {
       supplies: (item.sku?.supplies ?? []).map((supply) => ({
         supplierId: supply.supplier.id,
         supplierName: supply.supplier.companyName,
+        // Narrowed, not defaulted. The query above has already excluded
+        // nulls; this says so in the type rather than coercing whatever
+        // arrives into one of the two.
         rank: supply.rank === "Backup" ? "Backup" : "Primary",
         // Both facts have to hold: the company open, and the item available
         // from them. A retired supplier is unavailable whatever its flag says.
@@ -188,7 +203,7 @@ export async function previewPurchaseOrders(cutoffAt: Date): Promise<PurchasePla
  * Building
  * ------------------------------------------------------------------ */
 
-function formatPoNumber(year: number, sequence: number): string {
+export function formatPoNumber(year: number, sequence: number): string {
   return `PO-${year}-${String(sequence).padStart(6, "0")}`;
 }
 
@@ -635,3 +650,73 @@ export async function receivePurchaseOrder(
  * the demand, and the fallback rule places every affected line at once — which
  * is also what will happen tomorrow, so the review matches the routine.
  */
+
+/* ------------------------------------------------------------------ *
+ * Paying the supplier
+ * ------------------------------------------------------------------ */
+
+/**
+ * What we have paid a supplier against one purchase order.
+ *
+ * Money out is tracked apart from goods in, and deliberately: a purchase order
+ * can be received in full and unpaid for another month, and one can be paid up
+ * front and not yet delivered. Collapsing them into a single status would make
+ * one of those two situations unrepresentable.
+ *
+ * Overdue and Due soon are NOT stored here. They are this word plus the
+ * passage of time, and paymentStatusOf derives them from paymentDueOn, so the
+ * screen is right when it is looked at rather than when a nightly job last
+ * ran. Same arrangement as a customer order.
+ *
+ * paidAt is stamped when the status first becomes Paid and cleared if it moves
+ * back off Paid — a date that survives being un-paid is a date somebody will
+ * later quote as when the money went out.
+ */
+export async function setPurchaseOrderPayment(input: {
+  id: string;
+  paymentStatus: string;
+  paidFils: number;
+  paymentDueOn: Date | null;
+}): Promise<Result> {
+  const actor = await requireAdmin();
+
+  const allowed = ["Unpaid", "PartiallyPaid", "Paid", "Refunded"];
+  if (!allowed.includes(input.paymentStatus)) {
+    return { ok: false, error: "That is not a payment status we record." };
+  }
+  if (!Number.isInteger(input.paidFils) || input.paidFils < 0) {
+    return { ok: false, error: "Paid so far must be zero or more." };
+  }
+
+  const po = await db.purchaseOrder.findUnique({ where: { id: input.id } });
+  if (!po) return { ok: false, error: "That purchase order no longer exists." };
+
+  // Guarded rather than clamped: quietly reducing what somebody typed hides a
+  // typo that is about to be reconciled against a bank statement.
+  if (po.totalCostFils !== null && input.paidFils > po.totalCostFils) {
+    return {
+      ok: false,
+      error: "That is more than the order is worth. Check the figure.",
+    };
+  }
+
+  const becomingPaid = input.paymentStatus === "Paid";
+  const wasPaid = po.paymentStatus === "Paid";
+
+  await db.purchaseOrder.update({
+    where: { id: input.id },
+    data: {
+      paymentStatus: input.paymentStatus,
+      paidFils: input.paidFils,
+      paymentDueOn: input.paymentDueOn,
+      paidAt: becomingPaid ? (wasPaid ? po.paidAt : new Date()) : null,
+    },
+  });
+
+  await audit(actor, "purchaseOrder.payment", "PurchaseOrder", input.id, po, {
+    paymentStatus: input.paymentStatus,
+    paidFils: input.paidFils,
+  });
+
+  return { ok: true, value: undefined };
+}
