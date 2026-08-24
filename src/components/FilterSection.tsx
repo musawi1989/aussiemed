@@ -34,7 +34,11 @@ export function FilterSection({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="mb-2 flex w-full items-center justify-between gap-2 text-left"
+        // cursor-pointer because Tailwind 4 preflight sets buttons to
+        // cursor: default, unlike v3. Every row under this heading is a link
+        // and gets a pointer from the browser; the heading that folds them away
+        // is the one control here that looked inert while being clickable.
+        className="mb-2 flex w-full cursor-pointer items-center justify-between gap-2 text-left"
       >
         <span className="text-sm font-semibold text-text">
           {title}

@@ -4,31 +4,6 @@ import { BUSINESS_TYPES, businessTypeByCode } from "@/lib/business-types";
 import { hrefWith, type FilterParams as Params } from "@/lib/filter-href";
 import { FilterScroll } from "./FilterScroll";
 import { FilterSection } from "./FilterSection";
-import { PriceFilter } from "./PriceFilter";
-
-/** One tick-box row, so two of them cannot end up looking like two things. */
-function Toggle({ on, href, label }: { on: boolean; href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-2.5 rounded-card px-1 py-1.5 text-sm text-text-muted hover:text-text"
-    >
-      <span
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-          on ? "border-brand bg-brand text-on-brand" : "border-border-strong bg-surface"
-        }`}
-        aria-hidden="true"
-      >
-        {on && (
-          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="m3 8 3.5 3.5L13 5" />
-          </svg>
-        )}
-      </span>
-      {label}
-    </Link>
-  );
-}
 
 export async function FilterPanel({
   params,
@@ -89,7 +64,7 @@ export async function FilterPanel({
         )}
       </div>
 
-      <FilterScroll>
+      <FilterScroll activeCategory={activeCategory}>
       <div className="space-y-6">
       <FilterSection title="Category">
         <ul className="space-y-0.5">
@@ -115,7 +90,7 @@ export async function FilterPanel({
             if (narrowed && deptCount === 0 && !isActiveDept) return null;
 
             return (
-              <li key={dept.id}>
+              <li key={dept.id} data-branch={isActiveDept ? "open" : undefined}>
                 <Link
                   href={hrefWith(params, { category: dept.slug })}
                   // What FilterScroll opens the box on.
@@ -245,33 +220,22 @@ export async function FilterPanel({
       </FilterSection>
 
       {/*
-        There is no Availability section any more — the client removed the
-        in-stock filter on 19 Aug 2026. It asked a question this business cannot
-        answer honestly: nothing is held in stock, the flag means "a supplier
-        can supply it" (DEC-31), and a buyer ticking "in stock only" reasonably
-        reads it as a promise about a shelf somewhere.
+        Availability, Price and Volume pricing have all been taken off the
+        storefront at the client's request — in-stock on 19 Aug 2026, the price
+        range and the volume-breaks toggle on 23 Aug. Availability was the one
+        that asked a question this business cannot answer honestly: nothing is
+        held in stock, the flag means "a supplier can supply it" (DEC-31), and a
+        buyer ticking "in stock only" reasonably reads it as a promise about a
+        shelf somewhere.
 
-        The volume-breaks toggle it used to sit beside was always a pricing
-        question, so it moved here where it belongs. inStock=1 in a URL still
-        filters — the v1 API takes it and the parameter is unchanged — it is
-        simply not offered as a control.
+        Every one of those parameters still filters when it arrives in a URL —
+        the v1 API takes inStock, breaks, minPrice and maxPrice and none of them
+        changed — they are simply not offered as controls. Clear all still
+        clears them, so a link somebody was sent can still be got out of.
+
+        What is left is what a buyer navigates by: where a thing sits, who it is
+        for, and whose name is on it.
       */}
-      <FilterSection title="Price">
-        <PriceFilter min={params.minPrice} max={params.maxPrice} params={params} />
-
-        <div className="mt-3 border-t border-border-base pt-2">
-          {/* Volume pricing is the reason a trade buyer is on this site rather
-              than a pharmacy's, so "what gets cheaper by the box" is a question
-              worth being able to ask directly. */}
-          <Toggle
-            on={params.breaks === "1"}
-            href={hrefWith(params, {
-              breaks: params.breaks === "1" ? undefined : "1",
-            })}
-            label="Has volume price breaks"
-          />
-        </div>
-      </FilterSection>
 
       {/* Shown while there is a choice to make — OR while a brand is chosen,
           because filtering to one brand leaves one brand in the list and the

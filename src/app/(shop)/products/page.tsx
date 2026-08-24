@@ -166,12 +166,16 @@ export default async function ProductsPage({
         </ol>
       </nav>
 
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-4">
+      {/* The title carries the page, so it is set like one. It used to be 24px
+          over rows of 14px, which made the name of a department smaller than
+          the products inside it. Air as well as size: a heading crowded against
+          a breadcrumb is still crowded however large it is set. */}
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-3 border-b border-border-base pb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-text">
+          <h1 className="text-4xl font-semibold tracking-tight text-text">
             {heading}
           </h1>
-          <p className="mt-1 text-sm text-text-muted tnum">
+          <p className="mt-2 text-sm text-text-muted tnum">
             {nothing
               ? nothing.title
               : `${result.total} ${result.total === 1 ? "product" : "products"}`}
@@ -182,7 +186,7 @@ export default async function ProductsPage({
         </Suspense>
       </div>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
         {/* No framing here: the filter carries its own box and its own
             scrolling, so every view it appears on gets the same one. */}
         <aside className="lg:self-start">
