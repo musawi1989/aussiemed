@@ -8,7 +8,7 @@ import {
   ReportPanel,
   Unknown,
 } from "@/components/admin/ReportBits";
-import { CUSTOMER_TABS } from "../tabs";
+import { REPORT_TABS } from "../tabs";
 import { formatAED } from "@/lib/money";
 import { topBy } from "@/lib/reporting";
 import { customerReport } from "@/lib/reports-data";
@@ -35,37 +35,43 @@ export default async function CustomerReportsPage() {
     report.accounts,
     (a) => a.spendFils,
     (a) => a.name,
-    10
+    10,
   );
   const topCategories = topBy(
     report.categories,
     (c) => c.revenueFils,
     (c) => c.name,
-    10
+    10,
   );
-
-  const abandonedValue = report.abandoned.reduce((n, c) => n + c.valueFils, 0);
 
   return (
     <>
       <div className="mt-6">
-        <h1 className="text-xl font-bold tracking-tight text-text">Customers</h1>
+        <h1 className="text-xl font-bold tracking-tight text-text">
+          Customers
+        </h1>
         <p className="mt-1 text-sm text-text-muted">
           The last twelve months. All figures exclude VAT.
         </p>
       </div>
 
-      <SectionTabs tabs={CUSTOMER_TABS} />
+      <SectionTabs tabs={REPORT_TABS} />
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Figure label="Orders" value={String(report.totals.orders)} />
-        <Figure label="Revenue" value={aed(report.totals.revenueFils)} note="excluding VAT" />
+        <Figure
+          label="Revenue"
+          value={aed(report.totals.revenueFils)}
+          note="excluding VAT"
+        />
         <Figure
           label="Average order"
           value={
             report.totals.orders === 0
               ? "—"
-              : aed(Math.round(report.totals.revenueFils / report.totals.orders))
+              : aed(
+                  Math.round(report.totals.revenueFils / report.totals.orders),
+                )
           }
         />
         <Figure
@@ -103,7 +109,9 @@ export default async function CustomerReportsPage() {
                     <th className="py-1.5 pr-3 font-bold">Account</th>
                     <th className="py-1.5 pr-3 text-right font-bold">Orders</th>
                     <th className="py-1.5 pr-3 text-right font-bold">Spend</th>
-                    <th className="py-1.5 pr-3 text-right font-bold">Average</th>
+                    <th className="py-1.5 pr-3 text-right font-bold">
+                      Average
+                    </th>
                     <th className="py-1.5 text-right font-bold">Last</th>
                   </tr>
                 </thead>
@@ -187,73 +195,6 @@ export default async function CustomerReportsPage() {
                 </li>
               ))}
             </ol>
-          )}
-        </ReportPanel>
-      </div>
-
-      <div className="mt-5">
-        <ReportPanel
-          title="Carts left behind"
-          hint="Untouched for more than a day. A buyer still building an order over a working day is shopping, not abandoning, so those are not counted."
-        >
-          {report.abandoned.length === 0 ? (
-            <Nothing>No carts have been left behind.</Nothing>
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-text-muted tnum">
-                {report.abandoned.length} cart
-                {report.abandoned.length === 1 ? "" : "s"} holding{" "}
-                <strong className="text-text">{aed(abandonedValue)}</strong> at
-                today&rsquo;s prices.
-              </p>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[30rem] border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-border-base text-left text-xs uppercase tracking-wide text-text-subtle">
-                      <th className="py-1.5 pr-3 font-bold">Who</th>
-                      <th className="py-1.5 pr-3 text-right font-bold">Lines</th>
-                      <th className="py-1.5 pr-3 text-right font-bold">Units</th>
-                      <th className="py-1.5 pr-3 text-right font-bold">Value</th>
-                      <th className="py-1.5 text-right font-bold">Last touched</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.abandoned.map((cart) => (
-                      <tr
-                        key={cart.cartKey}
-                        className="border-b border-border-base last:border-0"
-                      >
-                        <td className="py-1.5 pr-3 text-text">
-                          {cart.who ?? (
-                            <Unknown>a visitor who was not signed in</Unknown>
-                          )}
-                        </td>
-                        <td className="py-1.5 pr-3 text-right tnum text-text-muted">
-                          {cart.lines}
-                        </td>
-                        <td className="py-1.5 pr-3 text-right tnum text-text-muted">
-                          {cart.units}
-                        </td>
-                        <td className="py-1.5 pr-3 text-right font-bold tnum text-text">
-                          {aed(cart.valueFils)}
-                        </td>
-                        <td className="py-1.5 text-right tnum text-text-muted">
-                          {day(cart.lastTouchedAt)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="mt-3 text-xs leading-relaxed text-text-subtle">
-                Valued at today&rsquo;s prices. A cart holds no price snapshot,
-                so this is an indication of what is sitting there rather than a
-                quotation. Nothing is emailed about these — recovering a cart is
-                a conversation, not an automation.
-              </p>
-            </>
           )}
         </ReportPanel>
       </div>

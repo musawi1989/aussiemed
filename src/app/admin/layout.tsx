@@ -26,8 +26,12 @@ export const metadata: Metadata = {
  */
 
 /**
- * Grouped the way the work is, not the way the database is: what is on sale,
- * what has been sold, who is involved, and the machinery underneath.
+ * Grouped the way the work is, not the way the database is: what has been
+ * sold, what is on sale, who is involved, and the machinery underneath.
+ *
+ * SALES SITS ABOVE CATALOGUE at the client's request (24 Aug 2026). Orders are
+ * what somebody opens the back office to deal with; the catalogue is what they
+ * go to when something needs changing, which is less often.
  */
 const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
   {
@@ -44,21 +48,21 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
     ],
   },
   {
-    heading: "Catalogue",
-    icon: "catalogue",
-    links: [
-      { href: "/admin/products", label: "Products", exact: true },
-      { href: "/admin/products/upload", label: "Load catalogue" },
-      { href: "/admin/categories", label: "Categories" },
-    ],
-  },
-  {
     heading: "Sales",
     icon: "sales",
     links: [
       { href: "/admin/orders", label: "Orders" },
       { href: "/admin/enquiries", label: "Enquiries" },
       { href: "/admin/searches", label: "Searches" },
+    ],
+  },
+  {
+    heading: "Catalogue",
+    icon: "catalogue",
+    links: [
+      { href: "/admin/products", label: "Products", exact: true },
+      { href: "/admin/products/upload", label: "Load catalogue" },
+      { href: "/admin/categories", label: "Categories" },
     ],
   },
   {
@@ -76,6 +80,24 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
       // customer who has gone somewhere else.
       { href: "/admin/applications", label: "Applications" },
       { href: "/admin/suppliers", label: "Suppliers" },
+    ],
+  },
+  {
+    /*
+     * Its own section, at the client's request on 24 Aug 2026.
+     *
+     * The three reports used to be a tab apiece under Products, Customers
+     * and Suppliers — three answers to one question in three places, and
+     * nobody found the second one. Below People because "how did we do" is
+     * a weekly question and the lists above are daily ones.
+     */
+    heading: "Reports",
+    icon: "sales",
+    links: [
+      { href: "/admin/reports", label: "Profit", exact: true },
+      { href: "/admin/reports/products", label: "Products" },
+      { href: "/admin/reports/customers", label: "Customers" },
+      { href: "/admin/reports/suppliers", label: "Suppliers" },
     ],
   },
   {
