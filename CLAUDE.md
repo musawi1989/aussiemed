@@ -27,6 +27,13 @@ Known corrections, so nobody re-derives them:
 - **Notify Me is keyed on email, not client** (`NotifySubscription`), and
   FN-04 records that it does not yet register a subscription at all. Section 1.5
   and every Notify Me metric depend on FN-04 being done first.
+- **Abandoned carts are not a metric here — do not build C-8 or D-3.** The spec
+  marks both P1. The client removed the feature on 24 Aug 2026 (DEC-37): only an
+  approved trade account can buy, and their cart persists against that account,
+  so an untouched cart is a buyer part-way through assembling a standing order
+  rather than a lost sale. The 24-hour threshold the old report used was already
+  an admission that the concept did not fit. A *guest* cart is a different
+  question and is still open as BE-13.
 - **Metric priorities in the spec are not our priorities.** Its P1s are not the
   register's P1s, and it is silent on the launch blockers (AC-01 to AC-04,
   DA-03, SEC-01, LG-01, LG-02).

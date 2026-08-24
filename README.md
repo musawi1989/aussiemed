@@ -14,13 +14,30 @@ site-wide and stays until launch.
 
 ## Running it
 
+From a fresh clone, in this order. The first two steps are the ones that were
+missing before and that everybody hit: there is no database in the repository
+and no `.env`, because neither belongs to source control.
+
 ```bash
+cp .env.example .env       # Windows: copy .env.example .env
 npm install
-npx prisma generate
+npx prisma migrate deploy  # creates dev.db from prisma/migrations
+npx prisma generate        # the typed client, into src/generated/prisma
 npm run db:seed            # catalogue
 npm run db:seed:accounts   # sign-in accounts
 npm run dev                # http://localhost:3000
 ```
+
+Optional, and only if you need the PDF downloads (order confirmations and
+supplier invoices). Those render a real page in a real browser, so Playwright
+needs one — see IN-11:
+
+```bash
+npx playwright install chromium
+```
+
+Node 22 or newer. The test runner uses `--experimental-strip-types`, which
+earlier versions do not have.
 
 | Script | What it does |
 | --- | --- |
