@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { contains } from "@/lib/db-search";
 import { countryName } from "@/lib/geo";
 import { formatAED } from "@/lib/money";
-import { AdminFilters } from "@/components/AdminFilters";
+import { UrlFilters } from "@/components/UrlFilters";
 import { StatusPill } from "@/components/StatusPill";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 import { CUSTOMER_TABS } from "./tabs";
@@ -93,7 +93,7 @@ export default async function AdminCustomersPage({
 
       <SectionTabs tabs={CUSTOMER_TABS} />
 
-      <AdminFilters
+      <UrlFilters
         basePath="/admin/customers"
         searchName="q"
         searchValue={q}

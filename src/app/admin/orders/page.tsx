@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { paymentFilterWhere } from "@/lib/status-tone";
 import { contains } from "@/lib/db-search";
 import { formatAED } from "@/lib/money";
 import { FilterBar, type ChipDef } from "@/components/admin/FilterBar";
@@ -50,6 +51,11 @@ export default async function AdminOrdersPage({
   const ship = parseDateRange(one("shipFrom"), one("shipTo"));
   const amount = parseAmountRange(one("min"), one("max"));
 
+  // One clock for the query and for the pills it renders, so a row cannot be
+  // filtered in as overdue and then drawn as merely unpaid.
+  const now = new Date();
+  const paymentWhere = paymentFilterWhere(payments, now);
+
   const columns = parseColumns(one("cols"));
   const { key: sortKey, dir: sortDir } = parseSort(one("sort"));
   const pageSize = parsePageSize(one("size"));
@@ -72,7 +78,22 @@ export default async function AdminOrdersPage({
         }
       : {}),
     ...(statuses.length ? { status: { in: statuses } } : {}),
-    ...(payments.length ? { paymentStatus: { in: payments } } : {}),
+
+    /*
+     * Payment is DERIVED, not read off the column.
+     *
+     * "Overdue" and "Due soon" are never stored: they are the stored word plus
+     * the passage of time, worked out by paymentStatusOf so a screen is right
+     * when it is looked at rather than when a job last ran. This list filtered
+     * on the column, so Overdue matched nothing at all while ten invoices sat
+     * overdue in front of it, and Unpaid quietly included every one of them —
+     * the wrong answer in the reassuring direction.
+     *
+     * UNDER `AND`, not spread in. The search above already puts an `OR` on
+     * this object, and a second `OR` key would replace it rather than join it:
+     * searching and filtering at the same time would silently drop the search.
+     */
+    ...(paymentWhere ? { AND: [paymentWhere] } : {}),
     ...(created.from || created.to
       ? { placedAt: { ...(created.from && { gte: created.from }), ...(created.to && { lte: created.to }) } }
       : {}),

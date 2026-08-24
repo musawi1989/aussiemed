@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { AdminFilters } from "@/components/AdminFilters";
+import { UrlFilters } from "@/components/UrlFilters";
 
 /**
  * The audit trail.
@@ -85,7 +85,7 @@ export default async function AdminAuditPage({
         </p>
       </div>
 
-      <AdminFilters
+      <UrlFilters
         basePath="/admin/audit"
         selects={[
           {
