@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  ABANDONED_AFTER_MS,
   barWidth,
   bucketByMonth,
-  isAbandoned,
   monthKey,
   monthLabel,
   share,
@@ -55,7 +53,7 @@ describe("bucketByMonth", () => {
     const buckets = bucketByMonth(orders, (o) => o.at, { months: 4, now });
     assert.deepEqual(
       buckets.map((b) => b.key),
-      ["2026-05", "2026-06", "2026-07", "2026-08"]
+      ["2026-05", "2026-06", "2026-07", "2026-08"],
     );
     assert.equal(buckets.find((b) => b.key === "2026-07")?.items.length, 0);
   });
@@ -68,7 +66,10 @@ describe("bucketByMonth", () => {
 
   it("drops anything older than the window rather than piling it on the end", () => {
     // Sweeping two years of history into the oldest bar makes that bar a lie.
-    const withOld = [...orders, { at: new Date("2024-01-01T00:00:00Z"), total: 999 }];
+    const withOld = [
+      ...orders,
+      { at: new Date("2024-01-01T00:00:00Z"), total: 999 },
+    ];
     const buckets = bucketByMonth(withOld, (o) => o.at, { months: 4, now });
     const counted = buckets.reduce((n, b) => n + b.items.length, 0);
     assert.equal(counted, 3);
@@ -80,7 +81,10 @@ describe("bucketByMonth", () => {
   });
 
   it("copes with nothing at all", () => {
-    const buckets = bucketByMonth([], (o: { at: Date }) => o.at, { months: 3, now });
+    const buckets = bucketByMonth([], (o: { at: Date }) => o.at, {
+      months: 3,
+      now,
+    });
     assert.equal(buckets.length, 3);
     assert.ok(buckets.every((b) => b.items.length === 0));
   });
@@ -116,25 +120,57 @@ describe("topBy", () => {
   it("takes the largest, with the tiebreak already applied", () => {
     // Charlie leads on value; Alpha and Bravo tie on 10 and are ordered by
     // name, so Alpha takes the second place.
-    const top = topBy(rows, (r) => r.value, (r) => r.name, 2);
-    assert.deepEqual(top.map((r) => r.name), ["Charlie", "Alpha"]);
+    const top = topBy(
+      rows,
+      (r) => r.value,
+      (r) => r.name,
+      2,
+    );
+    assert.deepEqual(
+      top.map((r) => r.name),
+      ["Charlie", "Alpha"],
+    );
   });
 
   it("breaks ties by name so the table is reproducible", () => {
     // Without this, two suppliers on identical figures swap places between
     // page loads, and a report nobody can quote is a report nobody uses.
-    const top = topBy(rows, (r) => r.value, (r) => r.name, 3);
-    assert.deepEqual(top.map((r) => r.name), ["Charlie", "Alpha", "Bravo"]);
+    const top = topBy(
+      rows,
+      (r) => r.value,
+      (r) => r.name,
+      3,
+    );
+    assert.deepEqual(
+      top.map((r) => r.name),
+      ["Charlie", "Alpha", "Bravo"],
+    );
   });
 
   it("does not mutate what it was given", () => {
     const before = rows.map((r) => r.name);
-    topBy(rows, (r) => r.value, (r) => r.name, 2);
-    assert.deepEqual(rows.map((r) => r.name), before);
+    topBy(
+      rows,
+      (r) => r.value,
+      (r) => r.name,
+      2,
+    );
+    assert.deepEqual(
+      rows.map((r) => r.name),
+      before,
+    );
   });
 
   it("returns everything when asked for more than there is", () => {
-    assert.equal(topBy(rows, (r) => r.value, (r) => r.name, 99).length, 4);
+    assert.equal(
+      topBy(
+        rows,
+        (r) => r.value,
+        (r) => r.name,
+        99,
+      ).length,
+      4,
+    );
   });
 });
 
@@ -155,26 +191,5 @@ describe("barWidth", () => {
     assert.equal(barWidth(0, 100), 0);
     assert.equal(barWidth(-5, 100), 0);
     assert.equal(barWidth(10, 0), 0);
-  });
-});
-
-describe("abandoned carts", () => {
-  const now = Date.parse("2026-08-16T12:00:00Z");
-
-  it("does not count a cart somebody is still building", () => {
-    // A trade buyer assembling an order over a working day is shopping, not
-    // abandoning. Counting them fills the report with carts about to become
-    // orders, and a list nobody trusts is worse than no list.
-    assert.equal(isAbandoned(now - 3_600_000, now), false);
-    assert.equal(isAbandoned(now - ABANDONED_AFTER_MS + 1, now), false);
-  });
-
-  it("counts one left overnight and longer", () => {
-    assert.equal(isAbandoned(now - ABANDONED_AFTER_MS, now), true);
-    assert.equal(isAbandoned(now - 5 * 86_400_000, now), true);
-  });
-
-  it("accepts a date as well as a timestamp", () => {
-    assert.equal(isAbandoned(new Date(now - 2 * 86_400_000), new Date(now)), true);
   });
 });

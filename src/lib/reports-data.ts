@@ -4,7 +4,7 @@ import { db } from "./db";
 import { requireAdmin } from "./admin";
 import { historiesOf } from "./status-events";
 import { onTimeRate, summarise, timeBetween, type Summary } from "./lifecycle";
-import { bucketByMonth, isAbandoned, type MonthBucket } from "./reporting";
+import { bucketByMonth, type MonthBucket } from "./reporting";
 import { lineMargin } from "./margin";
 import {
   performanceByProduct,
@@ -64,21 +64,11 @@ export type SavedRow = {
   listed: boolean;
 };
 
-export type AbandonedRow = {
-  cartKey: string;
-  who: string | null;
-  lines: number;
-  units: number;
-  valueFils: number;
-  lastTouchedAt: Date;
-};
-
 export type CustomerReport = {
   months: MonthSales[];
   accounts: AccountRow[];
   categories: CategoryRow[];
   saved: SavedRow[];
-  abandoned: AbandonedRow[];
   totals: { orders: number; revenueFils: number };
 };
 
@@ -102,7 +92,11 @@ export async function customerReport(): Promise<CustomerReport> {
           sku: {
             select: {
               product: {
-                select: { categories: { select: { category: { select: { name: true } } } } },
+                select: {
+                  categories: {
+                    select: { category: { select: { name: true } } },
+                  },
+                },
               },
             },
           },
@@ -115,7 +109,7 @@ export async function customerReport(): Promise<CustomerReport> {
   const buckets: MonthBucket<(typeof orders)[number]>[] = bucketByMonth(
     orders,
     (order) => order.placedAt,
-    { months: MONTHS }
+    { months: MONTHS },
   );
 
   const months: MonthSales[] = buckets.map((bucket) => ({
@@ -147,7 +141,8 @@ export async function customerReport(): Promise<CustomerReport> {
     byAccount.set(order.organisationId, row);
   }
   for (const row of byAccount.values()) {
-    row.averageFils = row.orders === 0 ? 0 : Math.round(row.spendFils / row.orders);
+    row.averageFils =
+      row.orders === 0 ? 0 : Math.round(row.spendFils / row.orders);
   }
 
   /* --- by category --- */
@@ -198,43 +193,11 @@ export async function customerReport(): Promise<CustomerReport> {
     })
     .filter((row): row is SavedRow => row !== null);
 
-  /* --- carts left behind — BE-27 --- */
-  const carts = await db.cart.findMany({
-    where: { items: { some: {} } },
-    select: {
-      cartKey: true,
-      updatedAt: true,
-      user: { select: { name: true, email: true } },
-      items: {
-        select: { qty: true, sku: { select: { priceFils: true } } },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 100,
-  });
-
-  const abandoned: AbandonedRow[] = carts
-    .filter((cart) => isAbandoned(cart.updatedAt))
-    .map((cart) => ({
-      cartKey: cart.cartKey,
-      who: cart.user ? `${cart.user.name} · ${cart.user.email}` : null,
-      lines: cart.items.length,
-      units: cart.items.reduce((n, i) => n + i.qty, 0),
-      // At today's prices: the cart holds no snapshot, and this is an
-      // indication of what is sitting there rather than an invoice.
-      valueFils: cart.items.reduce(
-        (n, i) => n + i.qty * (i.sku?.priceFils ?? 0),
-        0
-      ),
-      lastTouchedAt: cart.updatedAt,
-    }));
-
   return {
     months,
     accounts: [...byAccount.values()],
     categories: [...byCategory.values()],
     saved,
-    abandoned,
     totals: {
       orders: orders.length,
       revenueFils: orders.reduce((n, o) => n + o.subtotalFils, 0),
@@ -284,7 +247,11 @@ export type SupplierRow = {
 export type SupplierReport = {
   suppliers: SupplierRow[];
   months: { key: string; label: string; orders: number; spendFils: number }[];
-  totals: { purchaseOrders: number; spendFils: number; unknownCostOrders: number };
+  totals: {
+    purchaseOrders: number;
+    spendFils: number;
+    unknownCostOrders: number;
+  };
 };
 
 export async function supplierReport(): Promise<SupplierReport> {
@@ -318,7 +285,9 @@ export async function supplierReport(): Promise<SupplierReport> {
   });
 
   // One query for every purchase order's history rather than one per order.
-  const allOrderIds = suppliers.flatMap((s) => s.purchaseOrders.map((po) => po.id));
+  const allOrderIds = suppliers.flatMap((s) =>
+    s.purchaseOrders.map((po) => po.id),
+  );
   const histories = await historiesOf("PurchaseOrder", allOrderIds);
 
   const rows: SupplierRow[] = suppliers.map((supplier) => {
@@ -351,7 +320,7 @@ export async function supplierReport(): Promise<SupplierReport> {
     }).length;
 
     const unknown = supplier.purchaseOrders.filter(
-      (po) => po.totalCostFils === null
+      (po) => po.totalCostFils === null,
     ).length;
 
     return {
@@ -369,7 +338,7 @@ export async function supplierReport(): Promise<SupplierReport> {
           ? null
           : supplier.purchaseOrders.reduce(
               (n, po) => n + (po.totalCostFils ?? 0),
-              0
+              0,
             ),
       ordersWithUnknownCost: unknown,
       acknowledgement: summarise(ackDurations),
@@ -378,13 +347,13 @@ export async function supplierReport(): Promise<SupplierReport> {
       openPastPromise,
       onTimePercent: onTimeRate(
         ackDurations,
-        supplier.ackSlaHours ? supplier.ackSlaHours * 3_600_000 : null
+        supplier.ackSlaHours ? supplier.ackSlaHours * 3_600_000 : null,
       ).rate,
       promisedAckHours: supplier.ackSlaHours,
       promisedLeadTimeDays: supplier.promisedLeadTimeDays,
       fallbackLines: supplier.purchaseOrders.reduce(
         (n, po) => n + po.lines.filter((l) => l.wasFallback).length,
-        0
+        0,
       ),
     };
   });
@@ -405,7 +374,8 @@ export async function supplierReport(): Promise<SupplierReport> {
     totals: {
       purchaseOrders: everyOrder.length,
       spendFils: everyOrder.reduce((n, po) => n + (po.totalCostFils ?? 0), 0),
-      unknownCostOrders: everyOrder.filter((po) => po.totalCostFils === null).length,
+      unknownCostOrders: everyOrder.filter((po) => po.totalCostFils === null)
+        .length,
     },
   };
 }
@@ -453,7 +423,9 @@ export async function productPerformance(): Promise<{
                   name: true,
                   brand: { select: { name: true } },
                   categories: {
-                    select: { category: { select: { name: true, parentId: true } } },
+                    select: {
+                      category: { select: { name: true, parentId: true } },
+                    },
                   },
                 },
               },
@@ -476,13 +448,14 @@ export async function productPerformance(): Promise<{
         item.allocations.map((a) => ({
           qty: a.qty,
           unitCostFilsSnapshot: a.purchaseOrderLine.unitCostFilsSnapshot,
-        }))
+        })),
       );
 
       // The deepest category a product sits in is the one worth grouping by:
       // "Gloves" is what somebody browses for, "Medical Consumables" is not.
       const deepest =
-        product?.categories.find((c) => c.category.parentId !== null)?.category.name ??
+        product?.categories.find((c) => c.category.parentId !== null)?.category
+          .name ??
         product?.categories[0]?.category.name ??
         null;
 
@@ -502,5 +475,8 @@ export async function productPerformance(): Promise<{
     }
   }
 
-  return { performance: performanceByProduct(lines), orderCount: orders.length };
+  return {
+    performance: performanceByProduct(lines),
+    orderCount: orders.length,
+  };
 }

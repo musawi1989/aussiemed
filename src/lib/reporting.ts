@@ -24,7 +24,7 @@ const DUBAI_OFFSET_MS = 4 * 3_600_000;
  */
 export function monthKey(at: Date | number): string {
   const dubai = new Date(
-    (typeof at === "number" ? at : at.getTime()) + DUBAI_OFFSET_MS
+    (typeof at === "number" ? at : at.getTime()) + DUBAI_OFFSET_MS,
   );
   const year = dubai.getUTCFullYear();
   const month = String(dubai.getUTCMonth() + 1).padStart(2, "0");
@@ -36,8 +36,18 @@ export function monthLabel(key: string): string {
   const [year, month] = key.split("-").map(Number);
   if (!year || !month) return key;
   const names = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
   return `${names[month - 1]} ${year}`;
 }
@@ -58,7 +68,7 @@ export type MonthBucket<T> = {
 export function bucketByMonth<T>(
   items: T[],
   at: (item: T) => Date | number,
-  options: { months: number; now?: Date }
+  options: { months: number; now?: Date },
 ): MonthBucket<T>[] {
   const now = options.now ?? new Date();
   const buckets = new Map<string, T[]>();
@@ -111,7 +121,7 @@ export function topBy<T>(
   items: T[],
   value: (item: T) => number,
   name: (item: T) => string,
-  n: number
+  n: number,
 ): T[] {
   return [...items]
     .sort((a, b) => {
@@ -137,27 +147,4 @@ export function barWidth(value: number, max: number): number {
   // as something. Zero itself gets no bar: a sliver where nothing happened
   // reads as a small amount, which is a different claim.
   return Math.max(1, Math.round((value / max) * 100));
-}
-
-/* ------------------------------------------------------------------ *
- * Carts left behind
- * ------------------------------------------------------------------ */
-
-/**
- * How long a cart has to sit before it counts as abandoned.
- *
- * A trade buyer building an order over a working day is not abandoning it;
- * they are shopping. Counting those would fill the report with carts that are
- * about to become orders, and the one thing that would make it useless is a
- * list nobody trusts.
- */
-export const ABANDONED_AFTER_MS = 24 * 3_600_000;
-
-export function isAbandoned(
-  lastTouchedAt: Date | number,
-  now: Date | number = Date.now()
-): boolean {
-  const touched = typeof lastTouchedAt === "number" ? lastTouchedAt : lastTouchedAt.getTime();
-  const at = typeof now === "number" ? now : now.getTime();
-  return at - touched >= ABANDONED_AFTER_MS;
 }
