@@ -35,6 +35,11 @@ const GROUPS: OpsGroup[] = [
     icon: "catalogue",
     links: [{ href: "/business-portal/supplies", label: "What you supply" }],
   },
+  {
+    heading: null,
+    icon: "sales",
+    links: [{ href: "/business-portal/invoices", label: "Your invoices" }],
+  },
 ];
 
 export default async function BusinessPortalLayout({
