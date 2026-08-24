@@ -758,11 +758,16 @@ export type SupplierEdit = {
 };
 
 /**
- * secondaryEmail is mandatory at creation. That is a platform decision, not a
- * form nicety — both addresses receive order notifications, and a supplier
- * with one contact is a supplier whose orders go unread when that person is
- * away. The column stays nullable for rows that predate the rule, so it is
- * enforced here rather than in the schema.
+ * secondaryEmail is OPTIONAL. It was mandatory, on the reasoning that a
+ * supplier with one contact is one whose orders go unread while that person is
+ * away — good advice, but not something to refuse a supplier over. Plenty of
+ * small suppliers genuinely have one address, and requiring a second invited
+ * somebody to invent one, which is worse than the gap it filled.
+ *
+ * Nothing downstream needs it: both send paths already drop blank addresses
+ * before sending, so an empty second address simply means one recipient.
+ * If it IS given it must still be a real address and differ from the first,
+ * since a duplicate adds nothing while looking like cover.
  */
 /**
  * A promised number, or nothing.
@@ -799,17 +804,15 @@ function validateSupplier(input: SupplierEdit): string | null {
   if (!looksLikeEmail(input.primaryEmail.trim())) {
     return "The primary email does not look like an email address.";
   }
-  if (!input.secondaryEmail.trim()) {
-    return "A second email is required: both addresses receive order notifications.";
-  }
-  if (!looksLikeEmail(input.secondaryEmail.trim())) {
-    return "The secondary email does not look like an email address.";
-  }
-  if (
-    input.primaryEmail.trim().toLowerCase() ===
-    input.secondaryEmail.trim().toLowerCase()
-  ) {
-    return "The two emails must be different, or the second one adds nothing.";
+  // Blank is allowed. Anything else is held to the same standard as the first.
+  const second = input.secondaryEmail.trim();
+  if (second) {
+    if (!looksLikeEmail(second)) {
+      return "The second email does not look like an email address.";
+    }
+    if (input.primaryEmail.trim().toLowerCase() === second.toLowerCase()) {
+      return "The two emails must be different, or the second one adds nothing.";
+    }
   }
   if (!["Active", "Suspended"].includes(input.status)) {
     return "That is not a supplier status we recognise.";
@@ -1557,10 +1560,27 @@ export async function createOrganisation(
   return ok(created.id);
 }
 
+/**
+ * ⚠ NO TYPED REASON. An admin edit used to require one, on the reasoning that
+ * the database can always say the name changed and never why. The client asked
+ * for the box to go on 24 Aug 2026, and that is their call to make: it stood
+ * between an admin and correcting a phone number, and a required free-text box
+ * mostly collects "update" from people in a hurry.
+ *
+ * WHAT IS LOST, so nobody is surprised later: the audit trail still records
+ * what changed, from what, to what, by whom and when — every field, before and
+ * after. It no longer records the intent behind it. A rename still lands on
+ * the customer's own change log, since a rename they can see with no entry
+ * would make that log a half-truth; it now carries a plain statement of who
+ * did it rather than a reason nobody typed. Inventing wording that reads like
+ * a reason would be worse than admitting there is none.
+ *
+ * The customer's OWN change requests still require a reason. That rule is
+ * theirs, it is not this one, and checkReason still enforces it.
+ */
 export async function updateOrganisation(
   id: string,
-  input: OrganisationInput,
-  rawReason: string
+  input: OrganisationInput
 ): Promise<Result> {
   const actor = await requireAdmin();
 
@@ -1583,12 +1603,6 @@ export async function updateOrganisation(
 
   const changes = organisationChanges(before, after);
   if (changes.length === 0) return fail("Nothing was changed.");
-
-  // The same rule the customer's own forms follow: a change to somebody else's
-  // account needs a reason typed by whoever made it. The database will always
-  // be able to say the name changed and will never be able to say why.
-  const reason = checkReason(rawReason);
-  if (!reason.ok) return fail(reason.error);
 
   if (after.name !== before.name) {
     const clash = await db.organisation.findFirst({
@@ -1628,7 +1642,10 @@ export async function updateOrganisation(
           organisationId: id,
           kind: "AccountRenamed",
           summary: summarise("AccountRenamed", after.name),
-          reason: reason.reason,
+          // Not a reason, and deliberately does not read like one. See the
+          // note on this function: nobody typed one, and a plausible
+          // sentence here would be this system inventing a motive.
+          reason: `Changed by ${actor.name ?? "an administrator"} at AussieMed.`,
           status: "Applied",
           targetId: id,
           requestedByUserId: actor.id,
@@ -1641,7 +1658,6 @@ export async function updateOrganisation(
   await audit(actor, "organisation.update", "Organisation", id, before, {
     ...after,
     changes,
-    reason: reason.reason,
   });
 
   return ok(undefined);

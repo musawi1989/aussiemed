@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   DEFAULT_VAT_BASIS_POINTS,
+  accountUnitPriceFils,
+  applyDiscountFils,
   formatInvoiceNumber,
   formatReference,
   priceLine,
@@ -156,5 +158,104 @@ describe("reference numbers", () => {
   it("derives an invoice number from its order reference", () => {
     assert.equal(formatInvoiceNumber("AM-2026-000318", 1), "AM-2026-000318-01");
     assert.equal(formatInvoiceNumber("AM-2026-000318", 12), "AM-2026-000318-12");
+  });
+});
+
+describe("applyDiscountFils", () => {
+  it("takes a percentage off, exactly", () => {
+    // 2.5% of 1000 fils is 25.
+    assert.equal(applyDiscountFils(1000, 250), 975);
+    assert.equal(applyDiscountFils(2000, 1000), 1800); // 10%
+  });
+
+  it("rounds half up on the fils, never through a float", () => {
+    // 2.5% of 1799 is 44.975 -> 45 off.
+    assert.equal(applyDiscountFils(1799, 250), 1754);
+    // 0.5% of 100 is 0.5 -> 1 off, half up.
+    assert.equal(applyDiscountFils(100, 50), 99);
+  });
+
+  it("does nothing for no discount", () => {
+    assert.equal(applyDiscountFils(1799, 0), 1799);
+    assert.equal(applyDiscountFils(1799, -500), 1799, "a negative must not raise the price");
+    assert.equal(applyDiscountFils(1799, Number.NaN), 1799);
+  });
+
+  it("never goes below zero, however absurd the figure", () => {
+    assert.equal(applyDiscountFils(1000, 10000), 0);
+    assert.equal(applyDiscountFils(1000, 999999), 0);
+  });
+});
+
+describe("accountUnitPriceFils", () => {
+  const tiers = [
+    { minQty: 10, priceFils: 900 },
+    { minQty: 50, priceFils: 800 },
+  ];
+
+  it("is the list price when the account has no terms", () => {
+    assert.equal(accountUnitPriceFils(1000, tiers, 1), 1000);
+    assert.equal(accountUnitPriceFils(1000, tiers, 10), 900);
+    assert.equal(accountUnitPriceFils(1000, tiers, 50), 800);
+  });
+
+  it("applies the discount after the volume break, not before", () => {
+    // 10 units qualify for 900; 10% off that is 810.
+    assert.equal(
+      accountUnitPriceFils(1000, tiers, 10, { discountBasisPoints: 1000 }),
+      810
+    );
+  });
+
+  it("lets an agreed price beat list, breaks and the discount alike", () => {
+    const terms = { agreedPriceFils: 750, discountBasisPoints: 1000 };
+    // Whatever the quantity, and with a discount that would otherwise apply.
+    assert.equal(accountUnitPriceFils(1000, tiers, 1, terms), 750);
+    assert.equal(accountUnitPriceFils(1000, tiers, 50, terms), 750);
+  });
+
+  it("does NOT stack the discount on an agreed price", () => {
+    // The rule somebody will one day be tempted to change. 750 with 10% off
+    // would be 675, and a buyer and a supplier reading the same row would
+    // then get different answers about what was agreed.
+    assert.equal(
+      accountUnitPriceFils(1000, tiers, 1, {
+        agreedPriceFils: 750,
+        discountBasisPoints: 1000,
+      }),
+      750
+    );
+  });
+
+  it("treats a zero agreed price as an agreement, not as absent", () => {
+    // A free item on a tender is a real arrangement.
+    assert.equal(accountUnitPriceFils(1000, tiers, 5, { agreedPriceFils: 0 }), 0);
+  });
+
+  it("treats null and undefined as no agreement", () => {
+    assert.equal(accountUnitPriceFils(1000, tiers, 1, { agreedPriceFils: null }), 1000);
+    assert.equal(accountUnitPriceFils(1000, tiers, 1, { agreedPriceFils: undefined }), 1000);
+  });
+});
+
+describe("priceLine with account terms", () => {
+  it("prices at list when no terms are passed, as every old caller does", () => {
+    const line = priceLine(1000, [], 3, "Standard");
+    assert.equal(line.unitPriceFils, 1000);
+    assert.equal(line.lineTotalFils, 3000);
+  });
+
+  it("charges VAT on the discounted figure, not the list one", () => {
+    // The customer is invoiced for what they pay. VAT on a price nobody was
+    // charged would be VAT we collected on our own discount.
+    const line = priceLine(1000, [], 2, "Standard", 500, { discountBasisPoints: 1000 });
+    assert.equal(line.unitPriceFils, 900);
+    assert.equal(line.lineTotalFils, 1800);
+    assert.equal(line.vatFils, 90); // 5% of 1800, not of 2000
+  });
+
+  it("still zero-rates a zero-rated line after a discount", () => {
+    const line = priceLine(1000, [], 2, "ZeroRated", 500, { discountBasisPoints: 1000 });
+    assert.equal(line.vatFils, 0);
   });
 });

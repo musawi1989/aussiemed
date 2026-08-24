@@ -98,19 +98,23 @@ export async function accountIdentity(): Promise<{
   organisationName: string;
   contactName: string;
   email: string;
+  /** What this account was agreed, so checkout can state its own due date
+   *  rather than asserting the default at everybody. */
+  paymentTerms: string;
 } | null> {
   const session = await accountSession();
   if (!session) return null;
 
   const organisation = await db.organisation.findUnique({
     where: { id: session.organisationId },
-    select: { name: true },
+    select: { name: true, paymentTerms: true },
   });
 
   return {
     organisationName: organisation?.name ?? "",
     contactName: session.name,
     email: session.email,
+    paymentTerms: organisation?.paymentTerms ?? "Prepaid",
   };
 }
 
@@ -634,34 +638,17 @@ export type SavedGroup = {
  * Only categories with something in them: a list of empty headings is the
  * whole catalogue tree pretending to be a personal list.
  */
-export async function savedProducts(branchId?: string): Promise<SavedGroup[]> {
+/*
+ * This took a branchId until 23 Aug 2026 and no longer does — the client took
+ * the branch filter off My products. What it used to do, in case it is ever
+ * wanted back: it kept the saved products that appear on an order for that
+ * branch, because "My products for Jumeirah" means "which of these does
+ * Jumeirah order" rather than anything a wishlist stores. It cost a second
+ * query, and with the control gone it was work done for nobody.
+ */
+export async function savedProducts(): Promise<SavedGroup[]> {
   const session = await accountSession();
   if (!session) return [];
-
-  /**
-   * Narrowing a saved list by branch needs a word of explanation, because a
-   * wishlist belongs to a person rather than to a site and filtering it by
-   * address would be filtering on a field it does not have.
-   *
-   * What a manager actually means by "My products for Jumeirah" is "which of
-   * these does Jumeirah order" — so the filter keeps the saved products that
-   * appear on an order for that branch. Everything else is still saved and
-   * still there under All branches; this is a lens, not a deletion.
-   */
-  let orderedHere: Set<string> | null = null;
-  if (branchId) {
-    const lines = await db.orderItem.findMany({
-      where: {
-        order: { organisationId: session.organisationId, addressId: branchId },
-      },
-      select: { sku: { select: { productMasterId: true } } },
-    });
-    orderedHere = new Set(
-      lines
-        .map((line) => line.sku?.productMasterId)
-        .filter((id): id is string => Boolean(id))
-    );
-  }
 
   const saved = await db.wishlistItem.findMany({
     where: { userId: session.id },
@@ -698,8 +685,6 @@ export async function savedProducts(branchId?: string): Promise<SavedGroup[]> {
   const groups = new Map<string, SavedGroup>();
 
   for (const row of saved) {
-    if (orderedHere && !orderedHere.has(row.product.id)) continue;
-
     // The deepest category is the specific one — "Gloves" rather than
     // "Medical Consumables", which is what a person is actually browsing by.
     const category = row.product.categories.at(-1)?.category ?? null;

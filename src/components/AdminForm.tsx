@@ -135,6 +135,61 @@ export function AdminForm({
   );
 }
 
+/**
+ * A form that keeps what was typed when its action refuses.
+ *
+ * The inner half of AdminForm, exposed on its own for screens made of several
+ * small forms rather than one big one — each with its own button, its own
+ * action state and its own refusal. Children are rendered as given, so the
+ * caller owns the buttons and the messages; all this does is remember.
+ *
+ * Pass the state your own useActionState returned. That is the only way this
+ * can know a refusal happened.
+ */
+export function RestoringForm({
+  action,
+  state,
+  children,
+  className = "",
+}: {
+  action: (formData: FormData) => void;
+  state: FormState;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const [submitted, setSubmitted] = useState<FormData | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const refused = state?.ok === false;
+  let restored: FormData | null = refused ? submitted : null;
+  if (restored && state?.values) {
+    const merged = new FormData();
+    for (const [key, value] of restored.entries()) merged.append(key, value);
+    for (const [key, value] of Object.entries(state.values)) merged.set(key, value);
+    restored = merged;
+  }
+
+  return (
+    <form
+      action={action}
+      onSubmit={(event) => {
+        setSubmitted(new FormData(event.currentTarget));
+        setAttempt((n) => n + 1);
+      }}
+      className={className}
+    >
+      {/* Keyed for the same reason as AdminForm: changing defaultValue on a
+          mounted uncontrolled input does nothing, so the inputs have to
+          genuinely remount to take the restored values. The key moves only on
+          a refusal, so a form that is behaving is never torn down under
+          somebody's hands. */}
+      <Restored.Provider value={restored}>
+        <div key={restored ? attempt : "clean"}>{children}</div>
+      </Restored.Provider>
+    </form>
+  );
+}
+
 export function Field({
   label,
   name,

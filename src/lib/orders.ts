@@ -1,8 +1,10 @@
 import "server-only";
+
 import { DEFAULT_COUNTRY, countryName } from "./geo";
 
 import { db } from "./db";
 import { orderConfirmation } from "./email-message";
+import { paymentDueOn as dueOn } from "./payment-options";
 import { sendQuietly } from "./mailer";
 import { notify } from "./notifications";
 import {
@@ -11,6 +13,7 @@ import {
   formatReference,
   priceLine,
   sumLines,
+  type AccountTerms,
   type PricedLine,
 } from "./pricing";
 
@@ -70,8 +73,51 @@ export async function getOrCreateCart(cartKey: string) {
   });
 }
 
-export async function getCart(cartKey: string): Promise<CartView> {
-  const [cart, bp] = await Promise.all([
+/**
+ * What one account has agreed, ready to price a cart with.
+ *
+ * Fetched in one query per cart rather than one per line: an account with a
+ * hundred agreed prices and a cart of three is still one round trip, and the
+ * lookup is a Map because a cart of forty lines should not be forty scans.
+ *
+ * ⚠ THE ORGANISATION ID MUST COME FROM THE SESSION, never from a request
+ * body. It is the only thing standing between a customer and another
+ * account's negotiated prices. Both callers — the cart API and checkout —
+ * take it from getSessionUser, and this function is where that stops being
+ * true if anybody changes it.
+ */
+async function accountPricing(organisationId: string | null | undefined) {
+  if (!organisationId) return { discountBasisPoints: 0, agreed: new Map<string, number>() };
+
+  const [organisation, prices] = await Promise.all([
+    db.organisation.findUnique({
+      where: { id: organisationId },
+      select: { discountBasisPoints: true },
+    }),
+    db.customerPrice.findMany({
+      where: { organisationId },
+      select: { skuId: true, priceFils: true },
+    }),
+  ]);
+
+  return {
+    discountBasisPoints: organisation?.discountBasisPoints ?? 0,
+    agreed: new Map(prices.map((p) => [p.skuId, p.priceFils])),
+  };
+}
+
+/**
+ * The cart, priced for whoever is holding it.
+ *
+ * organisationId is optional and defaults to nobody, which prices at list —
+ * the right answer for a guest and for anyone browsing signed out. A signed-in
+ * buyer's account terms come from the session at the caller.
+ */
+export async function getCart(
+  cartKey: string,
+  organisationId?: string | null
+): Promise<CartView> {
+  const [cart, bp, account] = await Promise.all([
     db.cart.findUnique({
       where: { cartKey },
       include: {
@@ -94,16 +140,25 @@ export async function getCart(cartKey: string): Promise<CartView> {
       },
     }),
     vatBasisPoints(),
+    accountPricing(organisationId),
   ]);
 
   const lines: CartLineView[] = (cart?.items ?? []).map((item) => {
     const { sku } = item;
+    // has() rather than a truthiness check on the value: a SKU agreed at zero
+    // is a real arrangement, and reading it as "no agreement" would charge a
+    // customer list price for something we said was free.
+    const terms: AccountTerms = {
+      discountBasisPoints: account.discountBasisPoints,
+      agreedPriceFils: account.agreed.has(sku.id) ? account.agreed.get(sku.id) : null,
+    };
     const priced = priceLine(
       sku.priceFils,
       sku.tiers,
       item.qty,
       sku.product.taxClass,
-      bp
+      bp,
+      terms
     );
     return {
       id: item.id,
@@ -148,7 +203,19 @@ export class CartError extends Error {
   }
 }
 
-export async function addToCart(cartKey: string, skuCode: string, qty: number) {
+/*
+ * The four mutations all end by returning the cart, so each takes the account
+ * too. Threading it through looks repetitive; the alternative is a cart that
+ * prices correctly on load and at list the moment somebody changes a
+ * quantity, which is the kind of bug that gets reported as "the price keeps
+ * changing".
+ */
+export async function addToCart(
+  cartKey: string,
+  skuCode: string,
+  qty: number,
+  organisationId?: string | null
+) {
   const amount = Math.max(1, Math.trunc(qty || 1));
 
   const sku = await db.productSku.findUnique({
@@ -176,10 +243,15 @@ export async function addToCart(cartKey: string, skuCode: string, qty: number) {
     create: { cartId: cart.id, skuId: sku.id, qty: amount },
   });
 
-  return getCart(cartKey);
+  return getCart(cartKey, organisationId);
 }
 
-export async function setCartQty(cartKey: string, itemId: string, qty: number) {
+export async function setCartQty(
+  cartKey: string,
+  itemId: string,
+  qty: number,
+  organisationId?: string | null
+) {
   const amount = Math.max(0, Math.trunc(qty));
   const cart = await db.cart.findUnique({ where: { cartKey } });
   if (!cart) throw new CartError("No cart", "not_found", 404);
@@ -194,20 +266,24 @@ export async function setCartQty(cartKey: string, itemId: string, qty: number) {
   if (amount === 0) await db.cartItem.delete({ where: { id: item.id } });
   else await db.cartItem.update({ where: { id: item.id }, data: { qty: amount } });
 
-  return getCart(cartKey);
+  return getCart(cartKey, organisationId);
 }
 
-export async function removeFromCart(cartKey: string, itemId: string) {
+export async function removeFromCart(
+  cartKey: string,
+  itemId: string,
+  organisationId?: string | null
+) {
   const cart = await db.cart.findUnique({ where: { cartKey } });
   if (!cart) throw new CartError("No cart", "not_found", 404);
   await db.cartItem.deleteMany({ where: { id: itemId, cartId: cart.id } });
-  return getCart(cartKey);
+  return getCart(cartKey, organisationId);
 }
 
-export async function clearCart(cartKey: string) {
+export async function clearCart(cartKey: string, organisationId?: string | null) {
   const cart = await db.cart.findUnique({ where: { cartKey } });
   if (cart) await db.cartItem.deleteMany({ where: { cartId: cart.id } });
-  return getCart(cartKey);
+  return getCart(cartKey, organisationId);
 }
 
 /* ------------------------------------------------------------------ *
@@ -253,7 +329,14 @@ export type CheckoutResult = {
  * reference number the customer has been shown is the worst possible outcome.
  */
 export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
-  const cart = await getCart(input.cartKey);
+  /*
+   * Priced through getCart with the account, so the figures written to the
+   * order are the figures the buyer was shown. Pricing again here — or
+   * forgetting the organisation here — is exactly how a checkout charges list
+   * for a cart that displayed an agreed price, and nobody notices until an
+   * invoice is queried.
+   */
+  const cart = await getCart(input.cartKey, input.organisationId);
 
   if (cart.lines.length === 0) {
     throw new CartError("Cart is empty", "bad_request", 409);
@@ -314,14 +397,19 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
         })
       : null;
 
-    const TERM_DAYS: Record<string, number> = {
-      Prepaid: 0,
-      Net7: 7,
-      Net30: 30,
-      Net60: 60,
-    };
-    const days = TERM_DAYS[organisation?.paymentTerms ?? "Prepaid"] ?? 0;
-    const paymentDueOn = new Date(Date.now() + days * 86_400_000);
+    /*
+     * Terms come from payment-options.ts rather than a table of its own, so
+     * the date the buyer was shown at checkout and the date stored on the
+     * order are computed by the same function. They used to be two copies of
+     * the same numbers, and Net14 would have been added to only one of them.
+     *
+     * A guest is Prepaid: no account means no credit. An account uses what it
+     * was agreed, which for a new one is Net14.
+     */
+    const paymentDueOn = dueOn(
+      organisation?.paymentTerms ?? "Prepaid",
+      new Date()
+    );
 
     /*
      * Who placed it, and where it goes.

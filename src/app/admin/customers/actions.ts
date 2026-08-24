@@ -41,7 +41,7 @@ export async function updateCustomerAction(
   data: FormData
 ): Promise<FormState> {
   const id = text(data, "id");
-  const result = await updateOrganisation(id, read(data), text(data, "reason"));
+  const result = await updateOrganisation(id, read(data));
   if (!result.ok) return { ok: false, error: result.error };
 
   revalidatePath(`/admin/customers/${id}`);

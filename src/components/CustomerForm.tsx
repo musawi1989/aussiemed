@@ -9,16 +9,19 @@ import { CountryFields } from "@/components/CountryFields";
 
 const INPUT =
   "mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none";
-const LABEL = "block text-xs font-bold uppercase tracking-wide text-text-subtle";
+const LABEL =
+  "block text-xs font-bold uppercase tracking-wide text-text-subtle";
 
 /**
  * One form for opening an account and for correcting one, because the rules
  * are identical and two copies would drift — the same reason SupplierForm is
  * shared.
  *
- * The difference is the reason box, which appears only when editing. A new
- * account needs no explanation; changing somebody else's does, and it is the
- * one thing about a change that cannot be reconstructed from the data later.
+ * There WAS a reason box on the editing form, required, on the reasoning that
+ * the audit trail can say what changed but never why. Removed 24 Aug 2026 at
+ * the client's request — it stood between an admin and correcting a phone
+ * number. The audit trail still records every field before and after, by whom
+ * and when. See the note on updateOrganisation.
  */
 export function CustomerForm({
   customer,
@@ -88,32 +91,6 @@ export function CustomerForm({
             hint="Stops them ordering. Their history, branches and people are untouched."
           />
         </div>
-      </Panel>
-
-      {editing && (
-        <Panel title="Why">
-          <div className="space-y-4">
-            <TextArea
-              label="Reason for this change"
-              name="reason"
-              rows={2}
-              hint="Goes on the audit trail, and on the customer's own change log if the account name moves. At least 10 characters."
-            />
-          </div>
-        </Panel>
-      )}
-
-      <Panel title="Not set here">
-        <p className="text-sm leading-relaxed text-text-muted">
-          Payment terms and credit limit are deliberately absent. They are an
-          accounting decision that has not been taken yet (AC-09), and a figure
-          entered before the policy exists is a figure that gets believed. New
-          accounts open on{" "}
-          <span className="font-semibold text-text">
-            {customer?.paymentTerms ?? "Prepaid"}
-          </span>{" "}
-          with no credit until then.
-        </p>
       </Panel>
     </AdminForm>
   );

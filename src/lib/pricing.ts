@@ -16,6 +16,75 @@ export const DEFAULT_VAT_BASIS_POINTS = 500;
 
 export type TierFils = { minQty: number; priceFils: number };
 
+/**
+ * What one account pays, beyond the list price everyone sees.
+ *
+ * Both are optional and they are NOT alternatives — an account can have a
+ * discount and an agreed price on some of what it buys. They just never apply
+ * to the same line. See accountUnitPriceFils.
+ */
+export type AccountTerms = {
+  /** Off list, in basis points. 250 = 2.5%. Zero means no discount. */
+  discountBasisPoints?: number;
+  /** A price agreed for this SKU, in fils. Undefined when there is none. */
+  agreedPriceFils?: number | null;
+};
+
+/**
+ * A percentage off, in exact integer arithmetic.
+ *
+ * Rounded HALF UP on the final division and never through a float. 2.5% of
+ * 1799 fils is 44.975, and a float would make it 44.974999999999994 — which
+ * rounds the same way today and will not on some other figure. The whole
+ * reason money is fils is to keep this exact.
+ *
+ * A discount can never take a price below zero, and never below what it
+ * started at: a negative basis-point value would otherwise be a price rise
+ * wearing a discount's name.
+ */
+export function applyDiscountFils(priceFils: number, basisPoints: number): number {
+  if (!Number.isFinite(basisPoints) || basisPoints <= 0) return priceFils;
+  // 10000bp is everything. More than that would be paying them to take it.
+  const bp = Math.min(Math.trunc(basisPoints), 10000);
+  const off = Math.round((priceFils * bp) / 10000);
+  return Math.max(0, priceFils - off);
+}
+
+/**
+ * The unit price for one account, one SKU, one quantity.
+ *
+ * THE ORDER OF PRECEDENCE, which is the whole of this feature:
+ *
+ *   1. An AGREED PRICE wins outright. It is a number both sides shook hands
+ *      on. Volume breaks do not improve it and the account discount does NOT
+ *      stack on top — a buyer who negotiated a price and then found another
+ *      2.5% coming off it would be right to ask which figure we meant, and a
+ *      supplier reading the same row would get a different answer than us.
+ *   2. Otherwise the best VOLUME BREAK the quantity qualifies for, exactly as
+ *      before.
+ *   3. Then the ACCOUNT DISCOUNT off that. Applied after the break rather
+ *      than before because a break is a better list price, and a discount is
+ *      off what you would otherwise pay — doing it the other way rounds twice
+ *      and lands a fils out on some quantities.
+ *
+ * With no terms at all this is exactly unitPriceFilsFor, which is what every
+ * existing caller keeps getting.
+ */
+export function accountUnitPriceFils(
+  basePriceFils: number,
+  tiers: TierFils[],
+  qty: number,
+  terms: AccountTerms = {}
+): number {
+  const agreed = terms.agreedPriceFils;
+  // Zero is a real agreed price — a free item on a tender. Only null and
+  // undefined mean "no agreement", which is why this is not a truthiness test.
+  if (agreed !== null && agreed !== undefined) return Math.max(0, Math.trunc(agreed));
+
+  const listed = unitPriceFilsFor(basePriceFils, tiers, qty);
+  return applyDiscountFils(listed, terms.discountBasisPoints ?? 0);
+}
+
 export type PricedLine = {
   qty: number;
   unitPriceFils: number;
@@ -60,10 +129,13 @@ export function priceLine(
   tiers: TierFils[],
   qty: number,
   taxClass: TaxClass | string,
-  standardBasisPoints = DEFAULT_VAT_BASIS_POINTS
+  standardBasisPoints = DEFAULT_VAT_BASIS_POINTS,
+  // Last and optional, so every existing call is unchanged and still prices
+  // at list — which is what a guest and a browsing visitor must get.
+  terms: AccountTerms = {}
 ): PricedLine {
   const q = Math.max(1, Math.trunc(qty));
-  const unitPriceFils = unitPriceFilsFor(basePriceFils, tiers, q);
+  const unitPriceFils = accountUnitPriceFils(basePriceFils, tiers, q, terms);
   const lineTotalFils = unitPriceFils * q;
   const bp = vatBasisPointsFor(taxClass, standardBasisPoints);
   // Integer arithmetic throughout; half-up on the final division only.

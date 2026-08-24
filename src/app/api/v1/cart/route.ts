@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth";
 import { ensureCartKey, readCartKey } from "@/lib/cart-cookie";
 import {
   CartError,
@@ -19,7 +20,18 @@ import {
  *
  * Prices are computed here, never accepted from the client — a browser must
  * not be able to tell the server what something costs.
+ *
+ * ⚠ THE ACCOUNT COMES FROM THE SESSION COOKIE, never from the request. It
+ * decides which agreed prices and which account discount apply, so taking it
+ * from a body would let anybody price a cart as anybody else. account() is
+ * the only way it is obtained here.
  */
+
+/** The signed-in buyer's account, or null for a guest — who pays list. */
+async function account(): Promise<string | null> {
+  const user = await getSessionUser();
+  return user?.organisationId ?? null;
+}
 
 function fail(error: unknown) {
   if (error instanceof CartError) {
@@ -52,7 +64,7 @@ export async function GET() {
       },
     });
   }
-  return NextResponse.json({ cart: await getCart(key) });
+  return NextResponse.json({ cart: await getCart(key, await account()) });
 }
 
 export async function POST(request: Request) {
@@ -63,7 +75,9 @@ export async function POST(request: Request) {
     if (!skuCode) throw new CartError("skuCode is required", "bad_request");
 
     const key = await ensureCartKey();
-    return NextResponse.json({ cart: await addToCart(key, skuCode, qty) });
+    return NextResponse.json({
+      cart: await addToCart(key, skuCode, qty, await account()),
+    });
   } catch (error) {
     return fail(error);
   }
@@ -78,7 +92,9 @@ export async function PATCH(request: Request) {
     if (!Number.isFinite(qty)) throw new CartError("qty must be a number", "bad_request");
 
     const key = await ensureCartKey();
-    return NextResponse.json({ cart: await setCartQty(key, itemId, qty) });
+    return NextResponse.json({
+      cart: await setCartQty(key, itemId, qty, await account()),
+    });
   } catch (error) {
     return fail(error);
   }
@@ -91,7 +107,9 @@ export async function DELETE(request: Request) {
     const key = await ensureCartKey();
 
     return NextResponse.json({
-      cart: itemId ? await removeFromCart(key, itemId) : await clearCart(key),
+      cart: itemId
+        ? await removeFromCart(key, itemId, await account())
+        : await clearCart(key, await account()),
     });
   } catch (error) {
     return fail(error);
