@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { acknowledgeAction, dispatchAction } from "@/app/business-portal/actions";
 import type { FormState } from "@/components/AdminForm";
+import { CourierPicker } from "@/components/CourierPicker";
 
 function Feedback({ state }: { state: FormState }) {
   if (state?.ok === false && state.error) {
@@ -57,11 +58,14 @@ export function DispatchForm({
   id,
   poNumber,
   courier,
+  courierOptions,
   trackingNumber,
 }: {
   id: string;
   poNumber: string;
   courier: string | null;
+  /** From courierOptions() on the server. Empty falls back to a text box. */
+  courierOptions: string[];
   trackingNumber: string | null;
 }) {
   const [state, submit, pending] = useActionState(dispatchAction, null);
@@ -72,15 +76,12 @@ export function DispatchForm({
       <input type="hidden" name="poNumber" value={poNumber} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-xs font-bold text-text">Courier</span>
-          <input
-            name="courier"
-            defaultValue={courier ?? ""}
-            placeholder="Optional"
-            className="h-9 w-full rounded-card border border-border-strong bg-surface px-2.5 text-sm text-text"
-          />
-        </label>
+        <CourierPicker
+          value={courier}
+          options={courierOptions}
+          labelClassName="mb-1 block text-xs font-bold text-text"
+          inputClassName="h-9 w-full rounded-card border border-border-strong bg-surface px-2.5 text-sm text-text"
+        />
         <label className="block">
           <span className="mb-1 block text-xs font-bold text-text">
             Tracking number

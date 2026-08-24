@@ -11,6 +11,10 @@ import {
   stepLabel,
 } from "@/lib/order-notices";
 import { getCutoffHour } from "@/lib/purchasing";
+import { CourierList } from "@/components/admin/CourierList";
+import { SupplyApprovalSetting } from "@/components/admin/SupplyApprovalSetting";
+import { offersNeedApproval } from "@/lib/supply-offers";
+import { courierUsage, listCouriers } from "@/lib/couriers";
 
 /**
  * Settings, deliberately short.
@@ -20,14 +24,31 @@ import { getCutoffHour } from "@/lib/purchasing";
  * rest is listed as outstanding with the register item that tracks it.
  */
 export default async function AdminSettingsPage() {
-  const [vat, currency, version, cutoffHour, colours, notify] = await Promise.all([
-    db.setting.findUnique({ where: { key: "vatRateBasisPoints" } }),
-    db.setting.findUnique({ where: { key: "currency" } }),
-    db.setting.findUnique({ where: { key: "catalogVersion" } }),
-    getCutoffHour(),
-    toneColours(),
-    notifySettings(),
-  ]);
+  const [vat, currency, version, cutoffHour, colours, notify, couriers, supplyApproval] =
+    await Promise.all([
+      db.setting.findUnique({ where: { key: "vatRateBasisPoints" } }),
+      db.setting.findUnique({ where: { key: "currency" } }),
+      db.setting.findUnique({ where: { key: "catalogVersion" } }),
+      getCutoffHour(),
+      toneColours(),
+      notifySettings(),
+      // Archived ones too: this is the screen that restores them.
+      listCouriers(true),
+      offersNeedApproval(),
+    ]);
+
+  /*
+   * The usage count per courier, so the screen can say what removing one would
+   * take off the pickers. Counted here rather than in listCouriers, because
+   * every OTHER caller of that function is a picker that wants names and would
+   * be paying for two counts per courier to render a dropdown.
+   */
+  const courierRows = await Promise.all(
+    couriers.map(async (courier) => ({
+      ...courier,
+      usage: await courierUsage(courier.name),
+    }))
+  );
 
   const percent = Number(vat?.value ?? 500) / 100;
 
@@ -64,6 +85,10 @@ export default async function AdminSettingsPage() {
         </div>
 
         <div className="space-y-5">
+          <SupplyApprovalSetting on={supplyApproval} />
+
+          <CourierList couriers={courierRows} />
+
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
             <h2 className="text-base font-bold tracking-tight text-text">
               Fixed for now

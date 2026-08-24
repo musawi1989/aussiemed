@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { setToneColour } from "@/lib/tone-colours";
 import { setNotifyStep } from "@/lib/order-notices";
 import { requireAdmin } from "@/lib/admin";
+import { setOffersNeedApproval } from "@/lib/supply-offers";
+import {
+  archiveCourier,
+  createCourier,
+  restoreCourier,
+} from "@/lib/couriers";
 import { setVatRate } from "@/lib/admin";
 import { setCutoffHour } from "@/lib/purchasing";
 import { formatCutoffHour, parseCutoffHour } from "@/lib/cutoff";
@@ -80,5 +86,73 @@ export async function setNotifyStepAction(
     message: enabled
       ? "Customers will be emailed at this step."
       : "Customers will not be emailed at this step.",
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Couriers
+ * ------------------------------------------------------------------ */
+
+export async function addCourierAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await createCourier(String(data.get("name") ?? ""));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/settings");
+  return { ok: true, message: "Added. It is now on the courier pickers." };
+}
+
+export async function archiveCourierAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await archiveCourier(String(data.get("id") ?? ""));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/settings");
+  return {
+    ok: true,
+    // Says what did NOT happen as well as what did: somebody removing a
+    // courier wants to know they have not just rewritten old paperwork.
+    message: "Taken off the pickers. Orders that name it are unchanged.",
+  };
+}
+
+export async function restoreCourierAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await restoreCourier(String(data.get("id") ?? ""));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/settings");
+  return { ok: true, message: "Back on the courier pickers." };
+}
+
+/**
+ * Whether a supplier adding an item to their own list needs us to accept it.
+ *
+ * Off by default: additions land immediately, which is the client's decision.
+ * On, they arrive unapproved for somebody here to look at.
+ */
+export async function setSupplyApprovalAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  // getAll().at(-1): a checkbox posts its hidden "0" partner first, so the
+  // last value is the one the person actually left it on.
+  const on = data.getAll("enabled").at(-1) === "1";
+  const result = await setOffersNeedApproval(on);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/business-portal/supplies/add");
+  return {
+    ok: true,
+    message: on
+      ? "Suppliers' additions will wait for you to accept them."
+      : "Suppliers' additions take effect straight away.",
   };
 }
