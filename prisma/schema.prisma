@@ -66,8 +66,8 @@ model User {
 
   /// Where a sign-in came from, so a Google account is not asked for a
   /// password it never had. authProvider: Password | Google
-  authProvider   String  @default("Password")
-  googleSubject  String? @unique
+  authProvider  String  @default("Password")
+  googleSubject String? @unique
 
   /// Email OTP. The spec's sign-in is a code, not a password.
   otpCode      String?
@@ -89,7 +89,7 @@ model User {
   carts        Cart[]
   enquiries    Enquiry[]
   notifies     NotifySubscription[]
-  auditEntries AuditLog[]     @relation("AuditActor")
+  auditEntries AuditLog[]           @relation("AuditActor")
 
   changesRequested AccountChange[] @relation("AccountChangeRequester")
   changesReviewed  AccountChange[] @relation("AccountChangeReviewer")
@@ -106,23 +106,51 @@ model User {
 /// Trade accounts are held by the organisation and several people may order
 /// against one.
 model Organisation {
-  id      String  @id @default(cuid())
-  name    String
+  id          String  @id @default(cuid())
+  name        String
   /// Tax Registration Number. Required on a UAE tax invoice — see AC-03.
-  trn     String?
-  phone   String?
-  emirate String?
+  trn         String?
+  /// The TRN certificate itself, so the number on file can be checked against
+  /// the document it came from rather than taken on trust.
+  ///
+  /// ⚠ trnDocumentKey IS A STORAGE KEY, NOT A URL, and the file lives OUTSIDE
+  /// public/. A customer's tax paperwork is not catalogue photography: it is readable
+  /// only through an admin-authenticated route that looks this row up and
+  /// streams the bytes, so there is no address to leak. See src/lib/storage.ts.
+  trnDocumentKey        String?
+  /// The uploader's own filename, kept because it is how a person recognises
+  /// the file. Display text only — sanitised on the way in.
+  trnDocumentName       String?
+  trnDocumentUploadedAt DateTime?
+  phone       String?
+  emirate     String?
   /// ISO 3166-1 alpha-2. See Address.countryCode.
-  countryCode String @default("AE")
+  countryCode String  @default("AE")
 
   /// Opened through the sign-up form rather than by an admin, so it carries
   /// nothing we have agreed — terms, credit limit and pricing are all set
   /// when the application is approved.
   isSelfRegistered Boolean @default(false)
 
-  /// paymentTerms: Prepaid | Net7 | Net30 | Net60
+  /// paymentTerms: Prepaid | Net7 | Net14 | Net30 | Net60
+  /// Net14 is the default for a new account — the client's terms from 23 Aug
+  /// 2026. The permitted values live in src/lib/payment-options.ts; this is a
+  /// String rather than an enum so adding one needs no migration.
   paymentTerms    String  @default("Prepaid")
   creditLimitFils Int     @default(0)
+
+  /// An account-wide discount off list, in BASIS POINTS. 250 = 2.5%.
+  ///
+  /// Basis points, not a percentage float, for the same reason money is fils:
+  /// 2.5 stored as a float and multiplied out is how a stored invoice ends up
+  /// a fils out. A whole number of hundredths of a percent is exact.
+  ///
+  /// ⚠ THIS DOES NOT STACK ON AN AGREED PRICE. A CustomerPrice is a negotiated
+  /// figure and is final; the discount applies to everything priced off the
+  /// list. See applyAccountDiscount in pricing.ts, where the rule is stated
+  /// once and tested.
+  discountBasisPoints Int @default(0)
+
   isDisabled      Boolean @default(false)
 
   /// Standing notes about the account, shown on every order they place —
@@ -135,6 +163,7 @@ model Organisation {
   orders    Order[]
   staff     OrganisationStaff[]
   changes   AccountChange[]
+  prices    CustomerPrice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -211,24 +240,24 @@ model Address {
   /// clinic", "Main store". An address is a branch: giving a practice with
   /// three sites a separate Branch concept beside this one would mean two
   /// things that mean the same, and orders already point here.
-  label     String?
-  contact   String
-  phone     String
-  line1     String
-  line2     String?
-  city      String
+  label       String?
+  contact     String
+  phone       String
+  line1       String
+  line2       String?
+  city        String
   /// The subdivision under the country. Named for the UAE because that is
   /// where it started and every row still holds one; what a person is shown
   /// above the box follows the country now — Emirate, Governorate, State. The
   /// column keeps its name because renaming it would touch fifteen files and a
   /// migration for nothing a customer could see.
-  emirate   String
+  emirate     String
   /// ISO 3166-1 alpha-2. The display name in `country` is for printing on a
   /// document; this is what anything grouping or filtering should read, since
   /// "UAE", "U.A.E." and "United Arab Emirates" are one place.
-  countryCode String @default("AE")
-  country   String  @default("United Arab Emirates")
-  isDefault Boolean @default(false)
+  countryCode String  @default("AE")
+  country     String  @default("United Arab Emirates")
+  isDefault   Boolean @default(false)
 
   /// The people who order for this site.
   staff OrganisationStaff[]
@@ -256,7 +285,7 @@ model OrganisationStaff {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  name  String
+  name      String
   /// Which site they order for.
   ///
   /// Nullable because people were added before it was asked, and blanking
@@ -285,9 +314,10 @@ model Supplier {
   user   User?   @relation(fields: [userId], references: [id])
 
   companyName    String
-  /// Both addresses receive order notifications. secondaryEmail is mandatory
-  /// at creation — a locked platform decision, enforced in the service layer
-  /// since the column must stay nullable for existing rows.
+  /// Both addresses receive order notifications where there are two.
+  /// secondaryEmail is OPTIONAL — it was required until 24 Aug 2026, which
+  /// invited invented addresses for the many suppliers who genuinely have one.
+  /// Empty is stored as an empty string and dropped by both send paths.
   primaryEmail   String
   secondaryEmail String
   phone          String?
@@ -299,6 +329,18 @@ model Supplier {
   emirate        String?
   /// Suppliers may invoice in their own name, so they need their own TRN.
   trn            String?
+  /// The TRN certificate itself, so the number on file can be checked against
+  /// the document it came from rather than taken on trust.
+  ///
+  /// ⚠ trnDocumentKey IS A STORAGE KEY, NOT A URL, and the file lives OUTSIDE
+  /// public/. A supplier's tax paperwork is not catalogue photography: it is readable
+  /// only through an admin-authenticated route that looks this row up and
+  /// streams the bytes, so there is no address to leak. See src/lib/storage.ts.
+  trnDocumentKey        String?
+  /// The uploader's own filename, kept because it is how a person recognises
+  /// the file. Display text only — sanitised on the way in.
+  trnDocumentName       String?
+  trnDocumentUploadedAt DateTime?
   status         String  @default("Active")
 
   /// Temporarily unable to supply anything at all — closed, suspended, on
@@ -418,6 +460,7 @@ model ProductMaster {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([status])
   @@index([brandId])
   @@index([variantGroup])
@@ -467,18 +510,19 @@ model ProductSku {
 
   isActive Boolean @default(true)
 
-  tiers        PriceTier[]
-  optionValues SkuOptionValue[]
-  cartItems    CartItem[]
-  orderItems   OrderItem[]
-  quoteItems   QuoteItem[]
-  notify       NotifySubscription[]
-  batches      SkuBatch[]
-  images       ProductImage[]
-  supplies     ProductSupply[]
+  tiers                   PriceTier[]
+  agreed                  CustomerPrice[]
+  optionValues            SkuOptionValue[]
+  cartItems               CartItem[]
+  orderItems              OrderItem[]
+  quoteItems              QuoteItem[]
+  notify                  NotifySubscription[]
+  batches                 SkuBatch[]
+  images                  ProductImage[]
+  supplies                ProductSupply[]
   /// Supplies that name this SKU as the thing to buy instead.
-  offeredAsAlternativeFor ProductSupply[] @relation("SupplyAlternative")
-  poLines      PurchaseOrderLine[]
+  offeredAsAlternativeFor ProductSupply[]      @relation("SupplyAlternative")
+  poLines                 PurchaseOrderLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -498,15 +542,31 @@ model ProductSku {
 /// This is also where cost lives, superseding the first half of BE-34: two
 /// suppliers means two costs, so cost cannot sit on the SKU.
 model ProductSupply {
-  id       String     @id @default(cuid())
-  skuId    String
-  sku      ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  id    String     @id @default(cuid())
+  skuId String
+  sku   ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
 
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id])
 
-  /// rank: Primary | Backup. One of each per SKU, enforced below.
-  rank String
+  /// rank: Primary | Backup, or NULL.
+  ///
+  /// NULL means "this supplier can supply this pack" and nothing more — an
+  /// offer, not cover. It is what a supplier adding an item to their own list
+  /// creates, and it receives no purchase order.
+  ///
+  /// Nullable is what makes that possible at all. The unique below allows one
+  /// Primary and one Backup per pack, which left a self-added row nowhere to
+  /// go: every slot might be taken, and letting a supplier claim one would let
+  /// them make themselves our primary. SQLite treats NULLs as DISTINCT in a
+  /// unique index, so any number of suppliers can offer a pack while the two
+  /// cover slots stay exactly as constrained as before.
+  rank String?
+
+  /// False only where a supplier added themselves while approvals were on, and
+  /// nobody has accepted it yet. Default true, because the ordinary case is
+  /// AussieMed putting a supplier on an item.
+  isApproved Boolean @default(true)
 
   /// What AussieMed pays this supplier for one pack, in fils. Never a float,
   /// and never visible outside the admin — a supplier seeing the markup on
@@ -582,6 +642,41 @@ model PriceTier {
   unitsPerLevel Int?
 
   @@unique([skuId, minQty])
+  @@index([skuId])
+}
+
+/// A price agreed with one account for one SKU, overriding list and volume.
+///
+/// WHY A SEPARATE TABLE rather than a discount per product on the account: a
+/// negotiated price is a number both sides shook hands on, not a percentage
+/// off whatever list happens to be this week. If list moves, the agreed price
+/// does not, which is the whole point of agreeing one.
+///
+/// ⚠ IT IS FINAL. The account-wide discount does NOT stack on top — see
+/// Organisation.discountBasisPoints. An agreed price beats every other rule
+/// including volume breaks, because a break is our standing offer and this is
+/// a specific arrangement that supersedes it.
+model CustomerPrice {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  skuId          String
+  sku            ProductSku   @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  /// The agreed unit price in fils. Never null: a row with no price is not an
+  /// agreement, it is a row somebody has to interpret.
+  priceFils Int
+
+  /// Why this price exists — "tender 2026", "matched Henry Schein". Optional,
+  /// but the question gets asked every renewal and the answer is otherwise in
+  /// somebody's inbox.
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organisationId, skuId])
+  @@index([organisationId])
   @@index([skuId])
 }
 
@@ -793,15 +888,15 @@ model Order {
   /// back without an account. Never exposed to the client.
   guestCartKey String?
 
-  addressId        String?
-  address          Address? @relation(fields: [addressId], references: [id])
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
 
   /// Who at the customer placed it. The name is snapshotted alongside the
   /// link, like every other name on an order, so removing a staff member does
   /// not blank the orders they placed.
-  staffId      String?
-  staff        OrganisationStaff? @relation(fields: [staffId], references: [id])
-  placedByName String?
+  staffId          String?
+  staff            OrganisationStaff? @relation(fields: [staffId], references: [id])
+  placedByName     String?
   /// The delivery address as it was at the time, so later edits to the
   /// address book cannot rewrite a historical order.
   shippingSnapshot String?
@@ -970,8 +1065,8 @@ model Enquiry {
   message     String
 
   /// status: New | Answered | Closed
-  status      String  @default("New")
-  answeredAt  DateTime?
+  status        String    @default("New")
+  answeredAt    DateTime?
   /// Staff-only notes about the conversation.
   internalNotes String?
 
@@ -1089,6 +1184,31 @@ model PurchaseOrder {
   /// looks good, which is the direction nobody checks.
   totalCostFils Int?
 
+  /// Whether WE have paid THEM.
+  ///
+  /// A different question from Order.paymentStatus, which is whether a
+  /// customer has paid us, and tracked separately for the same reason: money
+  /// out and money in are independent, and a purchase order can be received in
+  /// full and unpaid for another month.
+  ///
+  /// The supplier sees this. Unlike their rank, it is a fact about their own
+  /// invoice and they are entitled to it — "have you paid me yet" is a
+  /// question they would otherwise have to ring up and ask.
+  ///
+  /// paymentStatus: Unpaid | PartiallyPaid | Paid | Refunded. Overdue and
+  /// DueSoon are NOT stored: they are this word with the passage of time
+  /// folded in, and paymentStatusOf derives them from paymentDueOn so the
+  /// screen is right the moment it is looked at, with no nightly job to
+  /// forget. Same arrangement as a customer order.
+  paymentStatus String    @default("Unpaid")
+  paidFils      Int       @default(0)
+  paidAt        DateTime?
+
+  /// When their invoice falls due. Nullable: supplier terms are agreed
+  /// per-supplier and are not modelled yet, so this is set by hand for now and
+  /// a null simply means nobody has said.
+  paymentDueOn DateTime?
+
   /// Staff-only. Never sent to the supplier.
   internalNotes String?
   /// Written on the document the supplier receives.
@@ -1127,6 +1247,19 @@ model PurchaseOrderLine {
 
   qtyOrdered  Int
   qtyReceived Int @default(0)
+
+  /// How many of qtyOrdered the SUPPLIER says they can actually send.
+  ///
+  /// Three quantities, three different facts, and none of them can stand in
+  /// for another: qtyOrdered is what we asked for, qtyConfirmed is what they
+  /// promised, qtyReceived is what turned up. A short delivery against a full
+  /// promise is a supplier problem; a short delivery against a short promise
+  /// is one we were told about and did not act on.
+  ///
+  /// NULL means they have not said yet, which is different from zero — zero is
+  /// "none of these, do not wait for them". Defaulting this to qtyOrdered
+  /// would put words in their mouth on every line of every order.
+  qtyConfirmed Int?
 
   /// True when this line fell back from the primary supplier, so a reviewer can
   /// see at a glance which lines were not the first choice.
@@ -1217,8 +1350,8 @@ model Notification {
 
   /// Set when this notification has been turned into an email, so nobody
   /// sends the same thing twice without meaning to.
-  emailedAt      DateTime?
-  emailedTo      String?
+  emailedAt       DateTime?
+  emailedTo       String?
   outboundEmailId String?
 
   createdAt DateTime @default(now())
@@ -1248,8 +1381,8 @@ model StatusEvent {
   id String @id @default(cuid())
 
   /// entity: Order | OrderItem | PurchaseOrder | ProductSku
-  entity   String
-  entityId String
+  entity    String
+  entityId  String
   /// The human-readable reference, so a query does not need a join to be
   /// readable and a deleted row still says what it was about.
   entityRef String?
@@ -1288,7 +1421,7 @@ model SearchEvent {
   id String @id @default(cuid())
 
   /// As typed, for reading back.
-  term String
+  term       String
   /// Folded to lower case and single-spaced, so "Nitrile  Gloves" and
   /// "nitrile gloves" group together in a report.
   normalised String
@@ -1324,7 +1457,7 @@ model OutboundEmail {
 
   /// kind: OrderConfirmation | RestockAlert | AccountChangeDecided |
   ///       PurchaseOrderSent | StaffAlert
-  kind String
+  kind     String
   /// audience: Customer | Supplier | Staff
   audience String
 
@@ -1337,7 +1470,7 @@ model OutboundEmail {
   /// Suppressed is not a failure. It is an address we would not send to — a
   /// missing one, or one that is plainly not an address — recorded rather
   /// than thrown away so it can be fixed.
-  status String @default("Queued")
+  status String  @default("Queued")
   /// Which driver handled it, so a mailbox that went missing can be traced to
   /// the configuration in force at the time.
   driver String
@@ -1352,8 +1485,8 @@ model OutboundEmail {
   /// rather than the caller's.
   dedupeKey String? @unique
 
-  attempts Int      @default(0)
-  queuedAt DateTime @default(now())
+  attempts Int       @default(0)
+  queuedAt DateTime  @default(now())
   sentAt   DateTime?
 
   @@index([status, queuedAt])
@@ -1415,4 +1548,36 @@ model SignInAttempt {
   @@index([key, at])
   @@index([address, at])
   @@index([at])
+}
+
+/// A carrier a parcel can be handed to.
+///
+/// The courier was free text in two places — on an order, where it is who is
+/// taking the goods to the customer, and on a purchase order, where it is who
+/// a supplier is sending them to us by. Free text is how "Aramex", "aramex"
+/// and "ARAMEX " become three couriers, which is discovered later by whoever
+/// tries to compare carriers on late deliveries.
+///
+/// THE NAME IS STILL STORED ON THE ORDER, as text, and this table is only the
+/// list a picker offers. That is deliberate, and the same rule the order lines
+/// follow: an order records what was true when it shipped. A foreign key would
+/// mean deleting a courier rewrote what last year's delivery notes say, and
+/// keeping the row forever just to protect them is a list that only grows.
+model Courier {
+  id   String @id @default(cuid())
+  name String @unique
+
+  /// Archived rather than deleted, so a courier can be taken off the pickers
+  /// without disturbing the orders that name it. Nothing here is ever hard
+  /// deleted by the admin screen.
+  isArchived Boolean @default(false)
+
+  /// The order they appear in. The one used most should not be alphabetically
+  /// unlucky.
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isArchived, sortOrder])
 }

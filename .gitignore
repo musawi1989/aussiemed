@@ -19,6 +19,9 @@ next-env.d.ts
 *.pem
 npm-debug.log*
 
+# Local launcher — hardcodes this machine's paths and conversation id.
+/click here to start.cmd
+
 /src/generated/prisma
 
 # Local development database — recreate with: npx prisma migrate dev
@@ -30,3 +33,7 @@ npm-debug.log*
 .windsurf/
 .claude/skills/prisma-*/
 skills-lock.json
+
+# Private document store (TRN certificates and the like). Never public,
+# never committed — see src/lib/storage.ts.
+/storage/
