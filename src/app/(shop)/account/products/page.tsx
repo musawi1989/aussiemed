@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { BranchFilter } from "@/components/account/BranchFilter";
-import { accountBranches } from "@/lib/account";
 import Image from "next/image";
 import Link from "next/link";
 import { QuickBuy } from "@/components/QuickBuy";
@@ -23,38 +21,28 @@ const aed = (fils: number) => formatAED(fils / 100);
  * categories with something in them appear, because a list of empty headings
  * is the catalogue tree pretending to be a personal list.
  */
-export default async function MyProductsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ branch?: string }>;
-}) {
-  const { branch } = await searchParams;
-  const [groups, branches] = await Promise.all([
-    savedProducts(branch),
-    accountBranches(),
-  ]);
+export default async function MyProductsPage() {
+  const groups = await savedProducts();
   const total = groups.reduce((n, g) => n + g.products.length, 0);
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-text">
-            My products
-          </h2>
-          <p className="mt-1 text-sm text-text-muted tnum">
-            {total === 0
-              ? "Nothing saved yet"
-              : `${total} saved across ${groups.length} ${groups.length === 1 ? "category" : "categories"}`}
-            {branch ? " · ordered by this branch" : ""}
-          </p>
-        </div>
-
-        <BranchFilter
-          basePath="/account/products"
-          branches={branches.map((b) => ({ id: b.id, label: b.label ?? b.city }))}
-          active={branch}
-        />
+      {/* No branch filter here, at the client's request of 23 Aug 2026. A
+          saved list belongs to a person rather than to a site, and narrowing
+          it by branch answered a question — "which of these does Jumeirah
+          order" — that the Orders tab already answers better, from the orders
+          themselves. The filter is still on the account overview and on
+          Account changes, where the thing being filtered really is
+          per-branch. (It was on Spending too, until that went — DEC-38.) */}
+      <div>
+        <h2 className="text-lg font-bold tracking-tight text-text">
+          My products
+        </h2>
+        <p className="mt-1 text-sm text-text-muted tnum">
+          {total === 0
+            ? "Nothing saved yet"
+            : `${total} saved across ${groups.length} ${groups.length === 1 ? "category" : "categories"}`}
+        </p>
       </div>
 
       {groups.length === 0 ? (

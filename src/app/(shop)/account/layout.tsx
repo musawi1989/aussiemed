@@ -59,18 +59,13 @@ export default async function AccountLayout({
             href: "/account/orders",
             label: "Orders",
             count: orderCount,
-            also: ["/account/reorder"],
-          },
-        ]
-      : []),
-    ...(session
-      ? [
-          {
-            href: "/account/reports",
-            label: "Spending",
-            // The invoice pages belong to this tab, not to Orders: somebody
-            // there is chasing a delivery, somebody here is doing the books.
-            also: ["/account/invoices"],
+            // The invoice pages belong to this tab now. They were under
+            // Spending, on the reasoning that somebody in Orders is
+            // chasing a delivery while somebody in Spending is doing the
+            // books — but the invoices moved to Orders first, and then
+            // Spending itself went (DEC-38), so this is where they are
+            // reached from and this is the tab that should light up.
+            also: ["/account/reorder", "/account/invoices"],
           },
         ]
       : []),

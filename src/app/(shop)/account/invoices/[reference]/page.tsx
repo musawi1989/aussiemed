@@ -94,10 +94,10 @@ export default async function AccountInvoicePage({
     <div className="mx-auto max-w-3xl px-4 py-8 print:max-w-none print:p-0">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
-          href="/account/reports"
+          href="/account/orders"
           className="text-sm font-semibold text-text-muted hover:text-navy"
         >
-          &larr; Spending
+          &larr; Your orders
         </Link>
         <PrintButton />
       </div>
