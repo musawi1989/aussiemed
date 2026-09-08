@@ -78,7 +78,7 @@ export async function importCatalogue(
   filename: string,
   bytes: Buffer
 ): Promise<Result<ImportOutcome>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const sheet = await readCatalogueWorkbook(bytes);
   if (!sheet.ok) return fail(sheet.error);

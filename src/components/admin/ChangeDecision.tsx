@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useState } from "react";
 import {
   approveChangeAction,
@@ -29,7 +30,7 @@ export function ChangeDecision({ changeId }: { changeId: string }) {
   return (
     <div className="mt-3 border-t border-border-base pt-3">
       {!rejecting ? (
-        <form action={approve} className="flex flex-wrap items-end gap-2">
+        <RestoringForm state={approveState} saveAll={false} action={approve} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="changeId" value={changeId} />
           <label className="min-w-0 flex-1">
             <span className="mb-1 block text-xs font-bold text-text-muted">
@@ -55,9 +56,9 @@ export function ChangeDecision({ changeId }: { changeId: string }) {
           >
             Turn down
           </button>
-        </form>
+        </RestoringForm>
       ) : (
-        <form action={reject} className="flex flex-wrap items-end gap-2">
+        <RestoringForm state={rejectState} saveAll={false} action={reject} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="changeId" value={changeId} />
           <label className="min-w-0 flex-1">
             <span className="mb-1 block text-xs font-bold text-text-muted">
@@ -86,7 +87,7 @@ export function ChangeDecision({ changeId }: { changeId: string }) {
           >
             Cancel
           </button>
-        </form>
+        </RestoringForm>
       )}
 
       {feedback?.ok === false && feedback.error && (

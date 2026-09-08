@@ -13,12 +13,27 @@
  * the quantities worth pricing.
  */
 
-export type SupplyRank = "Primary" | "Backup";
+/**
+ * The cover slots, in the order this run tries them.
+ *
+ * One list, in ./ranks, shared with the admin screens and the cover service.
+ * It was briefly duplicated here on the reasoning that this module is pure and
+ * supply-cover.ts is not — but ./ranks is pure too, and two lists of ranks
+ * drifting apart fails silently: the symptom is "the third supplier never
+ * receives an order", which nothing reports.
+ */
+import { RANKS, type Rank } from "./ranks.ts";
+
+export {
+  RANKS as SUPPLY_RANKS,
+  isRank as isSupplyRank,
+  type Rank as SupplyRank,
+} from "./ranks.ts";
 
 export type SupplyOption = {
   supplierId: string;
   supplierName: string;
-  rank: SupplyRank;
+  rank: Rank;
   /**
    * The supplier can supply this item right now. Two separate facts collapse
    * into this: the company being open for business at all, and this particular
@@ -137,20 +152,35 @@ export function allocateReceipt(
     });
 }
 
-/** Primary if it can supply, otherwise backup, otherwise nothing. */
+/**
+ * The first slot that can actually supply, in order of preference.
+ *
+ * Written as a walk over SUPPLY_RANKS rather than a chain of finds, so adding
+ * a slot does not mean remembering to add another line here — the bug that
+ * would follow is silent, and reads as "the third supplier is never used".
+ */
 export function chooseSupply(supplies: SupplyOption[]): SupplyOption | null {
   const usable = supplies.filter((s) => s.available);
-  return (
-    usable.find((s) => s.rank === "Primary") ??
-    usable.find((s) => s.rank === "Backup") ??
-    null
-  );
+
+  for (const rank of RANKS) {
+    const found = usable.find((s) => s.rank === rank);
+    if (found) return found;
+  }
+  return null;
 }
 
 function reasonFor(supplies: SupplyOption[]): string {
   if (supplies.length === 0) return "No supplier is recorded for this item.";
+
   const names = supplies.map((s) => `${s.supplierName} (${s.rank.toLowerCase()})`);
-  return `Neither supplier can supply it: ${names.join(" and ")} are both unavailable.`;
+
+  // "Neither" was correct while there were two slots and wrong the moment
+  // there were three. The count decides the word.
+  if (names.length === 1) {
+    return `${names[0]} cannot supply it, and there is no other supplier on this item.`;
+  }
+  const listed = `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `No supplier can supply it: ${listed} are all unavailable.`;
 }
 
 export function planPurchaseOrders(demand: DemandLine[]): PurchasePlan {
@@ -190,7 +220,10 @@ export function planPurchaseOrders(demand: DemandLine[]): PurchasePlan {
         qtyOrdered: line.qty,
         unitCostFils: supply.costFils,
         supplierPartNumber: supply.supplierPartNumber,
-        wasFallback: supply.rank === "Backup",
+        // Anything but the primary is a fallback. Written as "not Primary"
+        // rather than "is Backup" so a third-choice order is still flagged as
+        // one we did not intend to place.
+        wasFallback: supply.rank !== "Primary",
         allocations: [{ orderItemId: line.orderItemId, qty: line.qty }],
       });
     }

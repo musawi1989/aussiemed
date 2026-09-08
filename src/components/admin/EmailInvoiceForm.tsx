@@ -1,7 +1,8 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useState } from "react";
-import { emailInvoiceAction } from "@/app/admin/inbox/actions";
+import { emailInvoiceAction } from "@/app/admin/orders/[reference]/actions";
 
 /**
  * Sends the customer their invoice.
@@ -40,7 +41,7 @@ export function EmailInvoiceForm({
   }
 
   return (
-    <form action={submit} className="w-full rounded-card border border-border-strong bg-surface-sunken p-4">
+    <RestoringForm state={state} saveAll={false} action={submit} className="w-full rounded-card border border-border-strong bg-surface-sunken p-4">
       <input type="hidden" name="reference" value={reference} />
 
       <p className="text-sm font-bold text-text">Email invoice {reference}</p>
@@ -117,6 +118,6 @@ export function EmailInvoiceForm({
           </span>
         )}
       </div>
-    </form>
+    </RestoringForm>
   );
 }

@@ -66,6 +66,7 @@ export function OrderSidebar({
           <AdminForm
             action={setOrderStatusAction}
             submitLabel="Update status"
+            confirmChange={data => ["Cancelled", "Delivered"].includes(String(data.get("status"))) ? `Mark ${reference} as ${data.get("status")}? This closes the order and cannot be undone here.` : null}
             className="mt-2"
           >
             <input type="hidden" name="reference" value={reference} />
@@ -87,7 +88,7 @@ export function OrderSidebar({
             Past its due date and not settled.
           </p>
         )}
-        <AdminForm action={setPaymentAction} submitLabel="Save payment" className="mt-2">
+        <AdminForm action={setPaymentAction} submitLabel="Save payment" className="mt-2" confirmChange={data => data.get("paymentStatus") !== payment.paymentStatus && ["Paid", "Refunded"].includes(String(data.get("paymentStatus"))) ? `Mark ${reference} as ${data.get("paymentStatus")}? This will adjust its recorded payment balance.` : null}>
           <input type="hidden" name="reference" value={reference} />
           <div className="space-y-3">
             <Select

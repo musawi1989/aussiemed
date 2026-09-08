@@ -126,7 +126,7 @@ export async function setToneColour(
   tone: string,
   value: string
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   if (!TONE_ORDER.includes(tone as Tone)) {
     return { ok: false, error: "That is not one of the five status colours." };

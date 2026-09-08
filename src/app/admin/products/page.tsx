@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { contains } from "@/lib/db-search";
 import { formatAED } from "@/lib/money";
@@ -7,6 +8,11 @@ import { UrlFilters } from "@/components/UrlFilters";
 import { StatusPill } from "@/components/StatusPill";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 import { Pagination } from "@/components/Pagination";
+import {
+  ProductSelectionProvider,
+  SelectAllProducts,
+  SelectProduct,
+} from "@/components/admin/ProductSelection";
 import { PRODUCT_TABS } from "./tabs";
 
 // 50 rather than 25: at 2,068 products the old size meant 83 pages, and a
@@ -51,6 +57,9 @@ export default async function AdminProductsPage({
   const supplierId = one("supplier");
   const stock = one("stock");
   const categoryId = one("category");
+  const sort = one("sort");
+  const dateField = sort.startsWith("added") ? "createdAt" : "updatedAt";
+  const sortedByDate = ["added-newest", "added-oldest", "modified-newest", "modified-oldest"].includes(sort);
   /*
    * "samples" is absent by default and means hidden — the opposite way
    * round to every other filter here, where absent means no filtering. It
@@ -104,6 +113,7 @@ export default async function AdminProductsPage({
       db.productMaster.findMany({
         where,
         include: {
+          images: { orderBy: { sortOrder: "asc" }, select: { path: true, altText: true, skuId: true } },
           brand: { select: { name: true } },
           categories: { select: { categoryId: true } },
           skus: {
@@ -120,7 +130,7 @@ export default async function AdminProductsPage({
             },
           },
         },
-        orderBy: { name: "asc" },
+        orderBy: sortedByDate ? [{ [dateField]: sort.endsWith("oldest") ? "asc" : "desc" }, { id: "asc" }] : [{ name: "asc" }, { id: "asc" }],
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
       }),
@@ -173,6 +183,7 @@ export default async function AdminProductsPage({
     stock: stock || undefined,
     category: categoryId || undefined,
     samples: samples || undefined,
+    sort: sort || undefined,
   };
 
   return (
@@ -243,6 +254,17 @@ export default async function AdminProductsPage({
             })),
           },
           {
+            name: "sort",
+            label: "Name (A-Z)",
+            value: sort,
+            options: [
+              { value: "added-newest", label: "Date added: newest first" },
+              { value: "added-oldest", label: "Date added: oldest first" },
+              { value: "modified-newest", label: "Date modified: newest first" },
+              { value: "modified-oldest", label: "Date modified: oldest first" },
+            ],
+          },
+          {
             name: "stock",
             label: "Any stock",
             value: stock,
@@ -311,10 +333,14 @@ export default async function AdminProductsPage({
           Nothing matches those filters.
         </p>
       ) : (
+        <ProductSelectionProvider ids={products.map((p) => p.id)}>
         <div className="mt-4 overflow-x-auto rounded-card border border-border-base bg-surface shadow-card">
           <table className="w-full min-w-[52rem] text-sm">
             <thead className="border-b border-border-base bg-surface-sunken text-left">
               <tr>
+                <th className="w-10 px-4 py-2.5">
+                  <SelectAllProducts ids={products.map((p) => p.id)} />
+                </th>
                 <th className="px-4 py-2.5 font-bold text-text-subtle">
                   Product
                 </th>
@@ -331,6 +357,7 @@ export default async function AdminProductsPage({
             </thead>
             <tbody>
               {products.map((product) => {
+                const mainImage = product.images.find(image => !image.skuId) ?? product.images[0];
                 const cheapest = product.skus.reduce<number | null>(
                   (min, s) =>
                     min === null || s.priceFils < min ? s.priceFils : min,
@@ -342,6 +369,12 @@ export default async function AdminProductsPage({
                     className="border-b border-border-base last:border-0 hover:bg-surface-hover"
                   >
                     <td className="px-4 py-3">
+                      <SelectProduct id={product.id} name={product.name} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-card border border-border-base bg-surface">{mainImage ? <Image src={mainImage.path} alt={mainImage.altText || product.name} fill sizes="64px" className="object-contain p-1" /> : <span className="flex h-full items-center justify-center text-xs text-text-muted">No image</span>}</div>
+                        <div>
                       <Link
                         href={`/admin/products/${product.id}`}
                         className="font-semibold text-navy hover:underline"
@@ -362,6 +395,8 @@ export default async function AdminProductsPage({
                           </span>
                         )}
                       </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-text-muted">
                       {/* The primary supplier of its packs. Distinct packs can
@@ -387,6 +422,7 @@ export default async function AdminProductsPage({
             </tbody>
           </table>
         </div>
+        </ProductSelectionProvider>
       )}
 
       {/* The shared windowed pager, not a button per page. This list rendered

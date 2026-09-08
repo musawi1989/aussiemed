@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import Image from "next/image";
 import { useActionState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
   uploadImageAction,
 } from "@/app/admin/products/[id]/actions";
 import type { FormState } from "@/components/AdminForm";
+import { ConfirmSubmit } from "./ConfirmSubmit";
 
 /**
  * Product photography — BE-29.
@@ -22,6 +24,7 @@ export type AdminImage = {
   id: string;
   path: string;
   altText: string | null;
+  skuId?: string | null;
 };
 
 export function ProductImages({
@@ -30,12 +33,14 @@ export function ProductImages({
   productName,
   images,
   maxMb,
+  skus = [],
 }: {
   productId: string;
   slug: string;
   productName: string;
   images: AdminImage[];
   maxMb: number;
+  skus?: { id: string; label: string }[];
 }) {
   const [uploadState, upload, uploading] = useActionState(uploadImageAction, null);
 
@@ -70,11 +75,9 @@ export function ProductImages({
               </div>
 
               <div className="min-w-0 flex-1">
-                {index === 0 && (
-                  <span className="inline-block rounded-full bg-navy-soft px-2 py-0.5 text-[11px] font-bold text-navy">
-                    Shown in the catalogue
-                  </span>
-                )}
+                <span className="inline-block break-words text-[11px] font-bold text-navy">
+                  {image.skuId ? skus.find(sku => sku.id === image.skuId)?.label : "Whole product"}{index === 0 ? " (primary)" : ""}
+                </span>
                 <p className="mt-1 truncate text-xs text-text-muted" title={image.path}>
                   {image.path}
                 </p>
@@ -108,9 +111,15 @@ export function ProductImages({
         </ul>
       )}
 
-      <form action={upload} className="mt-4 border-t border-border-base pt-4">
+      <RestoringForm state={uploadState} saveAll={true} action={upload} className="mt-4 border-t border-border-base pt-4">
         <input type="hidden" name="productId" value={productId} />
         <input type="hidden" name="slug" value={slug} />
+        <label className="mb-3 block text-xs font-bold text-text">Image for
+          <select name="skuId" className="mt-1 min-h-9 w-full rounded-card border border-border-strong bg-surface px-2 text-sm">
+            <option value="">Whole product</option>
+            {skus.map(sku => <option key={sku.id} value={sku.id}>{sku.label}</option>)}
+          </select>
+        </label>
 
         <label className="block">
           <span className="mb-1 block text-xs font-bold text-text">
@@ -151,7 +160,7 @@ export function ProductImages({
           </button>
           <Feedback state={uploadState} />
         </div>
-      </form>
+      </RestoringForm>
     </div>
   );
 }
@@ -175,23 +184,33 @@ function ImageButton({
   const [state, submit, pending] = useActionState(action, null);
 
   return (
-    <form action={submit} className="text-right">
+    <RestoringForm state={state} saveAll={false} action={submit} className="text-right">
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="imageId" value={imageId} />
-      <button
-        type="submit"
-        disabled={pending}
-        className={`text-[11px] font-bold disabled:opacity-60 ${className}`}
-      >
-        {pending ? "Working…" : label}
-      </button>
+      {/* Promote is not destructive; only removal asks. */}
+      {label === "Remove" ? (
+        <ConfirmSubmit
+          what="this image"
+          consequence="The file is deleted. If it is the first image, the catalogue falls back to a monogram tile."
+          pending={pending}
+          className={`text-[11px] font-bold disabled:opacity-60 ${className}`}
+        />
+      ) : (
+        <button
+          type="submit"
+          disabled={pending}
+          className={`text-[11px] font-bold disabled:opacity-60 ${className}`}
+        >
+          {pending ? "Working…" : label}
+        </button>
+      )}
       {state?.ok === false && state.error && (
         <p role="alert" className="mt-0.5 text-[11px] font-semibold text-danger">
           {state.error}
         </p>
       )}
-    </form>
+    </RestoringForm>
   );
 }
 

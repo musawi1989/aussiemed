@@ -28,6 +28,28 @@ const PUBLIC_PATHS = [
   "/cart",
 ];
 
+/* The three carve-outs this check makes, kept in their own module so they can
+   be tested — see src/lib/privacy-match.test.ts. Each one makes the guard
+   quieter, which is exactly the kind of code that should not live only inside
+   a script nothing exercises. */
+import {
+  mentionsCode,
+  namesAnyOf,
+  stripAssetPaths,
+  stripBrandNames,
+} from "./privacy-match.mjs";
+
+/**
+ * The password every seeded account shares — prisma/seed-accounts.ts and
+ * seed-demo.ts both set it.
+ *
+ * It was "123456", hard-coded in three places, and stopped being true when the
+ * platform was wiped and reseeded. The check then failed at "could not sign in
+ * as a supplier", which reads like a privacy failure and was a stale constant
+ * — and a guardrail that cannot sign in is a guardrail checking nothing.
+ */
+const SEEDED_PASSWORD = "AussieMed2026!";
+
 let failures = 0;
 const fail = (message) => {
   failures++;
@@ -112,7 +134,7 @@ for (const path of PUBLIC_PATHS) {
     const auth = await fetch(`${BASE}/api/v1/auth`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ identifier: "admin", password: "123456", expectRole: "Admin" }),
+      body: JSON.stringify({ identifier: "admin", password: SEEDED_PASSWORD, expectRole: "Admin" }),
     });
 
     if (!auth.ok) {
@@ -125,7 +147,7 @@ for (const path of PUBLIC_PATHS) {
 
       // <main> only — the shell around it carries the operator's identity.
       const main = html.slice(html.indexOf('id="main"'));
-      const found = identifiers.filter((value) => main.includes(value));
+      const found = namesAnyOf(main, identifiers);
 
       if (found.length === 0) pass(`${po.poNumber} names no customer`);
       else fail(`${po.poNumber} names ${found.join(", ")}`);
@@ -175,7 +197,7 @@ for (const path of PUBLIC_PATHS) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         identifier: supplierUser.username,
-        password: "123456",
+        password: SEEDED_PASSWORD,
         expectRole: "Supplier",
       }),
     });
@@ -188,7 +210,7 @@ for (const path of PUBLIC_PATHS) {
       const portal = await (
         await fetch(`${BASE}/business-portal`, { headers: { cookie } })
       ).text();
-      const found = identifiers.filter((value) => portal.includes(value));
+      const found = namesAnyOf(portal, identifiers);
       if (found.length === 0) pass("the supplier portal names no customer");
       else fail(`the supplier portal names ${found.join(", ")}`);
 
@@ -258,12 +280,59 @@ for (const path of PUBLIC_PATHS) {
           .prepare(`select "companyName" from "Supplier" where "id" != ?`)
           .all(supplierUser.supplierId)
           .map((row) => row.companyName);
+
+        /*
+         * Product names carrying a supplier's name, so a BRAND is not read as
+         * a disclosure of who supplies it — the same narrow carve-out the
+         * email check makes, and made here for the same reason.
+         *
+         * "Livingstone" is one of our suppliers and also a brand on 16
+         * products. This screen lists the packs THIS supplier has taken on,
+         * and one of them is a Livingstone-branded glove: a name printed on
+         * the storefront, on the box, and in the search results the supplier
+         * found it through. That is not a disclosure, and a check that calls
+         * it one is a check people learn to ignore.
+         *
+         * ⚠ NARROW, NOT A RELAXATION. Only occurrences inside a product name
+         * from our own catalogue are forgiven; the name is cut out and
+         * whatever is left is still searched, so a row actually attributing a
+         * pack to "Livingstone" still fails.
+         */
+        const brandNames = db2
+          .prepare(`select "name" from "ProductMaster"`)
+          .all()
+          .map((r) => r.name)
+          .filter((name) => name && rivals.some((s) => name.includes(s)))
+          // Longest first, so a longer title is stripped before a shorter one
+          // that is a prefix of it and cannot leave a fragment behind.
+          .sort((a, b) => b.length - a.length);
         db2.close();
 
         const html = await (
           await fetch(`${BASE}/business-portal/supplies`, { headers: { cookie } })
         ).text();
-        const main = html.slice(html.indexOf('id="main"'));
+
+        /*
+         * An image filename is not an attribution.
+         *
+         * The seed names product photographs after a SKU code, and a
+         * photograph belongs to the PRODUCT rather than to one of its packs.
+         * So a supplier looking at a pack they genuinely supply was served
+         * /products/seed/GLPF100ZL.png, and a substring search read that
+         * filename as "a pack they do not supply". Every occurrence it flagged
+         * was a sibling pack of a product this supplier already covers, which
+         * is to say it disclosed nothing at all.
+         *
+         * STRIPPED BY FILE PATH, NOT BY ATTRIBUTE, because the same paths come
+         * back a second time inside the serialised props in the RSC payload —
+         * as \"image\":\"/products/seed/GLPF100ZL.png\" — where no src=
+         * attribute exists to match on. A path ending in an image extension is
+         * never a disclosure however it is spelled.
+         *
+         * Only paths go. Every other word on the page, visible or serialised,
+         * is still searched.
+         */
+        const main = stripAssetPaths(html.slice(html.indexOf('id="main"')));
 
         const problems = [];
         if (sellPrices.some((value) => main.includes(`AED ${value}`))) {
@@ -272,13 +341,29 @@ for (const path of PUBLIC_PATHS) {
         if (rivalCosts.some((value) => main.includes(`AED ${value}`))) {
           problems.push("another supplier's cost");
         }
-        if (notTheirs.some((code) => main.includes(code))) {
+        /*
+         * SKU codes need a boundary, because they are prefixes of each other.
+         *
+         * The supplier covers GLPF100ZL-10; the catalogue also holds
+         * GLPF100ZL, which they do not. A plain substring search finds the
+         * shorter code inside the longer one and reports a pack they do not
+         * supply — on a row showing the pack they do. Every occurrence this
+         * check flagged was of that shape.
+         *
+         * A code is only really present if what follows it cannot be part of
+         * the same code. Hyphens and alphanumerics continue a SKU code here,
+         * so a match followed by one of those is a prefix, not a hit.
+         */
+        if (notTheirs.some((code) => mentionsCode(main, code))) {
           problems.push("a pack they do not supply");
         }
-        if (rivals.some((name) => main.includes(name))) {
+        // Brand occurrences cut out first; anything left that still names a
+        // rival is a real attribution.
+        const withoutBrands = stripBrandNames(main, brandNames);
+        if (rivals.some((name) => withoutBrands.includes(name))) {
           problems.push("another supplier's name");
         }
-        if (identifiers.some((value) => main.includes(value))) {
+        if (namesAnyOf(main, identifiers).length > 0) {
           problems.push("a customer");
         }
 
@@ -372,7 +457,7 @@ for (const path of PUBLIC_PATHS) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           identifier: supplierUser.username,
-          password: "123456",
+          password: SEEDED_PASSWORD,
           expectRole: "Supplier",
         }),
       });
@@ -462,7 +547,7 @@ for (const path of PUBLIC_PATHS) {
     let leaked = 0;
     for (const mail of supplierMail) {
       const haystack = `${mail.subject}\n${mail.body}`;
-      const found = customerIdentifiers.filter((value) => haystack.includes(value));
+      const found = namesAnyOf(haystack, customerIdentifiers);
       if (found.length > 0) {
         fail(`a supplier email names ${[...new Set(found)].join(", ")}`);
         leaked++;

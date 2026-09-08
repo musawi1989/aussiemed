@@ -116,6 +116,21 @@ check(
 const notSample = { NOT: { slug: { startsWith: SAMPLE_SLUG_PREFIX } } };
 const notSampleSku = { NOT: { skuCode: { startsWith: SAMPLE_SKU_PREFIX } } };
 
+/**
+ * SKUs built out by npm run db:seed:variants, marked -V- in their code.
+ *
+ * Excluded on the same footing as the samples. This check asks whether every
+ * pack in catalog.json became a SKU; the variant matrix is deliberately extra
+ * — fifteen size-and-colour combinations the JSON has no concept of. Counting
+ * them turns a real invariant into one that fails by design as soon as that
+ * seed is run, which is the trap DA-27 dug the project out of.
+ *
+ * The originals they supersede are deactivated rather than deleted, so those
+ * fall out of these counts on their own.
+ */
+const VARIANT_SKU_MARKER = "-V-";
+const notVariantSku = { NOT: { skuCode: { contains: VARIANT_SKU_MARKER } } };
+
 const sampleProducts = await prisma.productMaster.count({
   where: { slug: { startsWith: SAMPLE_SLUG_PREFIX }, status: "Active" },
 });
@@ -126,14 +141,57 @@ if (sampleProducts > 0) {
   console.log("        Remove with: npm run db:seed:samples -- --remove\n");
 }
 
-// Active only: retired products stay in the table because orders reference them.
-const realProducts = await prisma.productMaster.count({
-  where: { status: "Active", ...notSample },
+/**
+ * Products the catalogue prune took off the shop — npm run db:prune.
+ *
+ * These checks ask whether the seed LOADED everything, not whether everything
+ * is on sale. Curating the storefront down to the finished products is a
+ * deliberate act with its own undo, and counting its results as missing rows
+ * turns a real invariant into one that fails by design — the trap DA-27 dug
+ * the project out of.
+ *
+ * Read from the same Setting row the prune writes, so the two cannot disagree.
+ */
+const prunedRecord = await prisma.setting.findUnique({
+  where: { key: "prunedProductIds" },
 });
+const prunedIds: string[] = prunedRecord ? JSON.parse(prunedRecord.value) : [];
+
+const pruned = new Set(prunedIds);
+
+/**
+ * Every real product, counted in memory rather than by query.
+ *
+ * There are only ever a few dozen non-sample products, and asking the database
+ * "id IN (…2,010 ids…)" exceeds what SQLite will bind in one statement — it
+ * failed with P2029 the first time this was written that way. Fetching the
+ * small set and deciding here is both simpler and immune to the size of the
+ * prune.
+ */
+const realProductRows = await prisma.productMaster.findMany({
+  where: { ...notSample },
+  select: { id: true, status: true, taxClass: true },
+});
+
+/** Active, or taken off the shop by the prune. */
+const onTheBooks = realProductRows.filter(
+  (p) => p.status === "Active" || pruned.has(p.id)
+);
+
+if (prunedIds.length > 0) {
+  const live = realProductRows.filter((p) => p.status === "Active").length;
+  console.log(
+    `  NOTE  ${prunedIds.length} product(s) deactivated by the catalogue prune and counted here as present.`
+  );
+  console.log(
+    `        ${live} real product(s) on the storefront. Undo: npm run db:prune -- --restore\n`
+  );
+}
+
 check(
   "product count matches the catalogue",
-  realProducts === catalog.products.length,
-  `db=${realProducts} json=${catalog.products.length}`
+  onTheBooks.length === catalog.products.length,
+  `db=${onTheBooks.length} json=${catalog.products.length}`
 );
 
 const expectedSkus = catalog.products.reduce(
@@ -142,8 +200,26 @@ const expectedSkus = catalog.products.reduce(
 );
 // Active only: retired SKUs stay in the table because orders reference them.
 const realSkus = await prisma.productSku.count({
-  where: { isActive: true, ...notSampleSku },
+  where: { isActive: true, AND: [notSampleSku, notVariantSku] },
 });
+
+// Samples are counted separately, and "-V-" appears inside SAMPLE-I-V-
+// ADMINISTRATION, which is an I.V. line rather than anything to do with
+// variants. Excluding them keeps this note honest.
+const variantSkus = await prisma.productSku.count({
+  where: {
+    isActive: true,
+    skuCode: { contains: VARIANT_SKU_MARKER },
+    ...notSampleSku,
+  },
+});
+if (variantSkus > 0) {
+  console.log(
+    `  NOTE  ${variantSkus} generated variant SKU(s) present and excluded from these checks.`
+  );
+  console.log("        Built by: npm run db:seed:variants\n");
+}
+
 check(
   "every pack became a SKU",
   realSkus === expectedSkus,
@@ -287,9 +363,7 @@ check("no price is fractional", fractional.length === 0, `${fractional.length} f
 
 /* ---------- tax ---------- */
 
-const zeroRated = await prisma.productMaster.count({
-  where: { taxClass: "ZeroRated", status: "Active", ...notSample },
-});
+const zeroRated = onTheBooks.filter((p) => p.taxClass === "ZeroRated").length;
 const jsonZeroRated = catalog.products.filter(
   (p: any) => p.taxClass === "zero-rated"
 ).length;

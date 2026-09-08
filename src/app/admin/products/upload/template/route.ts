@@ -10,7 +10,7 @@ import { buildTemplateWorkbook } from "@/lib/catalogue-workbook";
  * removed last month is how a spreadsheet full of unmatched rows happens.
  */
 export async function GET() {
-  await requireAdmin();
+  await requireAdmin("products", "view");
 
   const [suppliers, categories] = await Promise.all([
     db.supplier.findMany({

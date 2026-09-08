@@ -1,9 +1,10 @@
 /**
  * Seeds the sign-in accounts.
  *
- * TEST CREDENTIALS. Every password here is "123456", which is not a password —
- * it is a placeholder for local testing. These accounts must be deleted or
- * given real credentials before anything is deployed. Tracked as SEC-01.
+ * TEST CREDENTIALS. Every account here shares one password, which is not a
+ * password — it is a placeholder for local testing, and it is printed on the
+ * sign-in screens. These accounts must be deleted or given real credentials
+ * before anything is deployed. Tracked as SEC-01.
  *
  * Separate from seed.ts because the catalogue is re-seeded routinely and
  * accounts should not be swept away with it.
@@ -32,7 +33,7 @@ async function hashPassword(password: string): Promise<string> {
   return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
 }
 
-const PASSWORD = "123456";
+const PASSWORD = "AussieMed2026!";
 
 console.log("\nSeeding accounts\n");
 
@@ -42,19 +43,37 @@ const passwordHash = await hashPassword(PASSWORD);
  * Admin
  * ------------------------------------------------------------------ */
 
+/*
+ * The master admin, and on a fresh clone the ONLY one.
+ *
+ * isMasterAdmin is set here as well as by the migration, because the two cover
+ * different situations and neither covers both. The migration promotes the
+ * longest-standing admin on an installation that already has people in it; a
+ * fresh clone runs that migration against an empty database, so it promotes
+ * nobody, and without this line the seeded admin would be an ordinary admin
+ * with no way to open the console that grants mastery. Nobody could add a
+ * second admin, and the fix would be a hand-written SQL update.
+ */
 await prisma.user.upsert({
   where: { email: "admin@aussiemed.local" },
-  update: { username: "admin", passwordHash, role: "Admin", isVerified: true },
+  update: {
+    username: "admin",
+    passwordHash,
+    role: "Admin",
+    isVerified: true,
+    isMasterAdmin: true,
+  },
   create: {
     email: "admin@aussiemed.local",
     username: "admin",
     name: "AussieMed Admin",
     role: "Admin",
     isVerified: true,
+    isMasterAdmin: true,
     passwordHash,
   },
 });
-console.log("  admin                 sign in as: admin");
+console.log("  admin                 sign in as: admin  (master admin)");
 
 /* ------------------------------------------------------------------ *
  * Customer

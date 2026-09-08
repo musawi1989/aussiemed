@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { RestoringForm } from "@/components/AdminForm";
+import { useActionState, useEffect, useState } from "react";
 import { receiveAction } from "@/app/admin/purchasing/actions";
 import type { FormState } from "@/components/AdminForm";
 
@@ -36,6 +37,8 @@ export function GoodsInForm({
   lines: ReceivableLine[];
 }) {
   const [state, submit, pending] = useActionState(receiveAction, null);
+  const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  useEffect(() => { if (state?.ok) setRequestKey(crypto.randomUUID()); }, [state]);
 
   const outstanding = lines.filter((l) => l.qtyReceived < l.qtyOrdered);
 
@@ -48,8 +51,9 @@ export function GoodsInForm({
   }
 
   return (
-    <form action={submit} className="mt-3">
+    <RestoringForm state={state} saveAll={false} action={submit} className="mt-3">
       <input type="hidden" name="id" value={purchaseOrderId} />
+      <input type="hidden" name="requestKey" value={requestKey} />
       <input type="hidden" name="poNumber" value={poNumber} />
 
       <div className="overflow-x-auto">
@@ -89,7 +93,8 @@ export function GoodsInForm({
                       name="qtyReceived"
                       min={0}
                       max={remaining}
-                      defaultValue={remaining}
+                      key={remaining}
+                      defaultValue={0}
                       aria-label={`Received of ${line.name}`}
                       className="h-9 w-20 rounded-card border border-border-strong bg-surface px-2 text-right text-sm tnum text-text"
                     />
@@ -118,9 +123,8 @@ export function GoodsInForm({
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-text-subtle">
-        Anything short is released back into the buying queue and goes on the
-        next purchase order. Where stock is short, the customers who ordered
-        first are filled first.
+        Received goods await allocation under Sales, Received products.
+        Undelivered quantities remain outstanding on this purchase order.
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -142,6 +146,6 @@ export function GoodsInForm({
           </span>
         )}
       </div>
-    </form>
+    </RestoringForm>
   );
 }

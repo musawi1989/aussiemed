@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
+import { comparePriceFils,
   DEFAULT_VAT_BASIS_POINTS,
   accountUnitPriceFils,
   applyDiscountFils,
@@ -257,5 +257,62 @@ describe("priceLine with account terms", () => {
   it("still zero-rates a zero-rated line after a discount", () => {
     const line = priceLine(1000, [], 2, "ZeroRated", 500, { discountBasisPoints: 1000 });
     assert.equal(line.vatFils, 0);
+  });
+});
+
+describe("comparePriceFils", () => {
+  const tiers = [{ minQty: 12, priceFils: 1800 }];
+
+  it("shows nothing to strike through without an agreement", () => {
+    const c = comparePriceFils(2000, [], 1, {});
+    assert.equal(c.yoursFils, 2000);
+    assert.equal(c.listFils, 2000);
+    assert.equal(c.betterThanList, false);
+  });
+
+  it("measures an agreed price against the single-unit price below the break", () => {
+    const c = comparePriceFils(2000, tiers, 1, { agreedPriceFils: 1700 });
+    assert.equal(c.listFils, 2000);
+    assert.equal(c.yoursFils, 1700);
+    assert.equal(c.savingFils, 300);
+    assert.equal(c.savingBasisPoints, 1500);
+  });
+
+  it("measures it against the VOLUME BREAK once the quantity qualifies", () => {
+    // The honest comparison. Striking through 2000 at a quantity of twelve
+    // would claim a saving of 300 when 200 of it is a break anybody gets.
+    const c = comparePriceFils(2000, tiers, 12, { agreedPriceFils: 1700 });
+    assert.equal(c.listFils, 1800);
+    assert.equal(c.savingFils, 100);
+  });
+
+  it("reports no saving when the break has overtaken the agreed price", () => {
+    // An agreed price wins outright, so an old arrangement can be worse than
+    // a break added since. Saying so is the point.
+    const c = comparePriceFils(2000, [{ minQty: 12, priceFils: 1500 }], 12, {
+      agreedPriceFils: 1700,
+    });
+    assert.equal(c.yoursFils, 1700);
+    assert.equal(c.listFils, 1500);
+    assert.equal(c.savingFils, 0);
+    assert.equal(c.betterThanList, false);
+  });
+
+  it("treats an agreed price of zero as real", () => {
+    const c = comparePriceFils(2000, [], 1, { agreedPriceFils: 0 });
+    assert.equal(c.yoursFils, 0);
+    assert.equal(c.savingBasisPoints, 10_000);
+  });
+
+  it("shows an account discount as a saving too", () => {
+    const c = comparePriceFils(2000, [], 1, { discountBasisPoints: 250 });
+    assert.equal(c.yoursFils, 1950);
+    assert.equal(c.savingFils, 50);
+    assert.equal(c.betterThanList, true);
+  });
+
+  it("does not divide by zero on a free line", () => {
+    const c = comparePriceFils(0, [], 1, {});
+    assert.equal(c.savingBasisPoints, 0);
   });
 });

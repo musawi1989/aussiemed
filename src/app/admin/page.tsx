@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
+import { currentAdmin } from "@/lib/admin-team";
+import { canReach } from "@/lib/admin-permissions";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
@@ -12,11 +14,13 @@ const aed = (fils: number) => formatAED(fils / 100);
  * point where it stops being.
  */
 export default async function AdminPage() {
+  const me = await currentAdmin();
+  const visible = (href: string) => !!me && canReach(href.split("?")[0], { isMaster: me.isMaster, denied: me.denied });
   const [
     products,
     activeProducts,
     pendingProducts,
-    outOfStockSkus,
+    outOfStockProducts,
     uncategorised,
     categories,
     suppliers,
@@ -29,16 +33,52 @@ export default async function AdminPage() {
     db.productMaster.count(),
     db.productMaster.count({ where: { status: "Active" } }),
     db.productMaster.count({ where: { status: "PendingApproval" } }),
-    db.productSku.count({ where: { manualOutOfStock: true, isActive: true } }),
+    /*
+     * Out of stock, counted the way the link counts it.
+     *
+     * This counted every out-of-stock SKU whose own isActive flag was set,
+     * without asking whether its PRODUCT was still live. After the catalogue
+     * prune took 2,010 products off sale that read 399 while the screen it
+     * links to listed 4 — a tile nobody could trust and, worse, one that made
+     * the storefront look broken. Distinct products, because the link lists
+     * products.
+     */
+    db.productMaster.count({
+      where: {
+        status: "Active",
+        skus: { some: { manualOutOfStock: true, isActive: true } },
+      },
+    }),
     db.productMaster.count({
       where: { status: "Active", categories: { none: {} } },
     }),
-    db.category.count(),
+    /*
+     * Categories holding something, not categories that exist.
+     *
+     * 446 exist and 23 have a live product in them. The storefront still
+     * offers the whole tree on purpose (DEC-27) — an empty department invites
+     * an enquiry rather than hiding the range — but a staff tile reading 446
+     * describes a catalogue we do not have.
+     */
+    db.category.count({
+      where: { products: { some: { product: { status: "Active" } } } },
+    }),
     db.supplier.count({ where: { status: "Active" } }),
     db.user.count({ where: { role: "Customer" } }),
     db.order.count(),
     db.order.count({ where: { status: "Pending" } }),
-    db.order.aggregate({ _sum: { totalFils: true } }),
+    /*
+     * Revenue on the SAME definition the reports use — ex-VAT, cancelled
+     * orders excluded. See reports-data.ts: "VAT is collected, not earned."
+     *
+     * This tile summed totalFils across every order, so it disagreed with the
+     * profit report by AED 320.51 on the same word. Two screens using one word
+     * for two numbers is worse than either number being wrong.
+     */
+    db.order.aggregate({
+      _sum: { subtotalFils: true },
+      where: { status: { not: "Cancelled" } },
+    }),
     db.order.findMany({
       orderBy: { placedAt: "desc" },
       take: 10,
@@ -55,8 +95,10 @@ export default async function AdminPage() {
     },
     {
       label: "Revenue",
-      value: aed(revenue._sum.totalFils ?? 0),
-      hint: "all orders, inc. VAT",
+      value: aed(revenue._sum.subtotalFils ?? 0),
+      // Says which revenue it is. The word means three things depending on
+      // who is asking, and the tile has to name the one it shows.
+      hint: "ex. VAT, cancelled excluded",
       href: "/admin/orders",
     },
     {
@@ -68,14 +110,16 @@ export default async function AdminPage() {
     },
     {
       label: "Out of stock",
-      value: String(outOfStockSkus),
-      hint: "active SKUs",
+      value: String(outOfStockProducts),
+      hint: "live products, one pack or more",
       href: "/admin/products?stock=out",
     },
     {
       label: "Categories",
       value: String(categories),
-      hint: "",
+      // The shop still offers the whole tree (DEC-27); this counts the ones a
+      // buyer would find something in.
+      hint: "holding a live product",
       href: "/admin/categories",
     },
     {
@@ -90,7 +134,7 @@ export default async function AdminPage() {
       hint: "",
       href: "/admin/customers",
     },
-  ];
+  ].filter(stat => visible(stat.href));
 
   /**
    * Things that need a person, rather than things that happened. An empty list
@@ -110,7 +154,7 @@ export default async function AdminPage() {
       href: "/admin/orders?status=Pending",
       text: `${pendingOrders} order${pendingOrders === 1 ? "" : "s"} still pending`,
     },
-  ].filter(Boolean) as { href: string; text: string }[];
+  ].filter(item => item && visible(item.href)) as { href: string; text: string }[];
 
   return (
     <>
@@ -148,7 +192,7 @@ export default async function AdminPage() {
         ))}
       </ul>
 
-      <section className="mt-10">
+      {visible("/admin/orders") && <section className="mt-10">
         <h2 className="text-lg font-bold tracking-tight text-text">
           Recent orders
         </h2>
@@ -186,7 +230,7 @@ export default async function AdminPage() {
             ))}
           </ul>
         )}
-      </section>
+      </section>}
     </>
   );
 }

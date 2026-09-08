@@ -94,18 +94,15 @@ export default async function MyProductsPage() {
                           {product.name}
                         </span>
                         <span className="mt-1 block text-sm font-bold tnum text-text">
-                          {product.outOfStock ? (
-                            <span className="text-danger">Out of stock</span>
-                          ) : product.priceFils !== null ? (
-                            aed(product.priceFils)
-                          ) : (
-                            ""
-                          )}
+                          {/* Price, never a stock state. A saved list that
+                              says "Out of stock" tells the buyer to shop
+                              elsewhere — see ProductBadges. */}
+                          {product.priceFils !== null ? aed(product.priceFils) : ""}
                         </span>
                         {/* What one unit is. Quick-buy counts these, and +1
                             meaning a box of 100 rather than one glove is not
                             something to leave a buyer to guess. */}
-                        {!product.outOfStock && product.unitLabel && (
+                        {product.unitLabel && (
                           <span className="mt-0.5 block text-xs text-text-muted">
                             {product.unitLabel}
                           </span>
@@ -115,8 +112,9 @@ export default async function MyProductsPage() {
 
                     {/* Buy without leaving the list — this is a reorder list.
                         A product with no active SKU has nothing to add, and a
-                        button that cannot work is worse than no button. */}
-                    {!product.outOfStock && product.skuCode && (
+                        button that cannot work is worse than no button. Stock
+                        is not part of that test any more. */}
+                    {product.skuCode && (
                       <QuickBuy
                         skuCode={product.skuCode}
                         unitShortLabel={product.unitShortLabel}

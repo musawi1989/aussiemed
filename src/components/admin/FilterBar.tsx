@@ -153,7 +153,7 @@ export function FilterBar({
       {anyActive && (
         <button
           type="button"
-          onClick={() => router.push(basePath)}
+          onClick={() => router.push(params.get("client") ? `${basePath}?client=${encodeURIComponent(params.get("client")!)}` : basePath)}
           className="rounded-card px-2.5 py-2 text-sm font-semibold text-text-muted transition-colors hover:text-red"
         >
           Clear all

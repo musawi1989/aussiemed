@@ -95,7 +95,7 @@ export async function setAccountTerms(
   organisationId: string,
   input: { discountPercent: string; paymentTerms: string },
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const account = await accountOrFail(organisationId);
   if (!account) return fail("That account no longer exists.");
@@ -165,7 +165,7 @@ export type AgreedPriceRow = {
 export async function agreedPrices(
   organisationId: string,
 ): Promise<AgreedPriceRow[]> {
-  await requireAdmin();
+  await requireAdmin("customers", "view");
 
   const rows = await db.customerPrice.findMany({
     where: { organisationId },
@@ -212,7 +212,7 @@ export async function setAgreedPrice(
   organisationId: string,
   input: { skuCode: string; price: string; note: string },
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const account = await accountOrFail(organisationId);
   if (!account) return fail("That account no longer exists.");
@@ -270,7 +270,7 @@ export async function removeAgreedPrice(
   organisationId: string,
   priceId: string,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   // Scoped to this account rather than looked up by id alone: an id posted
   // from elsewhere must not delete another account's arrangement.
@@ -337,7 +337,7 @@ export async function addBranch(
   organisationId: string,
   input: BranchInput,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const account = await accountOrFail(organisationId);
   if (!account) return fail("That account no longer exists.");
@@ -381,7 +381,7 @@ export async function editBranch(
   branchId: string,
   input: BranchInput,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const existing = await db.address.findFirst({
     where: { id: branchId, organisationId },
@@ -430,7 +430,7 @@ export async function removeBranch(
   organisationId: string,
   branchId: string,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const branch = await db.address.findFirst({
     where: { id: branchId, organisationId, isArchived: false },
@@ -495,7 +495,7 @@ export async function addPerson(
   organisationId: string,
   input: { name: string; addressId: string },
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const name = input.name.trim();
   if (!name) return fail("A name is needed.");
@@ -551,7 +551,7 @@ export async function editPerson(
   personId: string,
   input: { name: string; addressId: string },
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const person = await db.organisationStaff.findFirst({
     where: { id: personId, organisationId },
@@ -611,7 +611,7 @@ export async function removePerson(
   organisationId: string,
   personId: string,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const person = await db.organisationStaff.findFirst({
     where: { id: personId, organisationId, isActive: true },

@@ -6,6 +6,7 @@ import {
 } from "@/app/admin/customers/actions";
 import { AdminForm, Checkbox, Field, Panel, TextArea } from "./AdminForm";
 import { CountryFields } from "@/components/CountryFields";
+import { PaymentTermsPicker } from "./PaymentTermsPicker";
 
 const INPUT =
   "mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none";
@@ -76,6 +77,7 @@ export function CustomerForm({
             />
           </div>
 
+          {!editing && <PaymentTermsPicker />}
           <TextArea
             label="Standing notes"
             name="notes"

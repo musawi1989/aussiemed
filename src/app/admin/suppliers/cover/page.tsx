@@ -103,7 +103,12 @@ export default async function SupplyCoverPage({
             value: filters.missing ?? "",
             options: [
               { value: "primary", label: "No primary" },
-              { value: "backup", label: "No backup" },
+              { value: "backup", label: "No secondary" },
+              { value: "third", label: "No third" },
+              // Not a gap in the cover but a gap in the deciding: a slot that
+              // moved because somebody went out of stock, which nobody here
+              // has looked at since.
+              { value: "demoted", label: "Demoted, not reviewed" },
             ],
           },
         ]}

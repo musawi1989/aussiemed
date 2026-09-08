@@ -1,9 +1,11 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import { setAccountTermsAction } from "@/app/admin/customers/terms-actions";
 import { Panel, type FormState } from "@/components/AdminForm";
 import { discountLabel } from "@/lib/customer-terms";
+import { PaymentTermsPicker } from "@/components/PaymentTermsPicker";
 
 const TERMS = [
   { value: "Prepaid", label: "Prepaid — payable before dispatch" },
@@ -49,7 +51,7 @@ export function AccountTerms({
       title="Agreed terms"
       note="What this account pays and when. Both apply to every order they place from now on — nothing already placed is repriced."
     >
-      <form action={submit} className="space-y-4">
+      <RestoringForm state={state} saveAll={true} action={submit} className="space-y-4">
         <input type="hidden" name="id" value={id} />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -79,26 +81,7 @@ export function AccountTerms({
             </span>
           </label>
 
-          <label className="block">
-            <span className="block text-xs font-bold uppercase tracking-wide text-text-subtle">
-              Payment terms
-            </span>
-            <select
-              name="paymentTerms"
-              defaultValue={paymentTerms}
-              className="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
-            >
-              {TERMS.map((term) => (
-                <option key={term.value} value={term.value}>
-                  {term.label}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 block text-xs text-text-subtle">
-              Sets the due date on every new order. Changing it never moves the
-              date on an order already placed.
-            </span>
-          </label>
+          <PaymentTermsPicker value={paymentTerms} />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -121,7 +104,7 @@ export function AccountTerms({
             </span>
           )}
         </div>
-      </form>
+      </RestoringForm>
 
       {/* Said on screen rather than left for somebody to wonder about. AC-09
           is still open and a limit entered before the policy exists is a

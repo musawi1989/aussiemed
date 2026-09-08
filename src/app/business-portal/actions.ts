@@ -37,13 +37,39 @@ export async function dispatchAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
+  /*
+   * The per-line quantities, when the form sent any.
+   *
+   * Paired positionally the way confirmQuantitiesAction pairs its own: one
+   * hidden lineId beside each number input, so the two lists are the same
+   * length and in the same order. No fields at all means the caller is the
+   * one-click "send everything outstanding" path, and markDispatched fills in
+   * the remainder itself.
+   */
+  const lineIds = data.getAll("docketLineId").map(String);
+  const quantities = data.getAll("docketQty").map((v) => Number(String(v).trim() || "0"));
+  const lines =
+    lineIds.length > 0
+      ? lineIds.map((purchaseOrderLineId, index) => ({
+          purchaseOrderLineId,
+          qty: Number.isFinite(quantities[index]) ? quantities[index] : 0,
+        }))
+      : undefined;
+
   const result = await markDispatched(text(data, "id"), {
     courier: text(data, "courier") || null,
     trackingNumber: text(data, "trackingNumber") || null,
+    note: text(data, "note") || null,
+    lines,
   });
   if (result.ok) refresh(text(data, "poNumber"));
   return result.ok
-    ? { ok: true, message: "Marked as despatched." }
+    ? {
+        ok: true,
+        message: result.value.complete
+          ? `Docket ${result.value.sequence} recorded. That completes the order — thank you.`
+          : `Docket ${result.value.sequence} recorded. Print it for the box; the rest stays outstanding.`,
+      }
     : { ok: false, error: result.error };
 }
 
@@ -68,7 +94,24 @@ export async function updateSupplyAction(
 
   if (result.ok) refreshSupplies();
   return result.ok
-    ? { ok: true, message: "Saved." }
+    ? {
+        ok: true,
+        /*
+         * Losing the primary slot is said here or nowhere.
+         *
+         * It is the biggest thing that can happen on this form and the one
+         * thing the supplier cannot see from the row afterwards without
+         * hunting for a badge that has quietly changed. When there is such a
+         * message it replaces the price note rather than queueing behind it:
+         * two sentences of consequence in one green line is a line nobody
+         * finishes reading.
+         */
+        message:
+          result.value ??
+          (text(data, "costAED")
+            ? "Saved. Any price change has been sent for approval."
+            : "Saved."),
+      }
     : {
         ok: false,
         error: result.error,

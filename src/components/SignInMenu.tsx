@@ -45,7 +45,13 @@ export function SignInMenu({
           ? "/business-portal"
           : "/account";
     return (
-      <div className="flex shrink-0 items-center gap-2">
+      <div ref={ref} className="relative flex shrink-0 items-center gap-2">
+        <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-label="Account menu"
+          className="rounded-card bg-navy px-2.5 py-2 text-xs font-bold text-on-navy sm:hidden">Account</button>
+        {open && <div className="absolute right-0 top-full z-50 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-card border border-border-base bg-surface p-3 shadow-raised sm:hidden">
+          <Link href={home} onClick={() => setOpen(false)} className="block break-words py-2 text-sm font-semibold text-navy">{user.name}</Link>
+          <SignOutButton sizeClassName="mt-2 w-full px-3 py-2 text-sm" />
+        </div>}
         {/* The whole name, not the first word: a supplier account is named
             after a company, and "AussieMed Distribution" cut to "AussieMed"
             reads as this storefront rather than the account signed in. */}
@@ -54,7 +60,7 @@ export function SignInMenu({
           // Pills, like Request access and Sign in beside them. The header
           // used to change shape when somebody signed in, because this pair
           // sits in the slot those two occupy when signed out.
-          className="max-w-[12rem] truncate rounded-full bg-navy px-4 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
+          className="hidden max-w-[12rem] truncate rounded-full bg-navy px-4 py-2.5 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover sm:block"
           title={user.name}
         >
           {user.name}
@@ -76,7 +82,7 @@ export function SignInMenu({
         */}
         <SignOutButton
           shapeClassName="rounded-full"
-          sizeClassName="shrink-0 px-4 py-2.5 text-sm"
+          sizeClassName="hidden shrink-0 px-4 py-2.5 text-sm sm:block"
         />
       </div>
     );

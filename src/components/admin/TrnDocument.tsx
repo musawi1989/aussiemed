@@ -1,11 +1,13 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import {
   removeTrnDocumentAction,
   uploadTrnDocumentAction,
 } from "@/app/admin/trn-documents/actions";
 import type { FormState } from "@/components/AdminForm";
+import { ConfirmSubmit } from "./ConfirmSubmit";
 
 /**
  * The TRN certificate on a supplier or a customer account.
@@ -90,16 +92,16 @@ export function TrnDocument({
             View
           </a>
 
-          <form action={remove} className="shrink-0">
+          <RestoringForm state={removeState} saveAll={false} action={remove} className="shrink-0">
             {hidden}
-            <button
-              type="submit"
-              disabled={removing}
+            <ConfirmSubmit
+              what="this TRN certificate"
+              consequence="The customer's tax paperwork is deleted and they would have to send it again."
+              pending={removing}
+              pendingLabel="Removing…"
               className="cursor-pointer rounded-card border border-border-strong bg-surface px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:border-danger disabled:opacity-60"
-            >
-              {removing ? "Removing…" : "Remove"}
-            </button>
-          </form>
+            />
+          </RestoringForm>
         </div>
       ) : (
         <p className="mt-3 rounded-card bg-surface-sunken px-3 py-3 text-sm text-text-muted">
@@ -108,7 +110,7 @@ export function TrnDocument({
         </p>
       )}
 
-      <form action={upload} className="mt-3 flex flex-wrap items-end gap-2">
+      <RestoringForm state={uploadState} saveAll={false} action={upload} className="mt-3 flex flex-wrap items-end gap-2">
         {hidden}
         <label className="min-w-0 flex-1">
           <span className="block text-xs font-bold uppercase tracking-wide text-text-subtle">
@@ -128,7 +130,7 @@ export function TrnDocument({
         >
           {uploading ? "Uploading…" : document ? "Replace" : "Upload"}
         </button>
-      </form>
+      </RestoringForm>
 
       {/* The accept attribute above is a convenience in the file picker and
           nothing more — it is trivially bypassed, and the bytes are what

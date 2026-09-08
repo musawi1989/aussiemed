@@ -31,7 +31,7 @@ export function OrderStatusForm({
   }
 
   return (
-    <AdminForm action={setOrderStatusAction} submitLabel="Update status" className="mt-3">
+    <AdminForm action={setOrderStatusAction} submitLabel="Update status" className="mt-3" confirmChange={data => ["Cancelled", "Delivered"].includes(String(data.get("status"))) ? `Mark ${reference} as ${data.get("status")}? This closes the order and cannot be undone here.` : null}>
       <input type="hidden" name="reference" value={reference} />
       <Select
         label="Move to"

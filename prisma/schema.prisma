@@ -35,6 +35,7 @@ datasource db {
 
 /// role: Admin | Supplier | Customer
 model User {
+  logoPath String?
   id           String  @id @default(cuid())
   email        String  @unique
   /// Optional sign-in handle. Staff accounts sign in as "admin" or
@@ -78,6 +79,20 @@ model User {
   /// issued, so a legitimate retry is never punished for an earlier attempt.
   otpAttempts  Int       @default(0)
 
+  /// The one account that cannot be locked out of anything.
+  ///
+  /// A master admin holds every permission, always, and no toggle can remove
+  /// one — see admin-permissions.ts. There must always be at least one, which
+  /// admin-team.ts enforces rather than assumes: a permission screen that can
+  /// lock the last person out of the permission screen is a bricked system
+  /// with extra steps.
+  isMasterAdmin Boolean @default(false)
+  emailSignatureHtml String?
+
+  /// Sections this admin may NOT reach. Absence means allowed — see
+  /// AdminPermission.
+  adminDenials AdminPermission[]
+
   supplier       Supplier?
   organisationId String?
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
@@ -106,10 +121,11 @@ model User {
 /// Trade accounts are held by the organisation and several people may order
 /// against one.
 model Organisation {
-  id          String  @id @default(cuid())
-  name        String
+  logoPath String?
+  id                    String    @id @default(cuid())
+  name                  String
   /// Tax Registration Number. Required on a UAE tax invoice — see AC-03.
-  trn         String?
+  trn                   String?
   /// The TRN certificate itself, so the number on file can be checked against
   /// the document it came from rather than taken on trust.
   ///
@@ -122,10 +138,10 @@ model Organisation {
   /// the file. Display text only — sanitised on the way in.
   trnDocumentName       String?
   trnDocumentUploadedAt DateTime?
-  phone       String?
-  emirate     String?
+  phone                 String?
+  emirate               String?
   /// ISO 3166-1 alpha-2. See Address.countryCode.
-  countryCode String  @default("AE")
+  countryCode           String    @default("AE")
 
   /// Opened through the sign-up form rather than by an admin, so it carries
   /// nothing we have agreed — terms, credit limit and pricing are all set
@@ -136,8 +152,8 @@ model Organisation {
   /// Net14 is the default for a new account — the client's terms from 23 Aug
   /// 2026. The permitted values live in src/lib/payment-options.ts; this is a
   /// String rather than an enum so adding one needs no migration.
-  paymentTerms    String  @default("Prepaid")
-  creditLimitFils Int     @default(0)
+  paymentTerms    String @default("Prepaid")
+  creditLimitFils Int    @default(0)
 
   /// An account-wide discount off list, in BASIS POINTS. 250 = 2.5%.
   ///
@@ -151,19 +167,20 @@ model Organisation {
   /// once and tested.
   discountBasisPoints Int @default(0)
 
-  isDisabled      Boolean @default(false)
+  isDisabled Boolean @default(false)
 
   /// Standing notes about the account, shown on every order they place —
   /// "deliveries only before 11am", "PO required on every order". The kind of
   /// thing that is otherwise learnt once and forgotten.
   notes String?
 
-  users     User[]
-  addresses Address[]
-  orders    Order[]
-  staff     OrganisationStaff[]
-  changes   AccountChange[]
-  prices    CustomerPrice[]
+  users           User[]
+  addresses       Address[]
+  orders          Order[]
+  bulkBuyRequests QuoteRequest[]
+  staff           OrganisationStaff[]
+  changes         AccountChange[]
+  prices          CustomerPrice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -309,26 +326,27 @@ model OrganisationStaff {
 
 /// status: Active | Suspended
 model Supplier {
+  logoPath String?
   id     String  @id @default(cuid())
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
 
-  companyName    String
+  companyName           String
   /// Both addresses receive order notifications where there are two.
   /// secondaryEmail is OPTIONAL — it was required until 24 Aug 2026, which
   /// invited invented addresses for the many suppliers who genuinely have one.
   /// Empty is stored as an empty string and dropped by both send paths.
-  primaryEmail   String
-  secondaryEmail String
-  phone          String?
-  address        String?
+  primaryEmail          String
+  secondaryEmail        String
+  phone                 String?
+  address               String?
   /// Where they are. Suppliers are the part of this business most likely to be
   /// outside the UAE, so the default is not assumed for them the way it is for
   /// a customer — it is asked.
-  countryCode    String  @default("AE")
-  emirate        String?
+  countryCode           String    @default("AE")
+  emirate               String?
   /// Suppliers may invoice in their own name, so they need their own TRN.
-  trn            String?
+  trn                   String?
   /// The TRN certificate itself, so the number on file can be checked against
   /// the document it came from rather than taken on trust.
   ///
@@ -341,7 +359,7 @@ model Supplier {
   /// the file. Display text only — sanitised on the way in.
   trnDocumentName       String?
   trnDocumentUploadedAt DateTime?
-  status         String  @default("Active")
+  status                String    @default("Active")
 
   /// Temporarily unable to supply anything at all — closed, suspended, on
   /// holiday. Every line where they are primary reverts to the backup while
@@ -355,6 +373,8 @@ model Supplier {
   promisedLeadTimeDays Int?
   /// How quickly they should acknowledge a purchase order, in hours.
   ackSlaHours          Int  @default(24)
+  paymentTermsDays     Int?
+  paymentTermsLabel    String?
 
   uploads        BulkUploadJob[]
   supplies       ProductSupply[]
@@ -577,6 +597,26 @@ model ProductSupply {
   /// 100% margin on every product and be believed.
   costFils Int?
 
+  /// A cost the supplier has ASKED FOR, which is not in force.
+  ///
+  /// costFils above is what we pay. This is what they would like to be paid.
+  /// Two columns rather than one column with a status, because everything that
+  /// spends money — the buying run, the margin report, a purchase order being
+  /// raised — reads costFils, and every one of them must go on reading the
+  /// agreed figure while a request sits here unanswered.
+  ///
+  /// A supplier cannot reprice their own goods. They can ask; an admin accepts
+  /// or refuses. On acceptance the value moves into costFils and these fields
+  /// are cleared. One live request per line — asking again replaces the
+  /// previous ask rather than queueing behind it.
+  proposedCostFils Int?
+  /// Why they want it, in their words, for whoever decides.
+  proposedReason   String?
+  proposedAt       DateTime?
+  /// Snapshotted like every other name on a record: the person who asked may
+  /// have left the supplier's account before anybody looks at it.
+  proposedByName   String?
+
   /// What this supplier calls the item. Their picker works from their own
   /// catalogue, so the purchase order leads with this and carries our SKU
   /// alongside only as a reference.
@@ -584,6 +624,16 @@ model ProductSupply {
 
   /// Overrides the supplier's default lead time for this item.
   leadTimeDays Int?
+
+  /// When this supplier lost the primary slot by saying they were out of stock.
+  ///
+  /// Set by the demotion, cleared the moment an admin puts them back. It is not
+  /// "are they out of stock" — supplyStatus is that, and it changes the day they
+  /// restock, at which point the demotion still stands and somebody here has to
+  /// decide whether to undo it. Without a stamp the Cover screen could not tell
+  /// a supplier we demoted from one we simply chose as the backup, which is the
+  /// only reason the screen can offer to put them back.
+  demotedAt DateTime?
 
   /// This supplier cannot currently supply this particular item. Distinct from
   /// Supplier.isAvailable, which takes the whole company out — they are
@@ -842,11 +892,45 @@ model QuoteRequest {
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
 
-  reference    String  @unique
-  contactName  String
-  contactEmail String
-  notes        String?
-  status       String  @default("New")
+  /// The trade account it was raised under, so everyone at a clinic can see
+  /// what their colleague asked for. userId above is who typed it; this is
+  /// whose account it belongs to, and it is what the buyer panel scopes by —
+  /// the same rule orders follow. Null for a guest and for a personal login.
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+
+  reference       String    @unique
+  contactName     String
+  contactEmail    String
+  notes           String?
+  /// status: Pending | Completed.
+  ///
+  /// TWO STATES, ON PURPOSE. It used to be New | Quoted, which described what
+  /// WE had done and left nobody able to say a request was finished — a
+  /// quote sent and then accepted, declined or forgotten all read as "Quoted"
+  /// for ever. What a buyer and an operator both want to know is whether it is
+  /// still open, so answering no longer closes it: a price has gone back and
+  /// the request stays Pending until somebody says it is done. See
+  /// bulk-buy-requests.ts, where the two values and that rule are stated once.
+  status          String    @default("Pending")
+  /// Who marked it finished, and when. Snapshotted like every other name.
+  completedAt     DateTime?
+  completedByName String?
+
+  /// What we told them about this quote, in words they are allowed to read.
+  ///
+  /// Unlike the bulk-buy enquiry's reply, which is a note to ourselves about a
+  /// conversation held elsewhere, this is the message itself: it is emailed to
+  /// contactEmail as written. Kept because the answer to "what did we quote
+  /// them in August" is worth having somewhere other than one person's sent
+  /// items, and because a resend has to send the same words.
+  replyToCustomer String?
+  /// Snapshotted, like every other name on a record.
+  answeredByName  String?
+  /// Set once, on the first reply. How long we took to answer is a fact about
+  /// us, and a stamp that moved every time somebody fixed a typo would
+  /// flatter it.
+  answeredAt      DateTime?
 
   items QuoteItem[]
 
@@ -914,6 +998,7 @@ model Order {
   paymentStatus String    @default("Unpaid")
   paidAt        DateTime?
   paidFils      Int       @default(0)
+  payments      InvoicePayment[]
   /// Taken from the account's terms when the order is placed, then stored —
   /// later changes to those terms must not move the due date on an invoice
   /// already issued.
@@ -926,12 +1011,21 @@ model Order {
   trackingNumber      String?
   courier             String?
 
-  subtotalFils       Int
-  vatFils            Int
-  totalFils          Int
+  subtotalFils               Int
+  vatFils                    Int
+  totalFils                  Int
+  /// The account's discount off list when the order was placed, in BASIS
+  /// POINTS (250 = 2.5%). Zero for a guest and for an account on list prices.
+  ///
+  /// Stored for the same reason the VAT rate is: moving a customer from 2.5%
+  /// to 5% must not restate what their invoices said they were given. The
+  /// per-line saving is computed from OrderItem.listUnitPriceFils; this is
+  /// what the rate was CALLED, so the invoice can name it rather than make the
+  /// reader divide two totals to find out.
+  accountDiscountBasisPoints Int @default(0)
   /// The VAT rate in force when the order was placed, in basis points (500 =
   /// 5%). Stored so a future rate change cannot rewrite historical orders.
-  vatRateBasisPoints Int @default(500)
+  vatRateBasisPoints         Int @default(500)
 
   items OrderItem[]
 
@@ -944,12 +1038,87 @@ model Order {
   /// nobody has to guess which of the two the customer can see.
   customerNotes String?
 
-  placedAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  placedAt         DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deliveryReceipts DeliveryReceipt[]
+
+  /// The batches this order physically left in. Empty on every order that
+  /// went out in one go before this existed, which is why the order-level
+  /// trackingNumber above is still read: see Shipment.
+  shipments Shipment[]
 
   @@index([userId])
   @@index([organisationId])
   @@index([status])
+}
+
+/// One batch of goods leaving us, with its own paperwork and its own tracking.
+///
+/// WHY THIS IS NOT JUST Order.trackingNumber. An order is rarely one parcel.
+/// Half the lines ship today and the rest wait on a supplier, and when the
+/// back order finally lands it travels separately, on a different day, with a
+/// different courier and a different consignment number. One tracking field on
+/// the order can hold exactly one of those, so the second despatch either
+/// overwrote the first — destroying the only record of how the first half
+/// travelled — or was never recorded at all.
+///
+/// THE ORDER-LEVEL FIELDS ARE NOT REMOVED. Every order placed before this
+/// existed has its courier and tracking there and nowhere else, and rewriting
+/// history to fit a new model is how you lose the ability to answer questions
+/// about last year. An order with no shipments still reads from the order;
+/// once it has one, the shipments are the truth.
+model Shipment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// 1, 2, 3… within the order, so a packing list can call itself
+  /// "Shipment 2 of AM-2026-000023" and the customer can tell two apart.
+  /// Allocated by counting what exists, under the unique constraint below —
+  /// a second concurrent despatch fails rather than silently becoming a
+  /// duplicate number on two different boxes.
+  sequence Int
+
+  courier        String?
+  trackingNumber String?
+
+  /// When it actually left. Null while a packing list is being prepared, so
+  /// the warehouse can print and pack before the courier is booked.
+  dispatchedAt DateTime?
+
+  /// Anything the packer needs to say about this batch specifically — "sent
+  /// in two cartons", "gloves to follow". Goes on the packing list.
+  note String?
+
+  createdAt     DateTime @default(now())
+  /// Snapshotted, like every other name on a document.
+  createdByName String
+
+  lines ShipmentLine[]
+
+  @@unique([orderId, sequence])
+  @@index([orderId])
+}
+
+/// What went in one particular box, and how many.
+///
+/// Quantity per line rather than a whole-line flag, because a partial despatch
+/// of a single line is ordinary: sixty boxes were ordered, forty came in, forty
+/// go today. The remaining twenty stay owed and appear on a later packing list.
+model ShipmentLine {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  qty Int
+
+  /// One row per line per shipment. Two rows for the same line in one box is
+  /// not a second despatch, it is a mistake in the form.
+  @@unique([shipmentId, orderItemId])
+  @@index([orderItemId])
 }
 
 /// OrderSupplierInvoice was removed on 16 Aug 2026.
@@ -984,6 +1153,28 @@ model OrderItem {
   lineTotalFils Int
   vatFils       Int
 
+  /// What ONE UNIT would have cost this buyer at this quantity WITHOUT their
+  /// account's terms — after any volume break everybody can reach, before the
+  /// account discount or an agreed price.
+  ///
+  /// Snapshotted rather than recomputed, for the same reason the name and the
+  /// tax class are: list prices move. Recomputing a saving from today's prices
+  /// would restate an invoice issued last year, and a saving is a figure a
+  /// customer may have quoted in a tender.
+  ///
+  /// ⚠ NULLABLE, AND THE NULL MEANS SOMETHING. Every order placed before this
+  /// column existed has no list price on file, and there is no honest way to
+  /// invent one. Those lines show their price with no saving beside it rather
+  /// than a number nobody can stand behind — see order-discounts.ts, which is
+  /// where that rule is stated once and tested.
+  listUnitPriceFils Int?
+
+  /// Why this line was cheaper than list: AgreedPrice | AccountDiscount.
+  /// Null when it was not — the two are never both true on one line, because
+  /// an agreed price wins outright and the discount does not stack on it.
+  /// See accountUnitPriceFils in pricing.ts.
+  discountSource String?
+
   /// Per-line fulfilment. An order is rarely one thing: half the lines ship
   /// today while one waits on a supplier, and a single order-level status
   /// cannot express that.
@@ -1004,6 +1195,12 @@ model OrderItem {
   /// Under cross-dock, Allocated stops meaning reserved from stock and starts
   /// meaning received at the sorting facility and assigned to this customer.
   allocations PurchaseAllocation[]
+
+  /// Which batches this line travelled in, and how much went in each. The sum
+  goodsAllocations GoodsAllocation[]
+
+  /// is what has actually left; qty minus that sum is what is still owed.
+  shipmentLines ShipmentLine[]
 
   @@index([orderId])
   @@index([batchCodeSnapshot])
@@ -1070,6 +1267,18 @@ model Enquiry {
   /// Staff-only notes about the conversation.
   internalNotes String?
 
+  /// What we told the customer, in words they are allowed to read.
+  ///
+  /// internalNotes above is ours — a margin, a supplier's name, a note that
+  /// this account always haggles. This is the answer itself, and it exists
+  /// because until now the reply to a bulk-price request lived in somebody's
+  /// sent items and nowhere the customer could go back to. A buyer who cannot
+  /// find the price they were quoted last month asks for it again, and the
+  /// second answer is rarely the same as the first.
+  replyToCustomer String?
+  /// Snapshotted, like every other name on a record.
+  answeredByName  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1125,6 +1334,20 @@ model AuditLog {
   actorUserId String?
   actor       User?   @relation("AuditActor", fields: [actorUserId], references: [id])
 
+  /// Who did it, snapshotted, like every other name on a record.
+  ///
+  /// The relation above is not enough on its own and it is the field that
+  /// matters most here. A disabled or deleted admin leaves actorUserId
+  /// pointing at nothing, and the trail then answers "who changed this price"
+  /// with "unknown" — for precisely the person whose changes somebody is most
+  /// likely to be going back through. The log is the one table that must
+  /// still be readable after the people in it have gone.
+  actorName String?
+  /// Their role at the time. A person promoted to master admin last month did
+  /// not have those powers when they made a change in June, and reading
+  /// today's role onto an old entry rewrites what happened.
+  actorRole String?
+
   action   String
   entity   String
   entityId String
@@ -1135,6 +1358,8 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([at])
+  @@index([actorUserId])
+  @@index([action])
 }
 
 /// One consolidated order to one supplier for one day — DEC-26.
@@ -1153,10 +1378,21 @@ model PurchaseOrder {
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id])
 
-  /// status: Draft | Sent | Acknowledged | Dispatched | PartiallyReceived | Received | Cancelled
+  /// status: Draft | Sent | Acknowledged | PartiallyDispatched | Dispatched | PartiallyReceived | Received | Cancelled
   ///
-  /// Sent, Acknowledged and Dispatched are the supplier's to set; the receiving
-  /// statuses are ours, because only the sorting facility knows what arrived.
+  /// Kept on ONE line: status-tone.test.ts discovers the vocabulary by finding
+  /// the line with the marker and splitting it on "|", so wrapping this list
+  /// hides half of it from the test that proves every status has a colour.
+  ///
+  /// Sent, Acknowledged and the dispatch statuses are the supplier's to set;
+  /// the receiving statuses are ours, because only the sorting facility knows
+  /// what arrived.
+  ///
+  /// PartiallyDispatched exists for the same reason PartiallyReceived does: an
+  /// order that has had one docket raised against it out of three has not been
+  /// dispatched, and a list filtered to Dispatched that included it would say
+  /// goods are on their way that nobody has packed. Derived from the docket
+  /// lines, never set by hand — see src/lib/docket-maths.ts.
   status String @default("Draft")
 
   /// The cutoff this batch covers. Anything ordered after it belongs to the
@@ -1202,6 +1438,7 @@ model PurchaseOrder {
   /// forget. Same arrangement as a customer order.
   paymentStatus String    @default("Unpaid")
   paidFils      Int       @default(0)
+  payments      InvoicePayment[]
   paidAt        DateTime?
 
   /// When their invoice falls due. Nullable: supplier terms are agreed
@@ -1214,7 +1451,8 @@ model PurchaseOrder {
   /// Written on the document the supplier receives.
   supplierNotes String?
 
-  lines PurchaseOrderLine[]
+  lines   PurchaseOrderLine[]
+  dockets PurchaseOrderDocket[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1222,6 +1460,77 @@ model PurchaseOrder {
   @@index([supplierId])
   @@index([status])
   @@index([cutoffAt])
+}
+
+/// One delivery docket: what actually left the supplier in one consignment.
+///
+/// WHY A SEPARATE ROW PER CONSIGNMENT. dispatchedAt, courier and trackingNumber
+/// on the order itself can only describe one departure, and a supplier who
+/// sends eight of ten today and the last two next week has made two. Recording
+/// the second over the top of the first loses the first: the tracking number
+/// for the box already in transit is replaced by the one for the box that has
+/// not left yet.
+///
+/// The same shape as Shipment on the customer side, deliberately. The two are
+/// the same problem seen from opposite ends — goods moving in batches, each
+/// batch needing its own paperwork — and a second mechanism with different
+/// words for the same thing is how the two drift apart.
+model PurchaseOrderDocket {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  /// 1, 2, 3… within the order, so a docket can call itself "Docket 2 of
+  /// PO-2026-09-003". Allocated by counting what exists, under the unique
+  /// constraint below — two consignments raised at the same moment fail rather
+  /// than both becoming docket 2.
+  sequence Int
+
+  courier        String?
+  trackingNumber String?
+
+  /// When it actually left. Null while a docket is being prepared, so a
+  /// supplier can print the paperwork and pack against it before the courier
+  /// is booked.
+  dispatchedAt DateTime?
+
+  /// Anything this consignment specifically needs said — "two cartons", "the
+  /// gloves follow next week". Goes on the printed docket.
+  note String?
+
+  createdAt     DateTime @default(now())
+  /// Snapshotted, like every other name on a document.
+  createdByName String
+  /// Supplier | Admin — a docket phoned in and recorded by us should not look
+  /// like one the supplier raised themselves.
+  createdByRole String
+
+  lines PurchaseOrderDocketLine[]
+
+  @@unique([purchaseOrderId, sequence])
+  @@index([purchaseOrderId])
+}
+
+/// One line on one docket: how many of this item were in THIS consignment.
+///
+/// The sum of these across every docket is how much of a line has been sent.
+/// There is no qtyDispatched column on PurchaseOrderLine for the same reason
+/// the customer side has none on OrderItem: a stored total and a set of rows
+/// that must agree is a pair that eventually does not.
+model PurchaseOrderDocketLine {
+  id       String              @id @default(cuid())
+  docketId String
+  docket   PurchaseOrderDocket @relation(fields: [docketId], references: [id], onDelete: Cascade)
+
+  purchaseOrderLineId String
+  purchaseOrderLine   PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Cascade)
+
+  qty Int
+
+  /// One row per line per docket. The same item twice in one consignment is
+  /// not two deliveries, it is a mistake in the form.
+  @@unique([docketId, purchaseOrderLineId])
+  @@index([purchaseOrderLineId])
 }
 
 model PurchaseOrderLine {
@@ -1247,6 +1556,7 @@ model PurchaseOrderLine {
 
   qtyOrdered  Int
   qtyReceived Int @default(0)
+  receipts GoodsReceipt[]
 
   /// How many of qtyOrdered the SUPPLIER says they can actually send.
   ///
@@ -1260,10 +1570,17 @@ model PurchaseOrderLine {
   /// "none of these, do not wait for them". Defaulting this to qtyOrdered
   /// would put words in their mouth on every line of every order.
   qtyConfirmed Int?
+  /// Ordered quantity when availability was last reviewed; new demand remains actionable.
+  qtyReviewed Int?
 
   /// True when this line fell back from the primary supplier, so a reviewer can
   /// see at a glance which lines were not the first choice.
   wasFallback Boolean @default(false)
+
+  /// Every consignment this line has travelled on. Summing their qty is the
+  /// only definition of "how many have been sent" — a fourth fact alongside
+  /// ordered, confirmed and received.
+  docketLines PurchaseOrderDocketLine[]
 
   /// Null whenever the unit cost is. See above.
   lineCostFils Int?
@@ -1283,6 +1600,37 @@ model PurchaseOrderLine {
 ///
 /// It is also what makes a short delivery expressible: three of five units
 /// received means three allocations and two order lines still waiting.
+model GoodsReceipt {
+  id String @id @default(cuid())
+  purchaseOrderLineId String
+  purchaseOrderLine PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id])
+  requestKey String @unique
+  qty Int
+  batchCode String?
+  expiresOn DateTime?
+  receivedAt DateTime @default(now())
+  receivedBy String?
+  allocations GoodsAllocation[]
+
+  @@index([purchaseOrderLineId])
+  @@index([receivedAt])
+}
+
+model GoodsAllocation {
+  id String @id @default(cuid())
+  receiptId String
+  receipt GoodsReceipt @relation(fields: [receiptId], references: [id])
+  orderItemId String
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  qty Int
+  allocatedAt DateTime @default(now())
+  allocatedBy String?
+  requestKey String @unique
+
+  @@index([receiptId])
+  @@index([orderItemId])
+}
+
 model PurchaseAllocation {
   id                  String            @id @default(cuid())
   purchaseOrderLineId String
@@ -1305,60 +1653,6 @@ model PurchaseAllocation {
   @@index([purchaseOrderLineId])
   @@index([orderItemId])
   @@index([batchCode])
-}
-
-/// Something that happened which a person should see — the in-site inbox.
-///
-/// Distinct from the Needs attention panel, which counts what is currently
-/// outstanding and forgets everything else. This is a stream: an order arrived,
-/// a supplier acknowledged, an email bounced. Some of it needs doing and some
-/// is only worth knowing, and both are lost if the only record is a count that
-/// goes back to zero.
-///
-/// Deliberately not a copy of AuditLog or StatusEvent. Those record everything
-/// for accountability and measurement; this records the few things worth
-/// interrupting somebody about, in words written for a person.
-model Notification {
-  id String @id @default(cuid())
-
-  /// audience: Admin — the only inbox today. A customer-facing one would be a
-  /// different surface with different rules, so the column exists rather than
-  /// the assumption being baked in.
-  audience String @default("Admin")
-
-  /// kind: OrderPlaced | AccountChangeRequested | EnquiryReceived |
-  ///       QuoteRequested | PurchaseOrderAcknowledged | EmailFailed
-  kind String
-
-  subject String
-  /// The body, in plain words, because it may be sent to somebody as an email
-  /// exactly as written.
-  body    String
-
-  /// Where to go to act on it.
-  href String?
-
-  /// What it is about, so the inbox can link back and so duplicates can be
-  /// avoided.
-  entity   String?
-  entityId String?
-
-  /// Read is a fact about a person, not about the event. One inbox today, so
-  /// one stamp; a per-user read state would need its own table and there is
-  /// only one admin.
-  readAt DateTime?
-
-  /// Set when this notification has been turned into an email, so nobody
-  /// sends the same thing twice without meaning to.
-  emailedAt       DateTime?
-  emailedTo       String?
-  outboundEmailId String?
-
-  createdAt DateTime @default(now())
-
-  @@index([audience, readAt, createdAt])
-  @@index([entity, entityId])
-  @@index([kind])
 }
 
 /// Every change of state, kept forever — BE-30, BE-31.
@@ -1464,6 +1758,8 @@ model OutboundEmail {
   toAddress String
   subject   String
   body      String
+  html      String?
+  attachments EmailAttachment[]
 
   /// status: Queued | Sent | Failed | Suppressed
   ///
@@ -1496,6 +1792,17 @@ model OutboundEmail {
 
 /// Key/value configuration — VAT rate, email templates, general settings.
 /// Kept as rows so an admin can change them without a deploy.
+model EmailAttachment {
+  id          String @id @default(cuid())
+  emailId     String
+  email       OutboundEmail @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  fileName    String
+  contentType String
+  bytes       Bytes
+
+  @@index([emailId])
+}
+
 model Setting {
   key       String   @id
   value     String
@@ -1580,4 +1887,156 @@ model Courier {
   updatedAt DateTime @updatedAt
 
   @@index([isArchived, sortOrder])
+}
+
+/// Proof that the goods actually arrived.
+///
+/// A photograph or scan of the signed delivery note, kept as a PRIVATE key
+/// rather than a URL: it carries somebody's name and their signature, and a
+/// guessable public path to that is a leak waiting for a pattern to be
+/// noticed. The only way back to the bytes is the admin route beside the
+/// order.
+///
+/// MORE THAN ONE PER ORDER, on purpose. A delivery can go to two doors on two
+/// days, a receipt can be photographed in three pages, and a second upload
+/// should not quietly destroy the first — this is the record somebody reaches
+/// for when a customer says it never came.
+///
+/// receivedByName and receivedOn are typed from what is written on the sheet,
+/// so "who signed for it" is answerable without opening the image.
+model DeliveryReceipt {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Private storage key. Never a URL, never served from public/.
+  storageKey String
+  /// Sanitised at upload; what to call it on the way back out.
+  fileName   String
+
+  /// Read off the signature block, so the record is searchable.
+  receivedByName String?
+  receivedOn     DateTime?
+  /// Anything the driver or goods-in said that the image does not show.
+  note           String?
+
+  uploadedAt     DateTime @default(now())
+  /// Snapshotted: whoever uploaded it may have left before anyone looks.
+  uploadedByName String
+
+  @@index([orderId])
+}
+
+/// An email template somebody here wrote, rather than one in the code.
+///
+/// The built-in templates are typed functions and stay that way: they are
+/// tested, they cannot be saved in a broken state, and the leak check runs
+/// over what they produce. These sit ALONGSIDE them in the same picker.
+///
+/// The body carries {{placeholders}} filled from the same order or purchase
+/// order context the built-ins receive, so a saved template can name a
+/// reference and list the items without anybody typing them.
+///
+/// AUDIENCE IS NOT DECORATION. A customer template can never be sent to a
+/// supplier, because under DEC-24 a supplier must not learn a customer exists,
+/// and the compose form switches lists on it.
+/// An admin's own wording for one of the automatic emails.
+///
+/// THE BUILT-IN TEXT IS THE DEFAULT, NOT A FLOOR. Every message AussieMed sends
+/// has a typed builder in email-message.ts with tests over its wording. A row
+/// here replaces the subject and body of one of them outright, rendered from
+/// the same context the builder was given, so the placeholders resolve to the
+/// same values the built-in would have used.
+///
+/// ⚠ DELIBERATELY UNVALIDATED, at the client's instruction. Nothing checks that
+/// a customer template avoids naming a supplier, that the placeholders exist,
+/// or that the wording still makes sense — see DEC-40. Deleting the row puts
+/// the tested original back, which is the whole of the safety net.
+/// A section of the back office one admin may not reach.
+///
+/// STORED AS DENIALS, NOT GRANTS, and the direction matters. A row means
+/// "this person may not"; its absence means they may. So a section added next
+/// month is available to everyone who already had an account, with the master
+/// admin deciding at leisure — rather than a deploy silently removing access
+/// from people who had it, for a reason nobody connects to permissions.
+///
+/// It also means a permission dropped from the catalogue leaves a harmless
+/// orphan row instead of quietly governing something else.
+model AdminPermission {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One of ADMIN_PERMISSION_KEYS.
+  key String
+
+  createdAt     DateTime @default(now())
+  /// Snapshotted, like every other name on a record.
+  createdByName String
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+model MessageTemplate {
+  id String @id @default(cuid())
+
+  /// One of EMAIL_KINDS. Unique: a message has one wording at a time.
+  kind String @unique
+
+  subject String
+  body    String
+  html    String?
+
+  /// Turned off rather than deleted, so wording somebody spent an afternoon on
+  /// survives being reverted to the built-in for a week.
+  isActive Boolean @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  /// Snapshotted: whoever wrote it may have left before anybody edits it.
+  updatedByName String
+}
+
+model SavedEmailTemplate {
+  id       String @id @default(cuid())
+  name     String
+  /// Customer | Supplier
+  audience String
+
+  subject String
+  body    String
+  html    String?
+
+  /// Whether it refers to an order, so the form asks for one before drafting.
+  needsOrder Boolean @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  /// Snapshotted: whoever wrote it may have left before anybody edits it.
+  updatedByName String
+
+  @@unique([audience, name])
+}
+
+model InvoicePayment {
+  id              String @id @default(cuid())
+  orderId         String?
+  order           Order? @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  amountFils      Int
+  /// Payment | Refund | Adjustment | OpeningBalance
+  kind            String
+  /// Null only for an imported balance whose original payment date is unknown.
+  occurredAt      DateTime?
+  recordedAt      DateTime @default(now())
+  actorUserId     String?
+  actorName       String
+  actorRole       String
+  note            String?
+  requestKey      String? @unique
+
+  @@index([orderId, occurredAt])
+  @@index([purchaseOrderId, occurredAt])
 }

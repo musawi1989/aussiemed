@@ -35,6 +35,10 @@ export type ServerCartLine = {
   lineTotalFils: number;
   vatFils: number;
   basePriceFils: number;
+  /** What a unit costs at this quantity without this account's terms. */
+  listUnitPriceFils: number;
+  /** "AgreedPrice" | "AccountDiscount", or null at list. */
+  discountSource: string | null;
   outOfStock: boolean;
   image: string | null;
 };
@@ -47,6 +51,11 @@ export type ServerCart = {
   totalFils: number;
   zeroRatedFils: number;
   itemCount: number;
+  /** What the cart would come to at list, and what the account takes off it. */
+  listSubtotalFils: number;
+  discountFils: number;
+  /** The rate the account is on, never one derived from the totals. */
+  accountDiscountBasisPoints: number;
 };
 
 const EMPTY: ServerCart = {
@@ -57,6 +66,9 @@ const EMPTY: ServerCart = {
   totalFils: 0,
   zeroRatedFils: 0,
   itemCount: 0,
+  listSubtotalFils: 0,
+  discountFils: 0,
+  accountDiscountBasisPoints: 0,
 };
 
 type CartValue = {

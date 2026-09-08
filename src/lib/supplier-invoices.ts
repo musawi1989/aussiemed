@@ -4,6 +4,7 @@ import { db } from "./db";
 import { requireSupplier } from "./supplier-portal";
 import { paymentStatusOf } from "./status-tone";
 import { monthKey, monthLabel, monthRange } from "./invoice-months.ts";
+import type { PublicPayment } from "@/components/InvoicePaymentHistory";
 
 /**
  * A supplier's monthly invoice, compiled by us from what actually arrived.
@@ -38,6 +39,7 @@ export type InvoiceLine = {
   poNumber: string;
   receivedAt: Date | null;
   code: string;
+  skuCode: string;
   name: string;
   qtyReceived: number;
   unitCostFils: number | null;
@@ -58,6 +60,7 @@ export type SupplierInvoice = {
   uncostedLines: number;
   paymentStatus: string;
   paidFils: number;
+  payments: PublicPayment[];
 };
 
 async function compile(
@@ -81,6 +84,7 @@ async function compile(
       paymentStatus: true,
       paymentDueOn: true,
       paidFils: true,
+      payments: { orderBy: [{ occurredAt: "asc" }, { recordedAt: "asc" }], select: { id: true, occurredAt: true, kind: true, amountFils: true } },
       lines: {
         orderBy: { nameSnapshot: "asc" },
         select: {
@@ -116,6 +120,7 @@ async function compile(
         poNumber: order.poNumber,
         receivedAt: order.receivedAt,
         code: line.supplierPartNumberSnapshot ?? line.skuCodeSnapshot,
+        skuCode: line.skuCodeSnapshot,
         name: line.nameSnapshot,
         qtyReceived: line.qtyReceived,
         unitCostFils: unit,
@@ -156,6 +161,8 @@ async function compile(
     uncostedLines: uncosted,
     paymentStatus,
     paidFils: orders.reduce((n, o) => n + o.paidFils, 0),
+    payments: orders.flatMap(order => order.payments.map(entry => ({ ...entry, reference: order.poNumber })))
+      .sort((a, b) => (a.occurredAt?.getTime() ?? 0) - (b.occurredAt?.getTime() ?? 0)),
   };
 }
 

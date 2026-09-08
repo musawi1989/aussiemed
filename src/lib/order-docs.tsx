@@ -27,7 +27,12 @@ export async function loadOrderForDocs(reference: string) {
       // Flat. An order is no longer split by supplier — AussieMed is the
       // seller of record (DEC-22) and the customer never learns a supplier
       // was involved (DEC-24), so these three documents describe one order.
-      items: { orderBy: { nameSnapshot: "asc" } },
+      items: {
+        orderBy: { nameSnapshot: "asc" },
+        include: { sku: { select: { product: { select: {
+          images: { orderBy: { sortOrder: "asc" }, select: { path: true, altText: true, skuId: true } },
+        } } } } },
+      },
     },
   });
 
@@ -86,7 +91,7 @@ export function DocTable({
    */
   return (
     <div className="mt-3 overflow-x-auto">
-      <table className="w-full min-w-[36rem] text-sm [&_.tnum]:whitespace-nowrap [&_td]:align-top [&_th]:whitespace-nowrap">
+      <table className="w-full min-w-[36rem] text-sm [&_.tnum]:whitespace-nowrap [&_td]:align-top [&_th]:whitespace-nowrap [&_td:not(:last-child)]:pr-3 [&_th:not(:last-child)]:pr-3">
         <thead className="border-b border-border-strong text-left text-xs font-bold uppercase tracking-wide text-text-subtle">
           {head}
         </thead>

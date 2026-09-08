@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   accountBranches,
   accountIdentity,
+  accountOpenBulkBuyCount,
   accountPendingCount,
   accountSession,
   accountStaff,
@@ -33,7 +34,8 @@ export default async function AccountLayout({
 
   const session = await accountSession();
 
-  const [identity, orderCount, savedCount, branches, staff, waiting] = session
+  const [identity, orderCount, savedCount, branches, staff, waiting, openRequests] =
+    session
     ? await Promise.all([
         accountIdentity(),
         db.order.count({ where: { organisationId: session.organisationId } }),
@@ -41,6 +43,7 @@ export default async function AccountLayout({
         accountBranches(),
         accountStaff(),
         accountPendingCount(),
+        accountOpenBulkBuyCount(),
       ])
     : [
         null,
@@ -48,6 +51,7 @@ export default async function AccountLayout({
         await db.wishlistItem.count({ where: { userId: user.id } }),
         [],
         [],
+        0,
         0,
       ];
 
@@ -66,6 +70,21 @@ export default async function AccountLayout({
             // Spending itself went (DEC-38), so this is where they are
             // reached from and this is the tab that should light up.
             also: ["/account/reorder", "/account/invoices"],
+          },
+        ]
+      : []),
+    ...(session
+      ? [
+          {
+            /*
+             * The count is what is still OPEN, not the length of the list —
+             * the same rule as Account changes. A badge showing forty answered
+             * requests tells nobody anything; one showing two we owe them an
+             * answer on is the reason to click.
+             */
+            href: "/account/bulk-buy",
+            label: "Bulk buy requests",
+            count: openRequests,
           },
         ]
       : []),

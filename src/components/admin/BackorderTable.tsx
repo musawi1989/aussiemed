@@ -1,5 +1,7 @@
 "use client";
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
 import { resourceBackordersAction } from "@/app/admin/purchasing/actions";
@@ -15,6 +17,15 @@ export type BackorderView = {
   qtyOrdered: number;
   qtyConfirmed: number | null;
   shortfall: number;
+  /** Who is waiting on it, most affected first. */
+  customers: {
+    reference: string;
+    organisation: string;
+    qty: number;
+    atRisk: number;
+  }[];
+  /** Missing units with no customer order behind them. */
+  unallocatedShortfall: number;
 };
 
 /**
@@ -85,7 +96,7 @@ export function BackorderTable({
   return (
     <div className="mt-4">
       {selected.length > 0 && (
-        <form action={submit} className="rounded-card border border-navy-border bg-navy-soft p-3">
+        <RestoringForm state={state} saveAll={false} action={submit} className="rounded-card border border-navy-border bg-navy-soft p-3">
           {selected.map((line) => (
             <input key={line.lineId} type="hidden" name="lineId" value={line.lineId} />
           ))}
@@ -143,7 +154,7 @@ export function BackorderTable({
               {state.message}
             </p>
           )}
-        </form>
+        </RestoringForm>
       )}
 
       <div className="mt-3 space-y-4">
@@ -186,10 +197,69 @@ export function BackorderTable({
                       />
                     </td>
                     <td className="px-3 py-2">
-                      <span className="block font-semibold text-text">{line.name}</span>
+                      <ProductThumbnail skuCode={line.skuCode} /><span className="block font-semibold text-text">{line.name}</span>
                       <span className="block text-xs tnum text-text-subtle">
                         {line.skuCode}
                       </span>
+
+                      {/*
+                        Who is actually waiting on it.
+
+                        A back order is only interesting because somebody is
+                        owed something, and that half used to be invisible: the
+                        row said "eight of the ten cannot come" and left working
+                        out whose eight to a person opening orders one at a
+                        time. Deciding whether to re-source, and how urgently,
+                        is a question about the customer at the end of it.
+
+                        THE AT-RISK NUMBER, NOT THE ALLOCATED ONE, is what the
+                        row leads with. A line allocated 20 to an account with a
+                        shortfall of 3 is not 20 units of bad news, and showing
+                        the larger figure would overstate the damage on every
+                        line a supplier can mostly fill.
+                      */}
+                      {line.customers.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5">
+                          {line.customers.map((customer) => (
+                            <li
+                              key={customer.reference}
+                              className="text-xs text-text-muted"
+                            >
+                              <span
+                                className={`font-bold tnum ${
+                                  customer.atRisk > 0 ? "text-accent" : "text-text-subtle"
+                                }`}
+                              >
+                                {customer.atRisk > 0
+                                  ? `${customer.atRisk} short`
+                                  : "covered"}
+                              </span>{" "}
+                              <span className="font-semibold text-text">
+                                {customer.organisation}
+                              </span>{" "}
+                              <Link
+                                href={`/admin/orders/${customer.reference}`}
+                                className="tnum text-navy hover:underline"
+                              >
+                                {customer.reference}
+                              </Link>
+                              <span className="text-text-subtle">
+                                {" "}
+                                &middot; {customer.qty} allocated
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {line.unallocatedShortfall > 0 && (
+                        <p className="mt-1 text-xs font-semibold text-text-subtle">
+                          {line.unallocatedShortfall} missing with no customer
+                          order behind{" "}
+                          {line.unallocatedShortfall === 1 ? "it" : "them"}
+                          {line.customers.length === 0 && " — nobody is waiting on this line"}
+                        </p>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right text-sm tnum text-text-muted">
                       {/* All three, because the gap between them is the point. */}

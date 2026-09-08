@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { createProductAction } from "@/app/admin/products/new/actions";
 import { AdminForm, Field, Panel, Select, TextArea } from "@/components/AdminForm";
-import { CategoryChecklist, type Department } from "./CategoryChecklist";
+import { CategoryChecklist } from "./CategoryChecklist";
+import type { CategoryNode } from "@/lib/category-tree";
+import { BrandPicker } from "./BrandPicker";
+import { SupplierPicker } from "./SupplierPicker";
 
 /**
  * Adding one product by hand.
@@ -20,12 +24,17 @@ import { CategoryChecklist, type Department } from "./CategoryChecklist";
 export function NewProductForm({
   brands,
   taxClasses,
-  departments,
+  tree,
+  suppliers,
+  supplierId,
 }: {
   brands: { id: string; name: string }[];
   taxClasses: string[];
-  departments: Department[];
+  tree: CategoryNode[];
+  suppliers: { id: string; companyName: string }[];
+  supplierId: string;
 }) {
+  const [selectedSupplier, setSelectedSupplier] = useState(supplierId);
   return (
     <AdminForm action={createProductAction} submitLabel="Create product">
       <Panel
@@ -48,12 +57,7 @@ export function NewProductForm({
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Brand"
-              name="brandId"
-              allowEmpty="No brand"
-              options={brands.map((b) => ({ value: b.id, label: b.name }))}
-            />
+            <BrandPicker brands={brands} />
 
             <Select
               label="Tax class"
@@ -65,6 +69,8 @@ export function NewProductForm({
               hint="Zero rated charges no VAT. Getting this wrong overstates a tax document the customer keeps — see AC-02."
             />
           </div>
+          <SupplierPicker label="Primary supplier" defaultValue={supplierId} suppliers={suppliers} onChange={setSelectedSupplier} />
+          {selectedSupplier && <Field label="Supplier buying price (AED per pack, excluding VAT)" name="buyingPriceAED" type="number" min="0.01" step="0.01" required />}
         </div>
       </Panel>
 
@@ -99,14 +105,14 @@ export function NewProductForm({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
-                label="Unit label"
+                label="Full pack label"
                 name="unitLabel"
                 required
                 placeholder="100 Pieces/Box"
                 hint="What the buyer sees on the unit selector."
               />
               <Field
-                label="Short label"
+                label="Short pack name"
                 name="unitShortLabel"
                 placeholder="Box"
                 hint="Shown beside Add to cart. Left blank, the unit label is used."
@@ -140,7 +146,7 @@ export function NewProductForm({
        * Where it lives
        * ------------------------------------------------------------ */}
       <div className="mt-5">
-        <CategoryChecklist departments={departments} />
+        <CategoryChecklist tree={tree} />
       </div>
 
       <div className="mt-5">
@@ -150,7 +156,7 @@ export function NewProductForm({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Family key"
+              label="Related-product family key"
               name="variantGroup"
               placeholder="nitrile-examination-gloves"
               hint="The same text on every member of the family."

@@ -329,3 +329,78 @@ export function splitByKnownSkus(
 
   return { applicable, notSupplied };
 }
+
+/* ------------------------------------------------------------------ *
+ * Price changes are requests, not edits
+ * ------------------------------------------------------------------ */
+
+/**
+ * Fields cleared whenever a request stops being outstanding.
+ *
+ * Exported so the two callers cannot spell "no request" differently. A row
+ * left holding a proposedAt with no proposedCostFils would sit in the approval
+ * queue's count forever without ever appearing in its list.
+ */
+export const NO_PRICE_REQUEST = {
+  proposedCostFils: null,
+  proposedReason: null,
+  proposedAt: null,
+  proposedByName: null,
+} as const;
+
+export type PriceIntent = {
+  /** What to write to the ProductSupply row. Never includes costFils. */
+  data: Record<string, unknown>;
+  /** The audit action, so the log distinguishes an ask from a withdrawal. */
+  auditAs: string;
+};
+
+/**
+ * What a submitted cost MEANS, given what is agreed and what is already asked.
+ *
+ * A supplier cannot set what we pay them; they can ask. This decides which of
+ * four things a submitted figure is, and the reason it is a separate, pure
+ * function is that only one of them raises a request — re-saving the form
+ * after correcting a lead time must not put the line in somebody's queue.
+ *
+ * costFils never appears in the returned data. That is the guarantee: whatever
+ * happens here, the agreed price is untouched, and the buying run goes on
+ * paying it until an admin decides.
+ *
+ * `now` is passed in rather than read, so the behaviour is testable.
+ */
+export function priceIntent(
+  agreed: number | null,
+  alreadyAsked: number | null,
+  requested: number | null,
+  reason: string | null,
+  by: string,
+  now: Date
+): PriceIntent {
+  // What we already pay. Any outstanding request is withdrawn — they have just
+  // told us the agreed price is the one they want after all.
+  if (requested === agreed) {
+    return alreadyAsked === null
+      ? { data: {}, auditAs: "supply.update" }
+      : { data: { ...NO_PRICE_REQUEST }, auditAs: "supply.price.withdraw" };
+  }
+
+  // The same figure they already asked for. Nothing new to say, though a
+  // reason typed on the second attempt is still worth keeping.
+  if (requested === alreadyAsked) {
+    return {
+      data: reason ? { proposedReason: reason } : {},
+      auditAs: "supply.update",
+    };
+  }
+
+  return {
+    data: {
+      proposedCostFils: requested,
+      proposedReason: reason,
+      proposedAt: now,
+      proposedByName: by,
+    },
+    auditAs: "supply.price.request",
+  };
+}

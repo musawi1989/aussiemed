@@ -1,14 +1,18 @@
 import "server-only";
 
 import { db } from "./db";
+import type { Prisma } from "@/generated/prisma/client";
 import { audit, requireAdmin, type Result } from "./admin";
 import { recordStatus } from "./status-events";
 import { purchaseOrderSent } from "./email-message";
-import { sendQuietly } from "./mailer";
+import { send } from "./mailer";
+import { createHash } from "node:crypto";
 import { publicUrl } from "./public-url";
 import {
   allocateReceipt,
+  isSupplyRank,
   planPurchaseOrders,
+  SUPPLY_RANKS,
   type DemandLine,
   type PurchasePlan,
 } from "./purchase-plan";
@@ -16,6 +20,7 @@ import {
   DEFAULT_CUTOFF_HOUR,
   isValidCutoffHour,
   lastCutoffBefore,
+  monthWindow,
   parseCutoffHour,
 } from "./cutoff";
 
@@ -49,7 +54,7 @@ export const AUTO_SEND_KEY = "purchaseAutoSend";
 // The cutoff arithmetic itself lives in cutoff.ts, which is pure and tested,
 // so the buying run and the countdown a buyer sees cannot disagree about when
 // the day closes.
-export { DEFAULT_CUTOFF_HOUR, lastCutoffBefore } from "./cutoff";
+export { DEFAULT_CUTOFF_HOUR, lastCutoffBefore, monthWindow } from "./cutoff";
 
 export async function getCutoffHour(): Promise<number> {
   const row = await db.setting.findUnique({ where: { key: CUTOFF_HOUR_KEY } });
@@ -66,7 +71,7 @@ export async function getCutoffHour(): Promise<number> {
  * every buyer is shown, which is why it is audited.
  */
 export async function setCutoffHour(hour: number): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   if (!isValidCutoffHour(hour)) {
     return fail("Choose a whole hour of the day, from 0 to 23.");
@@ -91,7 +96,7 @@ export async function getAutoSend(): Promise<boolean> {
 }
 
 export async function setAutoSend(on: boolean): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
   const before = await getAutoSend();
 
   await db.setting.upsert({
@@ -115,11 +120,31 @@ export async function setAutoSend(on: boolean): Promise<Result> {
  * covered by an earlier purchase order returns here for the remainder. That is
  * what makes running the build twice safe.
  */
-export async function outstandingDemand(cutoffAt: Date): Promise<DemandLine[]> {
-  const items = await db.orderItem.findMany({
+/**
+ * Narrows the run to one customer order.
+ *
+ * The daily run pools everything placed before the cutoff, which is the right
+ * default and the wrong one when a single clinic cannot wait. Scoping by
+ * reference rather than by date leaves every other rule untouched — the
+ * pooling, the monthly order per supplier, the fallback supplier, the
+ * allocations — so a pushed order and a pooled one produce the same kind of
+ * purchase order.
+ */
+export type DemandScope = { orderReference?: string };
+
+export async function outstandingDemand(
+  cutoffAt: Date,
+  scope: DemandScope = {},
+  client: Prisma.TransactionClient = db
+): Promise<DemandLine[]> {
+  const items = await client.orderItem.findMany({
     where: {
       status: { notIn: ["Cancelled"] },
-      order: { placedAt: { lte: cutoffAt }, status: { notIn: ["Cancelled"] } },
+      order: {
+        placedAt: { lte: cutoffAt },
+        status: { notIn: ["Cancelled"] },
+        ...(scope.orderReference ? { reference: scope.orderReference } : {}),
+      },
     },
     orderBy: { id: "asc" },
     select: {
@@ -175,10 +200,16 @@ export async function outstandingDemand(cutoffAt: Date): Promise<DemandLine[]> {
       supplies: (item.sku?.supplies ?? []).map((supply) => ({
         supplierId: supply.supplier.id,
         supplierName: supply.supplier.companyName,
-        // Narrowed, not defaulted. The query above has already excluded
-        // nulls; this says so in the type rather than coercing whatever
-        // arrives into one of the two.
-        rank: supply.rank === "Backup" ? "Backup" : "Primary",
+        // Narrowed against the real list, not coerced. This read
+        // `rank === "Backup" ? "Backup" : "Primary"` while there were two
+        // slots, which with a third silently promoted every third-choice
+        // supplier to primary and would have sent them the order ahead of the
+        // backup. Anything unrecognised now falls to the LAST slot rather than
+        // the first, so a bad value can only cost an order we did not need to
+        // place — never send one to the wrong company.
+        rank: isSupplyRank(supply.rank)
+          ? supply.rank
+          : SUPPLY_RANKS[SUPPLY_RANKS.length - 1],
         // Both facts have to hold: the company open, and the item available
         // from them. A retired supplier is unavailable whatever its flag says.
         available:
@@ -203,9 +234,23 @@ export async function previewPurchaseOrders(cutoffAt: Date): Promise<PurchasePla
  * Building
  * ------------------------------------------------------------------ */
 
-export function formatPoNumber(year: number, sequence: number): string {
-  return `PO-${year}-${String(sequence).padStart(6, "0")}`;
+/**
+ * One purchase order per supplier per calendar month — the client's model
+ * from 28 Aug 2026.
+ *
+ * The number says which month it is, because that is now the thing that
+ * identifies it: PO-2026-08-004 is the fourth order opened in August. Orders
+ * raised before this change keep their old PO-2026-000101 numbers; nothing
+ * renumbers a document a supplier already holds.
+ */
+export function formatPoNumber(
+  year: number,
+  month: number,
+  sequence: number
+): string {
+  return `PO-${year}-${String(month).padStart(2, "0")}-${String(sequence).padStart(3, "0")}`;
 }
+
 
 export type BuildResult = {
   // The id as well as the number: the status log keys on the row, and the
@@ -215,7 +260,22 @@ export type BuildResult = {
     poNumber: string;
     supplierName: string;
     lineCount: number;
+    /** True when this run opened the month's order rather than adding to it. */
+    opened: boolean;
+    /** Items new to the order. The rest joined a line already on it. */
+    newLines: number;
   }[];
+  /**
+   * What auto-send actually sent, and what it could not.
+   *
+   * Reported rather than swallowed: a run that built four orders and sent
+   * three is not a run that worked, and the one that stayed behind is the one
+   * a supplier is not looking at.
+   */
+  sent: { poNumber: string; supplierName: string }[];
+  unsent: { poNumber: string; supplierName: string; reason: string }[];
+  /** Whether auto-send was on for this run, so the caller can say so. */
+  autoSent: boolean;
   unsourceable: PurchasePlan["unsourceable"];
 };
 
@@ -227,61 +287,134 @@ export type BuildResult = {
  * everything twice. Cancelling a draft releases them again.
  */
 export async function buildPurchaseOrders(
-  cutoffAt: Date
+  cutoffAt: Date,
+  scope: DemandScope = {}
 ): Promise<Result<BuildResult>> {
-  const actor = await requireAdmin();
-  const plan = planPurchaseOrders(await outstandingDemand(cutoffAt));
+  const actor = await requireAdmin("purchasing");
+  let plan = planPurchaseOrders(await outstandingDemand(cutoffAt, scope));
 
   if (plan.orders.length === 0) {
-    return ok({ created: [], unsourceable: plan.unsourceable });
+    return ok({
+      created: [],
+      sent: [],
+      unsent: [],
+      autoSent: false,
+      unsourceable: plan.unsourceable,
+    });
   }
 
+  const changes = new Map<string, { before: unknown; after: unknown }>();
   const created = await db.$transaction(async (tx) => {
+    // Recheck demand under the same transaction that writes allocations.
+    plan = planPurchaseOrders(await outstandingDemand(cutoffAt, scope, tx));
+    const { from, to } = monthWindow(cutoffAt);
     const year = cutoffAt.getUTCFullYear();
-    const key = `poSequence:${year}`;
+    const month = cutoffAt.getUTCMonth() + 1;
+
+    // Sequence is per month now, so the number reads as "the fourth order
+    // opened in August" rather than the four-hundredth this year.
+    const key = `poSequence:${year}-${String(month).padStart(2, "0")}`;
     const current = await tx.setting.findUnique({ where: { key } });
     let sequence = current ? Number(current.value) : 0;
 
     const made: BuildResult["created"] = [];
 
     for (const order of plan.orders) {
-      sequence += 1;
-      const po = await tx.purchaseOrder.create({
-        data: {
-          poNumber: formatPoNumber(year, sequence),
+      /*
+       * ONE ORDER PER SUPPLIER PER MONTH — the client's model, 28 Aug 2026.
+       *
+       * Today's lines join the order already open for this supplier this month
+       * rather than starting another one. Cancelled orders are passed over: a
+       * cancelled document is not somewhere to put new work.
+       *
+       * Ordered oldest first so that if two ever exist for one month — a
+       * cancellation followed by a rebuild — the live one is the one that
+       * grows.
+       */
+      const open = await tx.purchaseOrder.findFirst({
+        where: {
           supplierId: order.supplierId,
-          status: "Draft",
-          cutoffAt,
-          // Null travels through rather than collapsing to zero — the plan
-          // already returns null when any line's cost is unknown, and
-          // flattening it here is what made an order of uncosted lines read
-          // as free.
-          totalCostFils: order.totalCostFils,
+          cutoffAt: { gte: from, lt: to },
+          status: { not: "Cancelled" },
         },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, poNumber: true, status: true, totalCostFils: true, paidFils: true, paymentStatus: true },
       });
 
-      for (const line of order.lines) {
-        const poLine = await tx.purchaseOrderLine.create({
+      let po = open;
+
+      if (!po) {
+        sequence += 1;
+        const supplierTerms = await tx.supplier.findUniqueOrThrow({ where: { id: order.supplierId }, select: { paymentTermsDays: true } });
+        po = await tx.purchaseOrder.create({
           data: {
-            purchaseOrderId: po.id,
-            skuId: line.skuId,
-            supplierPartNumberSnapshot: line.supplierPartNumber,
-            nameSnapshot: line.name,
-            skuCodeSnapshot: line.skuCode,
-            unitCostFilsSnapshot: line.unitCostFils,
-            qtyOrdered: line.qtyOrdered,
-            wasFallback: line.wasFallback,
-            lineCostFils:
-              line.unitCostFils === null
-                ? null
-                : line.unitCostFils * line.qtyOrdered,
+            poNumber: formatPoNumber(year, month, sequence),
+            supplierId: order.supplierId,
+            status: "Draft",
+            // The instant the month's order opened. It is what every later
+            // build of the same month matches against.
+            cutoffAt,
+            totalCostFils: order.totalCostFils,
+            paymentDueOn: supplierTerms.paymentTermsDays === null ? null : new Date(cutoffAt.getTime() + supplierTerms.paymentTermsDays * 86400000),
           },
+          select: { id: true, poNumber: true, status: true, totalCostFils: true, paidFils: true, paymentStatus: true },
         });
+      }
+
+      // Lines already on this month's order, so a second order for the same
+      // pack adds to the line rather than sitting beside it. One line per item
+      // per month is what makes the document readable at the end of it.
+      const existingLines = await tx.purchaseOrderLine.findMany({
+        where: { purchaseOrderId: po.id },
+        select: { id: true, skuId: true, qtyOrdered: true, unitCostFilsSnapshot: true },
+      });
+      const lineBySku = new Map(existingLines.map((l) => [l.skuId, l]));
+
+      let addedLines = 0;
+
+      for (const line of order.lines) {
+        const existing = lineBySku.get(line.skuId);
+
+        const poLineId = existing
+          ? (
+              await tx.purchaseOrderLine.update({
+                where: { id: existing.id },
+                data: {
+                  qtyOrdered: existing.qtyOrdered + line.qtyOrdered,
+                  lineCostFils:
+                    existing.unitCostFilsSnapshot === null
+                      ? null
+                      : existing.unitCostFilsSnapshot * (existing.qtyOrdered + line.qtyOrdered),
+                },
+                select: { id: true },
+              })
+            ).id
+          : (
+              await tx.purchaseOrderLine.create({
+                data: {
+                  purchaseOrderId: po.id,
+                  skuId: line.skuId,
+                  supplierPartNumberSnapshot: line.supplierPartNumber,
+                  nameSnapshot: line.name,
+                  skuCodeSnapshot: line.skuCode,
+                  unitCostFilsSnapshot: line.unitCostFils,
+                  qtyOrdered: line.qtyOrdered,
+                  wasFallback: line.wasFallback,
+                  lineCostFils:
+                    line.unitCostFils === null
+                      ? null
+                      : line.unitCostFils * line.qtyOrdered,
+                },
+                select: { id: true },
+              })
+            ).id;
+
+        if (!existing) addedLines += 1;
 
         for (const allocation of line.allocations) {
           await tx.purchaseAllocation.create({
             data: {
-              purchaseOrderLineId: poLine.id,
+              purchaseOrderLineId: poLineId,
               orderItemId: allocation.orderItemId,
               qty: allocation.qty,
               allocatedBy: actor.id,
@@ -290,11 +423,57 @@ export async function buildPurchaseOrders(
         }
       }
 
+      /*
+       * The total is recomputed from the lines, not added to.
+       *
+       * Null must survive: the plan returns null the moment any line's cost is
+       * unknown, and a month's order that quietly totalled only the priced
+       * lines would read as cheaper than it is.
+       */
+      const lines = await tx.purchaseOrderLine.findMany({
+        where: { purchaseOrderId: po.id },
+        select: { lineCostFils: true },
+      });
+      const anyUnpriced = lines.some((l) => l.lineCostFils === null);
+      const totalCostFils = anyUnpriced ? null : lines.reduce((sum, line) => sum + (line.lineCostFils ?? 0), 0);
+
+      const updated = await tx.purchaseOrder.update({
+        where: { id: po.id },
+        data: {
+          totalCostFils,
+          ...(po.paymentStatus === "Paid" && (totalCostFils === null || po.paidFils < totalCostFils)
+            ? { paymentStatus: po.paidFils > 0 ? "PartiallyPaid" : "Unpaid", paidAt: null } : {}),
+          /*
+           * A finished order that gains a line is no longer finished.
+           *
+           * "Received" means everything on this document has arrived, and that
+           * stops being true the moment something is added. Saying so is not
+           * rewriting history — it is the document describing itself
+           * correctly. Draft, Sent and Acknowledged are left exactly as they
+           * are: none of them claims completeness.
+           */
+          ...(po.status === "Received" ? { status: "PartiallyReceived", receivedAt: null }
+            : po.status === "Dispatched" ? { status: "PartiallyDispatched" } : {}),
+        },
+        select: { id: true, poNumber: true, status: true, totalCostFils: true, paymentStatus: true,
+          lines: { select: { id: true, skuId: true, qtyOrdered: true, unitCostFilsSnapshot: true } },
+        },
+      });
+      changes.set(po.id, { before: open ? { ...open, lines: existingLines } : null,
+        after: { ...updated, supplier: order.supplierName, addedDemand: order.lines.map(line => ({
+          skuCode: line.skuCode, qty: line.qtyOrdered, allocations: line.allocations,
+        })) },
+      });
+
       made.push({
         id: po.id,
         poNumber: po.poNumber,
         supplierName: order.supplierName,
         lineCount: order.lines.length,
+        // Which of the two happened, so the screen can say "opened" or "added
+        // to" rather than claiming every run created something.
+        opened: !open,
+        newLines: addedLines,
       });
     }
 
@@ -308,13 +487,11 @@ export async function buildPurchaseOrders(
   });
 
   for (const po of created) {
-    await audit(actor, "purchaseOrder.build", "PurchaseOrder", po.poNumber, null, {
-      supplier: po.supplierName,
-      lines: po.lineCount,
-    });
+    const change = changes.get(po.id);
+    await audit(actor, "purchaseOrder.build", "PurchaseOrder", po.poNumber, change?.before, change?.after);
     // The first event in the order's life, so every later duration has
     // something to measure from — BE-30.
-    await recordStatus({
+    if (po.opened) await recordStatus({
       entity: "PurchaseOrder",
       entityId: po.id,
       entityRef: po.poNumber,
@@ -323,7 +500,45 @@ export async function buildPurchaseOrders(
     });
   }
 
-  return ok({ created, unsourceable: plan.unsourceable });
+  /*
+   * AUTO-SEND, WHICH UNTIL NOW DID NOTHING.
+   *
+   * The toggle has existed since the buying run was built, and the screen said
+   * in red that orders would go out without review. Nothing read the setting:
+   * sendPurchaseOrder was reachable only from the Send button, so every run
+   * left drafts behind and the switch was decoration. A supplier sees nothing
+   * until an order is sent, so the orders simply sat there.
+   *
+   * Sent HERE rather than inside the transaction above. Sending is not
+   * reversible — it emails the supplier — and a transaction that rolls back
+   * after an email has gone cannot unsend it. The documents are committed
+   * first, then told about.
+   *
+   * One order failing does not stop the rest. sendPurchaseOrder returns a
+   * Result rather than throwing, and its refusals are reasonable things to
+   * meet here: an order that was added to this month is already Sent, and
+   * must not be sent twice.
+   */
+  const autoSent = await getAutoSend();
+  const sent: BuildResult["sent"] = [];
+  const unsent: BuildResult["unsent"] = [];
+
+  if (autoSent) {
+    for (const po of created) {
+      const result = await sendPurchaseOrder(po.id);
+      if (result.ok) {
+        sent.push({ poNumber: po.poNumber, supplierName: po.supplierName });
+      } else {
+        unsent.push({
+          poNumber: po.poNumber,
+          supplierName: po.supplierName,
+          reason: result.error,
+        });
+      }
+    }
+  }
+
+  return ok({ created, sent, unsent, autoSent, unsourceable: plan.unsourceable });
 }
 
 /* ------------------------------------------------------------------ *
@@ -331,7 +546,7 @@ export async function buildPurchaseOrders(
  * ------------------------------------------------------------------ */
 
 export async function sendPurchaseOrder(id: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("purchasing");
 
   const po = await db.purchaseOrder.findUnique({
     where: { id },
@@ -356,14 +571,16 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
     },
   });
   if (!po) return fail("That purchase order no longer exists.");
-  if (po.status !== "Draft") return fail(`It has already been ${po.status.toLowerCase()}.`);
+  if (po.status === "Cancelled") return fail("A cancelled purchase order cannot be sent.");
   if (po._count.lines === 0) return fail("There is nothing on it to send.");
 
   const sentAt = new Date();
-  await db.purchaseOrder.update({
-    where: { id },
+  if (po.status === "Draft") {
+  const moved = await db.purchaseOrder.updateMany({
+    where: { id, status: "Draft" },
     data: { status: "Sent", sentAt },
   });
+  if (!moved.count) return fail("This purchase order changed while sending. Reload and try again.");
 
   await audit(actor, "purchaseOrder.send", "PurchaseOrder", id, { status: "Draft" }, { status: "Sent" });
 
@@ -376,6 +593,7 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
     actor: { id: actor.id, name: actor.name, role: "Admin" },
     at: sentAt,
   });
+  }
 
   // After the status, and never able to undo it. A purchase order the supplier
   // has been told about is sent; a bounced email is a mail problem, visible on
@@ -396,8 +614,12 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
     ),
   ];
 
+  if (!addresses.length) return fail("The purchase order is available in the portal, but the supplier has no notification email address.");
+  const revision = createHash("sha256").update(JSON.stringify(po.lines)).digest("hex").slice(0, 24);
+  const errors: string[] = [];
   for (const address of addresses) {
-    await sendQuietly(
+    try {
+    const outcome = await send(
       purchaseOrderSent({
         to: address,
         supplierName: po.supplier.companyName,
@@ -415,17 +637,181 @@ export async function sendPurchaseOrder(id: string): Promise<Result> {
       {
         entity: "PurchaseOrder",
         entityId: id,
-        dedupeKey: `PurchaseOrderSent:${po.poNumber}:${address}`,
+        dedupeKey: `PurchaseOrderSent:${po.poNumber}:${revision}:${address.toLowerCase()}`,
+        subjectPrefix: po.status === "Draft" ? undefined : "Updated: ",
+        senderUserId: actor.id,
       }
     );
+    if (outcome.status === "Failed" || outcome.status === "Suppressed") errors.push(`${address}: ${outcome.error ?? outcome.status}`);
+    } catch (error) { errors.push(`${address}: ${error instanceof Error ? error.message : "notification failed"}`); }
+  }
+  if (po.status !== "Draft") await audit(actor, "purchaseOrder.amendment.notify", "PurchaseOrder", id,
+    { status: po.status }, { revision, lines: po.lines, errors });
+  if (errors.length) return fail(`Purchase order saved; notification needs attention. ${errors.join("; ")}`);
+  return ok(undefined);
+}
+
+export type SendAllResult = {
+  sent: { poNumber: string; supplierName: string }[];
+  failed: { poNumber: string; supplierName: string; reason: string }[];
+};
+
+/**
+ * Send every draft at once, without waiting for the cutoff.
+ *
+ * WHY THIS EXISTS. The buying run pools a day's demand and the cutoff hour is
+ * the line it pools up to, so the normal rhythm is one push a day. That
+ * rhythm is not always right: a customer needs something today, a supplier is
+ * about to close for the weekend, or somebody built a run in the morning and
+ * left the drafts sitting. Sending them one at a time is the same decision
+ * taken N times, and the risk in that is not the clicking — it is the one
+ * that gets missed, which is exactly how a purchase order sits in draft for a
+ * day while a supplier waits to hear from us.
+ *
+ * ⚠ THE CUTOFF IS NOT A TIMER. Nothing fires on its own at the cutoff hour:
+ * it computes the window the run pools demand over, and the countdown on the
+ * storefront is telling a buyer how long they have to get into the next run.
+ * A person builds and a person sends. So this is not "sending early" against
+ * something that would otherwise send later — it is the send, taken sooner.
+ *
+ * ONE AT A TIME, THROUGH sendPurchaseOrder. Every send has to write its own
+ * audit entry, its own status event and its own supplier emails; a bulk
+ * UPDATE that flipped the statuses would produce orders no supplier had been
+ * told about, which is the very bug this button exists to prevent. One
+ * failure does not stop the rest, and each is named in the result — "two
+ * failed" is no use to somebody who then has to find which two.
+ */
+export async function sendAllDraftPurchaseOrders(): Promise<Result<SendAllResult>> {
+  await requireAdmin("purchasing");
+
+  // Oldest first: if anything does fail part way, the ones that have waited
+  // longest are the ones already away.
+  const drafts = await db.purchaseOrder.findMany({
+    where: { status: "Draft" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, poNumber: true, supplier: { select: { companyName: true } } },
+  });
+
+  const sent: SendAllResult["sent"] = [];
+  const failed: SendAllResult["failed"] = [];
+
+  for (const draft of drafts) {
+    const supplierName = draft.supplier.companyName;
+    const result = await sendPurchaseOrder(draft.id);
+    if (result.ok) {
+      sent.push({ poNumber: draft.poNumber, supplierName });
+    } else {
+      failed.push({ poNumber: draft.poNumber, supplierName, reason: result.error });
+    }
   }
 
-  return ok(undefined);
+  return ok({ sent, failed });
+}
+
+export type PushResult = {
+  /** Purchase orders opened or added to by this push. */
+  built: BuildResult["created"];
+  /** Sent to their suppliers as a result. */
+  sent: { poNumber: string; supplierName: string }[];
+  /** Could not be sent, each with the reason. */
+  unsent: { poNumber: string; supplierName: string; reason: string }[];
+  /** Lines nobody supplies, which no amount of pushing will place. */
+  unsourceable: PurchasePlan["unsourceable"];
+  /**
+   * Purchase orders that gained lines but were ALREADY sent.
+   *
+   * The monthly model adds today's lines to the order a supplier already has
+   * open, and sendPurchaseOrder rightly refuses to send the same document
+   * twice. So the lines are on a real purchase order and the supplier has not
+   * been told about them — reported here rather than swallowed, because it is
+   * the one outcome of a push that looks like success and is not.
+   */
+  addedToSent: { poNumber: string; supplierName: string; newLines: number }[];
+};
+
+/**
+ * Build and send in one movement — what "push to suppliers" means.
+ *
+ * WHY THE TWO STEPS ARE ONE BUTTON. Building drafts and sending them are
+ * separate operations because reviewing a run before it goes is usually worth
+ * it. When somebody has decided this order cannot wait, the review is the
+ * decision they have already made, and leaving them to find the draft and
+ * press a second button is how half a push ends up sitting in a queue.
+ *
+ * Sending only what THIS push drafted. A purchase order left in draft
+ * deliberately by somebody else is not swept along by a push of an unrelated
+ * order — that is what "Send all drafts" is for, and it asks first.
+ */
+async function push(
+  cutoffAt: Date,
+  scope: DemandScope
+): Promise<Result<PushResult>> {
+  const build = await buildPurchaseOrders(cutoffAt, scope);
+  if (!build.ok) return build;
+
+  const { created, unsourceable } = build.value;
+
+  const sent: PushResult["sent"] = [];
+  const unsent: PushResult["unsent"] = [];
+  const addedToSent: PushResult["addedToSent"] = [];
+
+  for (const po of created) {
+    // Auto-send may already have sent it inside the build. Sending is guarded
+    // by status, so a second attempt is refused rather than duplicated — but
+    // reading the status first keeps the report honest about what happened.
+    if (build.value.sent.some((s) => s.poNumber === po.poNumber)) {
+      sent.push({ poNumber: po.poNumber, supplierName: po.supplierName });
+      continue;
+    }
+
+    const result = await sendPurchaseOrder(po.id);
+    if (result.ok) {
+      sent.push({ poNumber: po.poNumber, supplierName: po.supplierName });
+    } else {
+      unsent.push({
+        poNumber: po.poNumber,
+        supplierName: po.supplierName,
+        reason: result.error,
+      });
+    }
+  }
+
+  return ok({ built: created, sent, unsent, unsourceable, addedToSent });
+}
+
+/**
+ * Everything one customer order needs, on its way to the suppliers.
+ *
+ * The cutoff passed through is now rather than the day's boundary: the whole
+ * point is to place lines that the boundary would otherwise leave until
+ * tomorrow.
+ */
+export async function pushOrderToSuppliers(
+  reference: string
+): Promise<Result<PushResult>> {
+  await requireAdmin("purchasing");
+
+  const order = await db.order.findUnique({
+    where: { reference },
+    select: { reference: true, status: true },
+  });
+  if (!order) return fail("That order no longer exists.");
+  if (order.status === "Cancelled") {
+    return fail("That order was cancelled, so there is nothing to buy for it.");
+  }
+
+  return push(new Date(), { orderReference: order.reference });
+}
+
+/** Every outstanding customer order, placed and sent in one go. */
+export async function pushAllOrdersToSuppliers(): Promise<Result<PushResult>> {
+  await requireAdmin("purchasing");
+  return push(new Date(), {});
 }
 
 /** Releases the demand so the next build can place it elsewhere. */
 export async function cancelDraftPurchaseOrder(id: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("purchasing");
 
   const po = await db.purchaseOrder.findUnique({ where: { id } });
   if (!po) return fail("That purchase order no longer exists.");
@@ -470,173 +856,16 @@ export type ReceiptLine = {
 export type ReceiptResult = {
   linesReceived: number;
   unitsReceived: number;
-  /** Units ordered but not delivered, which return to the buying queue. */
+  /** Units still owed on this purchase order, carried forward until received. */
   shortfall: number;
   status: string;
 };
 
-/**
- * Booking a delivery in at the sorting facility — BE-37.
- *
- * This is where the cross-dock model closes. Goods arrive pooled by item with
- * no idea who they are for; this records what physically turned up, stamps the
- * batch and expiry on it, and assigns the units to the customers waiting —
- * without the supplier ever learning a customer existed.
- *
- * Short deliveries are the normal case, not an error. Whatever did not arrive
- * stops being reserved and returns to outstanding demand, which puts it on the
- * next purchase order by itself.
- */
-export async function receivePurchaseOrder(
-  id: string,
-  lines: ReceiptLine[]
-): Promise<Result<ReceiptResult>> {
-  const actor = await requireAdmin();
-
-  const po = await db.purchaseOrder.findUnique({
-    where: { id },
-    include: { lines: { select: { id: true, qtyOrdered: true, qtyReceived: true } } },
-  });
-
-  if (!po) return fail("That purchase order no longer exists.");
-  if (po.status === "Draft") return fail("It has not been sent to the supplier yet.");
-  if (po.status === "Cancelled") return fail("It was cancelled.");
-
-  const byId = new Map(po.lines.map((l) => [l.id, l]));
-  for (const line of lines) {
-    const existing = byId.get(line.lineId);
-    if (!existing) return fail("A line on this receipt does not belong to this order.");
-    if (line.qtyReceived < 0) return fail("A received quantity cannot be negative.");
-    if (line.qtyReceived > existing.qtyOrdered) {
-      return fail(
-        `More was received than ordered on one line (${line.qtyReceived} of ${existing.qtyOrdered}). ` +
-          `Record what was ordered and raise the difference separately.`
-      );
-    }
-  }
-
-  const outcome = await db.$transaction(async (tx) => {
-    let unitsReceived = 0;
-    let shortfall = 0;
-
-    for (const line of lines) {
-      const reserved = await tx.purchaseAllocation.findMany({
-        where: { purchaseOrderLineId: line.lineId },
-        select: {
-          id: true,
-          qty: true,
-          orderItemId: true,
-          orderItem: { select: { id: true, qty: true, order: { select: { placedAt: true } } } },
-        },
-      });
-
-      const filled = allocateReceipt(
-        line.qtyReceived,
-        reserved.map((r) => ({
-          allocationId: r.id,
-          qty: r.qty,
-          placedAt: r.orderItem.order.placedAt.getTime(),
-        }))
-      );
-
-      for (const result of filled) {
-        if (result.filled === 0) {
-          // Nothing arrived for this customer. Releasing the reservation is
-          // what returns them to the buying queue rather than leaving them
-          // waiting on a delivery that has already been and gone.
-          await tx.purchaseAllocation.delete({ where: { id: result.allocationId } });
-        } else {
-          await tx.purchaseAllocation.update({
-            where: { id: result.allocationId },
-            data: {
-              qty: result.filled,
-              batchCode: line.batchCode,
-              expiresOn: line.expiresOn,
-            },
-          });
-        }
-        shortfall += result.shortfall;
-      }
-
-      unitsReceived += line.qtyReceived;
-
-      await tx.purchaseOrderLine.update({
-        where: { id: line.lineId },
-        data: { qtyReceived: { increment: line.qtyReceived } },
-      });
-    }
-
-    /* Bring each affected customer line up to date. */
-    const touched = await tx.purchaseAllocation.findMany({
-      where: { purchaseOrderLine: { purchaseOrderId: id } },
-      select: {
-        orderItemId: true,
-        batchCode: true,
-        expiresOn: true,
-        orderItem: { select: { id: true, qty: true, batchCodeSnapshot: true } },
-      },
-    });
-
-    const seen = new Set<string>();
-    for (const allocation of touched) {
-      if (seen.has(allocation.orderItemId)) continue;
-      seen.add(allocation.orderItemId);
-
-      const all = await tx.purchaseAllocation.findMany({
-        where: { orderItemId: allocation.orderItemId },
-        select: { qty: true },
-      });
-      const covered = all.reduce((n, a) => n + a.qty, 0);
-
-      await tx.orderItem.update({
-        where: { id: allocation.orderItemId },
-        data: {
-          // Allocated stops meaning reserved and starts meaning physically
-          // here and assigned to this customer.
-          status: covered >= allocation.orderItem.qty ? "Allocated" : "Pending",
-          // The line's own record of what it was filled from. The per-unit
-          // truth lives on the allocation; this is the readable summary that
-          // travels onto the delivery note.
-          batchCodeSnapshot:
-            allocation.orderItem.batchCodeSnapshot ?? allocation.batchCode,
-          expiresOnSnapshot: allocation.expiresOn,
-        },
-      });
-    }
-
-    /* Received in full only when every line is. */
-    const after = await tx.purchaseOrderLine.findMany({
-      where: { purchaseOrderId: id },
-      select: { qtyOrdered: true, qtyReceived: true },
-    });
-    const complete = after.every((l) => l.qtyReceived >= l.qtyOrdered);
-    const anything = after.some((l) => l.qtyReceived > 0);
-    const status = complete ? "Received" : anything ? "PartiallyReceived" : po.status;
-
-    await tx.purchaseOrder.update({
-      where: { id },
-      data: { status, receivedAt: complete ? new Date() : po.receivedAt },
-    });
-
-    return { linesReceived: lines.length, unitsReceived, shortfall, status };
-  });
-
-  await audit(actor, "purchaseOrder.receive", "PurchaseOrder", po.poNumber, {
-    status: po.status,
-  }, outcome);
-
-  await recordStatus({
-    entity: "PurchaseOrder",
-    entityId: po.id,
-    entityRef: po.poNumber,
-    fromStatus: po.status,
-    toStatus: outcome.status,
-    actor: { id: actor.id, name: actor.name, role: "Admin" },
-  });
-
-  return ok(outcome);
+/** Record physical receipts; allocation to customers is a separate admin action. */
+export async function receivePurchaseOrder(id: string, lines: ReceiptLine[], requestKey?: string): Promise<Result<ReceiptResult>> {
+  const { bookGoodsReceipt } = await import("./inbound");
+  return bookGoodsReceipt(id, lines, requestKey);
 }
-
 /*
  * Moving one line to the other supplier is deliberately not a function here.
  *
@@ -678,45 +907,8 @@ export async function setPurchaseOrderPayment(input: {
   paidFils: number;
   paymentDueOn: Date | null;
 }): Promise<Result> {
-  const actor = await requireAdmin();
-
-  const allowed = ["Unpaid", "PartiallyPaid", "Paid", "Refunded"];
-  if (!allowed.includes(input.paymentStatus)) {
-    return { ok: false, error: "That is not a payment status we record." };
-  }
-  if (!Number.isInteger(input.paidFils) || input.paidFils < 0) {
-    return { ok: false, error: "Paid so far must be zero or more." };
-  }
-
-  const po = await db.purchaseOrder.findUnique({ where: { id: input.id } });
-  if (!po) return { ok: false, error: "That purchase order no longer exists." };
-
-  // Guarded rather than clamped: quietly reducing what somebody typed hides a
-  // typo that is about to be reconciled against a bank statement.
-  if (po.totalCostFils !== null && input.paidFils > po.totalCostFils) {
-    return {
-      ok: false,
-      error: "That is more than the order is worth. Check the figure.",
-    };
-  }
-
-  const becomingPaid = input.paymentStatus === "Paid";
-  const wasPaid = po.paymentStatus === "Paid";
-
-  await db.purchaseOrder.update({
-    where: { id: input.id },
-    data: {
-      paymentStatus: input.paymentStatus,
-      paidFils: input.paidFils,
-      paymentDueOn: input.paymentDueOn,
-      paidAt: becomingPaid ? (wasPaid ? po.paidAt : new Date()) : null,
-    },
-  });
-
-  await audit(actor, "purchaseOrder.payment", "PurchaseOrder", input.id, po, {
-    paymentStatus: input.paymentStatus,
-    paidFils: input.paidFils,
-  });
-
-  return { ok: true, value: undefined };
+  const { adjustInvoiceBalance } = await import("./payment-ledger");
+  return adjustInvoiceBalance({ entity: "PurchaseOrder", identifier: input.id,
+    paidFils: input.paidFils, paymentStatus: input.paymentStatus,
+    dueOn: input.paymentDueOn?.toISOString().slice(0, 10) ?? "" });
 }

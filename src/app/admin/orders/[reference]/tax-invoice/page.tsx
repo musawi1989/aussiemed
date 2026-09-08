@@ -1,7 +1,14 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { PrintableDoc } from "@/components/PrintableDoc";
 import { sellerIdentity } from "@/lib/seller-identity";
 import { PLACEHOLDER_NOTICE, formatTrn, invoiceCompliance } from "@/lib/trn";
 import { DocTable, SellerBlock, aed, day, loadOrderForDocs } from "@/lib/order-docs";
+import {
+  discountLabel,
+  lineDiscount,
+  orderDiscount,
+  sourceLabel,
+} from "@/lib/order-discounts";
 
 /**
  * The tax invoice — one per supplier, as the order is actually split.
@@ -41,6 +48,17 @@ export default async function TaxInvoicePage({
   const zeroNet = order.items
     .filter((i) => i.taxClassSnapshot === "ZeroRated")
     .reduce((n, i) => n + i.lineTotalFils, 0);
+
+  /*
+   * What this account's terms took off, as recorded when the order was placed.
+   *
+   * Read from the snapshot on each line, never recomputed from today's prices:
+   * an invoice already sent must say the same thing next year, and a customer
+   * may have quoted this saving in a tender. Orders placed before the snapshot
+   * existed report nothing at all rather than a figure worked out from prices
+   * that have since moved.
+   */
+  const saved = orderDiscount(order.items);
 
   return (
     <PrintableDoc
@@ -104,6 +122,11 @@ export default async function TaxInvoicePage({
                   <th className="py-1.5">Item code</th>
                   <th className="py-1.5">Description</th>
                   <th className="py-1.5 text-right">Qty</th>
+                  {/* Only when there is something to put in it. An empty
+                      column on every list-priced invoice is furniture. */}
+                  {saved.discounted && (
+                    <th className="py-1.5 text-right">List price</th>
+                  )}
                   <th className="py-1.5 text-right">Unit price</th>
                   <th className="py-1.5 text-right">Net</th>
                   <th className="py-1.5 text-right">VAT rate</th>
@@ -111,10 +134,13 @@ export default async function TaxInvoicePage({
                 </tr>
               }
             >
-              {order.items.map((item) => (
+              {order.items.map((item) => {
+                const off = lineDiscount(item);
+                const note = discountLabel(off, order.accountDiscountBasisPoints);
+                return (
                 <tr key={item.id} className="border-b border-border-base">
                   <td className="py-2 tnum font-semibold text-text">
-                    {item.skuCodeSnapshot}
+                    <ProductThumbnail skuCode={item.skuCodeSnapshot} />{item.skuCodeSnapshot}
                   </td>
                   <td className="py-2 text-text-muted">
                     {item.nameSnapshot}
@@ -123,9 +149,21 @@ export default async function TaxInvoicePage({
                       {item.batchCodeSnapshot
                         ? ` · lot ${item.batchCodeSnapshot}`
                         : ""}
+                      {/* Why this line is below list, in words, beside the
+                          figures that show it. */}
+                      {note ? ` · ${note}` : ""}
                     </span>
                   </td>
                   <td className="py-2 text-right tnum text-text-muted">{item.qty}</td>
+                  {saved.discounted && (
+                    <td className="py-2 text-right tnum text-text-subtle">
+                      {off.listUnitPriceFils === null
+                        ? "—"
+                        : off.discounted
+                          ? aed(off.listUnitPriceFils)
+                          : ""}
+                    </td>
+                  )}
                   <td className="py-2 text-right tnum text-text-muted">
                     {aed(item.unitPriceFils)}
                   </td>
@@ -139,12 +177,35 @@ export default async function TaxInvoicePage({
                     {aed(item.vatFils)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </DocTable>
 
       </section>
 
       <dl className="mt-8 ml-auto max-w-xs space-y-1 border-t-2 border-border-strong pt-3 text-sm">
+        {/* The discount stated before the subtotal it produced, so the
+            reader can follow the arithmetic rather than take the net figure
+            on trust. */}
+        {saved.discounted && saved.listSubtotalFils !== null && (
+          <Line label="Subtotal at list" value={aed(saved.listSubtotalFils)} />
+        )}
+        {saved.sources.map((source) =>
+          saved.savingBySource[source] > 0 ? (
+            <Line
+              key={source}
+              label={sourceLabel(
+                source,
+                // The rate the account was on when the order was placed, not
+                // what it is on today.
+                source === "AccountDiscount"
+                  ? order.accountDiscountBasisPoints
+                  : undefined
+              )}
+              value={`−${aed(saved.savingBySource[source])}`}
+            />
+          ) : null
+        )}
         <Line label={`Standard rated at ${rate}%`} value={aed(standardNet)} />
         <Line label="Zero rated" value={aed(zeroNet)} />
         <Line label="Subtotal" value={aed(order.subtotalFils)} />

@@ -28,6 +28,7 @@ export const EMAIL_KINDS = [
   "ApplicationReceived",
   "ApplicationDecided",
   "OrderProgress",
+  "QuoteReply",
 ] as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[number];
@@ -55,14 +56,41 @@ export const AUDIENCE: Record<EmailKind, Recipient> = {
   ApplicationReceived: "Customer",
   ApplicationDecided: "Customer",
   OrderProgress: "Customer",
+
+  // Written by a person in the back office and addressed to the one buyer
+  // who asked. It is a customer email, not a "Forwarded" one, because the
+  // customer leak test is the one that matters here: a quote is answered
+  // out of a supplier price list, and the name of the supplier it came from
+  // is exactly the thing that must not travel with the number.
+  QuoteReply: "Customer",
 };
 
+/** What a message was built from, for an admin override to render from. */
+export type MessageContext = Record<string, string | number | null>;
+
 export type EmailMessage = {
+  html?: string;
+  attachments?: { fileName: string; contentType: string; bytes: Uint8Array }[];
   kind: EmailKind;
   to: string;
   subject: string;
   /** The body. Plain text only — see the note on HTML at the bottom. */
   text: string;
+  /**
+   * The values this wording was built from, so an admin can write their own
+   * version of it against the same data — see MessageTemplate.
+   *
+   * ABSENT MEANS NOT OVERRIDABLE. A message that does not publish its context
+   * cannot be re-rendered from a template, and the send path falls back to the
+   * built-in text rather than to a body full of unresolved placeholders. That
+   * is the safe direction: the tested wording goes out.
+   *
+   * Only what a person would put in a sentence goes in here. Anything already
+   * formatted for the reader — an amount as AED, a date as their day — is
+   * placed as the formatted string, because a template author writing
+   * {{total}} means the words "AED 1,234.00" and not a count of fils.
+   */
+  context?: MessageContext;
 };
 
 /* ------------------------------------------------------------------ *
@@ -226,6 +254,21 @@ export function orderConfirmation(input: OrderConfirmationInput): EmailMessage {
     // for months later, and what they quote on the phone.
     subject: `Your AussieMed order ${input.reference}`,
     text: body,
+    context: {
+      contactName: input.contactName,
+      reference: input.reference,
+      placedAt: dubaiDateTime(input.placedAt),
+      // Already formatted: a template author writing {{total}} means the words
+      // "AED 1,234.00", not a count of fils.
+      subtotal: aed(input.subtotalFils),
+      vat: aed(input.vatFils),
+      total: aed(input.totalFils),
+      lineCount: input.lines.length,
+      items: lines.join("\n"),
+      poReference: input.poReference ?? null,
+      placedByName: input.placedByName ?? null,
+      branchLabel: input.branchLabel ?? null,
+    },
   };
 }
 
@@ -263,6 +306,13 @@ export function restockAlert(input: RestockAlertInput): EmailMessage {
     to: input.to,
     subject: `Back in stock: ${input.productName}`,
     text: body,
+    context: {
+      productName: input.productName,
+      skuCode: input.skuCode,
+      unitLabel: input.unitLabel,
+      price: aed(input.priceFils),
+      productUrl: input.productUrl,
+    },
   };
 }
 
@@ -312,6 +362,15 @@ export function accountChangeDecided(
     to: input.to,
     subject: `${input.summary} — ${verdict}`,
     text: body,
+    context: {
+      contactName: input.contactName,
+      organisationName: input.organisationName,
+      summary: input.summary,
+      verdict,
+      decidedAt: dubaiDateTime(input.decidedAt),
+      decisionNote: input.decisionNote ?? null,
+      theirReason: input.theirReason,
+    },
   };
 }
 
@@ -380,6 +439,18 @@ export function purchaseOrderSent(input: PurchaseOrderSentInput): EmailMessage {
     to: input.to,
     subject: `Purchase order ${input.poNumber} from AussieMed`,
     text: body,
+    // Nothing about a customer, here or anywhere near here. The context is
+    // what a template author can put in a sentence, so anything placed in it
+    // can end up in the supplier's inbox — see DEC-24.
+    context: {
+      supplierName: input.supplierName,
+      poNumber: input.poNumber,
+      raisedOn: dubaiDate(input.sentAt),
+      requiredBy: input.expectedAt ? dubaiDate(input.expectedAt) : null,
+      lineCount: input.lines.length,
+      items: lines.join("\n"),
+      portalUrl: input.portalUrl,
+    },
   };
 }
 
@@ -415,6 +486,11 @@ export function staffAlert(input: StaffAlertInput): EmailMessage {
     to: input.to,
     subject: `AussieMed: ${input.headline}`,
     text: body,
+    context: {
+      headline: input.headline,
+      detail: input.detail,
+      url: input.url,
+    },
   };
 }
 
@@ -441,6 +517,8 @@ export type InvoiceLineForEmail = {
   vatFils: number;
   lineTotalFils: number;
   zeroRated: boolean;
+  /** "Agreed price" / "2.5% off list", or null when bought at list. */
+  discountNote?: string | null;
 };
 
 export type TaxInvoiceInput = {
@@ -452,6 +530,14 @@ export type TaxInvoiceInput = {
   lines: InvoiceLineForEmail[];
   standardNetFils: number;
   zeroRatedNetFils: number;
+  /**
+   * What the account's terms took off, by where it came from, printed above
+   * the totals. Empty when there was no discount: an invoice carrying
+   * "Account discount 0.00" is noise, and one carrying nothing where the
+   * customer expected their 2.5% is a support call.
+   */
+  discountRows?: { label: string; amountFils: number }[];
+  listSubtotalFils?: number | null;
   vatFils: number;
   totalFils: number;
   vatRatePercent: number;
@@ -482,10 +568,20 @@ export function taxInvoice(input: TaxInvoiceInput): EmailMessage {
       `  ${line.qty} x ${line.name}\n` +
       `      ${line.skuCode} · ${aed(line.unitPriceFils)} each · ` +
       `VAT ${aed(line.vatFils)}${line.zeroRated ? " (zero rated)" : ""} · ` +
-      `${aed(line.lineTotalFils)}`
+      `${aed(line.lineTotalFils)}${line.discountNote ? ` · ${line.discountNote}` : ""}`
   );
 
+  const discountRows = input.discountRows ?? [];
   const compliant = Boolean(input.sellerTrn && input.buyerTrn);
+
+  // Never narrower than the 20 columns the fixed labels have always used, so
+  // an invoice with no discount rows reads exactly as it did before.
+  const moneyColumn = Math.max(
+    20,
+    // Two spaces clear of the longest label, not one: a single space reads as
+    // a typo next to rows sitting six columns out.
+    ...discountRows.map((row) => row.label.length + 2)
+  );
 
   const body = [
     `Hello ${input.contactName || "there"},`,
@@ -506,11 +602,30 @@ export function taxInvoice(input: TaxInvoiceInput): EmailMessage {
     // The VAT label carries a rate, so its width varies and it cannot be a
     // hand-counted run of spaces like the others.
     ...[
+      // What it would have come to, then what came off, then the bases. A net
+      // subtotal with no sign of the discount is a saving the customer was
+      // given and never told about.
+      ...(discountRows.length > 0 && input.listSubtotalFils
+        ? ([["Subtotal at list", input.listSubtotalFils]] as [string, number][])
+        : []),
+      ...discountRows.map((row) => [row.label, -row.amountFils] as [string, number]),
       ["Standard rated", input.standardNetFils],
       ["Zero rated", input.zeroRatedNetFils],
       [`VAT at ${input.vatRatePercent}%`, input.vatFils],
       ["Total", input.totalFils],
-    ].map(([label, amount]) => `  ${String(label).padEnd(20)}${aed(Number(amount))}`),
+    ].map(
+      /*
+       * Padded to the widest label rather than to a hard 20.
+       *
+       * It was 20, and "Account discount 2.5%" is 21, so the figure printed
+       * flush against the label as "Account discount 2.5%-AED 0.40". The
+       * labels used to be four fixed strings; they now include a rate the
+       * account chooses, so their width is not something this file can know
+       * in advance. Found by reading an invoice the real path produced.
+       */
+      ([label, amount]) =>
+        `  ${String(label).padEnd(moneyColumn)}${aed(Number(amount))}`
+    ),
     "",
     compliant
       ? null
@@ -530,49 +645,22 @@ export function taxInvoice(input: TaxInvoiceInput): EmailMessage {
     to: input.to,
     subject: `AussieMed invoice ${input.reference}`,
     text: body,
-  };
-}
-
-/* ------------------------------------------------------------------ *
- * Forwarding something from the inbox
- * ------------------------------------------------------------------ */
-
-export type ForwardInput = {
-  to: string;
-  subject: string;
-  body: string;
-  /** Added by the person sending it, above the original. */
-  note?: string | null;
-  /** Where the thing lives, if it has a page. */
-  link?: string | null;
-};
-
-/**
- * An inbox item sent on to somebody, as written.
- *
- * The original wording is passed through unchanged rather than regenerated,
- * because the person forwarding it has read that text and is vouching for it.
- * Rewriting it into something else would mean they sent one thing and the
- * recipient received another.
- */
-export function forwarded(input: ForwardInput): EmailMessage {
-  const body = [
-    input.note?.trim() ? input.note.trim() : null,
-    input.note?.trim() ? "" : null,
-    input.note?.trim() ? rule : null,
-    input.body,
-    input.link ? "" : null,
-    input.link ? input.link : null,
-    signOff({ money: false }),
-  ]
-    .filter((part) => part !== null)
-    .join("\n");
-
-  return {
-    kind: "Forwarded",
-    to: input.to,
-    subject: input.subject,
-    text: body,
+    context: {
+      contactName: input.contactName,
+      organisationName: input.organisationName,
+      reference: input.reference,
+      placedOn: dubaiDate(input.placedAt),
+      standardRated: aed(input.standardNetFils),
+      zeroRated: aed(input.zeroRatedNetFils),
+      vat: aed(input.vatFils),
+      total: aed(input.totalFils),
+      vatRatePercent: input.vatRatePercent,
+      poReference: input.poReference ?? null,
+      sellerTrn: input.sellerTrn ?? null,
+      buyerTrn: input.buyerTrn ?? null,
+      documentUrl: input.documentUrl,
+      items: lines.join("\n"),
+    },
   };
 }
 
@@ -617,6 +705,11 @@ export function emailVerification(input: EmailVerificationInput): EmailMessage {
     to: input.to,
     subject: `${input.code} is your AussieMed confirmation code`,
     text: body,
+    context: {
+      contactName: input.contactName,
+      code: input.code,
+      minutes: input.minutes,
+    },
   };
 }
 
@@ -655,6 +748,10 @@ export function applicationReceived(
     to: input.to,
     subject: "We have your AussieMed trade account application",
     text: body,
+    context: {
+      contactName: input.contactName,
+      companyName: input.companyName,
+    },
   };
 }
 
@@ -706,6 +803,109 @@ export function applicationDecided(
       ? "Your AussieMed trade account is open"
       : "About your AussieMed trade account application",
     text: body,
+    // One kind, two outcomes. A template author writing a single wording for
+    // both has to be able to tell them apart, so the verdict is a value rather
+    // than only a difference in the built-in text.
+    context: {
+      contactName: input.contactName,
+      companyName: input.companyName,
+      verdict: input.approved ? "approved" : "not approved",
+      reason: input.reason?.trim() || null,
+      signInUrl: input.signInUrl,
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Customer: the answer to a quote request
+ * ------------------------------------------------------------------ */
+
+export type QuoteLineForEmail = {
+  name: string;
+  unitLabel: string;
+  qty: number;
+};
+
+export type QuoteReplyInput = {
+  to: string;
+  contactName: string;
+  reference: string;
+  askedAt: Date;
+  lines: QuoteLineForEmail[];
+  /** What the buyer wrote on the form, if they wrote anything. */
+  theirNotes?: string | null;
+  /** The reply, in the words the person in the back office typed. */
+  reply: string;
+};
+
+/**
+ * A price going back to somebody who asked for one.
+ *
+ * THE REPLY IS NOT REWRITTEN. Everything around it is ours — the greeting,
+ * the reference, the list of what they asked about — but the answer itself
+ * is reproduced exactly as it was typed, because the person who typed it is
+ * the one who is accountable for the number in it. A template that helpfully
+ * rephrased "AED 22.80 a box held for 90 days" would eventually rephrase it
+ * into something nobody agreed to.
+ *
+ * The lines are echoed back for a reason a shorter email would miss: a clinic
+ * that asked for prices on four things three weeks ago does not remember
+ * which four, and an answer that opens with a number and no question is a
+ * reply they have to go and find the other half of.
+ *
+ * Nothing here names a supplier. A quote is worked out from a supplier price
+ * list and the temptation is to justify the figure with where it came from;
+ * under DEC-24 the customer never learns a supplier exists, and the test on
+ * this file holds that line for the same reason it holds it everywhere else.
+ */
+export function quoteReply(input: QuoteReplyInput): EmailMessage {
+  const lines = input.lines.map(
+    (line) => `  ${line.qty} x ${line.name}\n      ${line.unitLabel}`
+  );
+
+  const body = [
+    `Hello ${input.contactName || "there"},`,
+    "",
+    `Thank you for your quote request on ${dubaiDate(input.askedAt)}. Our`,
+    "answer is below.",
+    "",
+    `Quote reference: ${input.reference}`,
+    "",
+    "You asked about:",
+    ...lines,
+    input.theirNotes ? "" : null,
+    input.theirNotes ? `You told us: ${input.theirNotes}` : null,
+    "",
+    rule,
+    input.reply.trim(),
+    rule,
+    "",
+    // An answer with no way back is a quote that dies in an inbox. Reply,
+    // rather than a link to a form they would have to fill in again.
+    "If you would like to go ahead, or if anything needs changing, reply to",
+    "this email and it comes straight back to us.",
+    signOff(),
+  ]
+    .filter((part) => part !== null)
+    .join("\n");
+
+  return {
+    kind: "QuoteReply",
+    to: input.to,
+    // The reference in the subject: it is what they search their inbox for
+    // when they come back to it, and what they quote on the phone.
+    subject: `Your AussieMed quote ${input.reference}`,
+    text: body,
+    context: {
+      contactName: input.contactName,
+      reference: input.reference,
+      askedOn: dubaiDate(input.askedAt),
+      theirNotes: input.theirNotes ?? null,
+      // The admin's own words. A template can move them but must not be able
+      // to drop them: an answer with the answer taken out is worse than none.
+      reply: input.reply.trim(),
+      items: lines.join("\n"),
+    },
   };
 }
 
@@ -748,6 +948,22 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
     signOff(),
   ];
 
+  /**
+   * Shared by all five branches, because they are one message with five
+   * wordings rather than five messages. An override is written once and has to
+   * make sense whichever step fired it, so every branch offers the same names.
+   */
+  const context = {
+    contactName: input.contactName,
+    reference: input.reference,
+    status: input.status,
+    orderUrl: input.orderUrl,
+    courier: input.courier ?? null,
+    trackingNumber: input.trackingNumber ?? null,
+    expectedOn: input.expectedOn ?? null,
+    itemsOutstanding: input.itemsOutstanding ?? null,
+  };
+
   const body = (lines: (string | null | undefined)[]) =>
     [hello, "", ...lines.filter((l): l is string => typeof l === "string"), ...tail]
       .join("\n")
@@ -761,6 +977,7 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
     case "Processing":
       return {
         kind: "OrderProgress",
+        context,
         to: input.to,
         subject: `${input.reference} is being made up`,
         text: body([
@@ -774,6 +991,7 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
     case "Dispatched":
       return {
         kind: "OrderProgress",
+        context,
         to: input.to,
         subject: `${input.reference} is on its way`,
         text: body([
@@ -795,6 +1013,7 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
     case "Delivered":
       return {
         kind: "OrderProgress",
+        context,
         to: input.to,
         subject: `${input.reference} has been delivered`,
         text: body([
@@ -808,6 +1027,7 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
     case "Cancelled":
       return {
         kind: "OrderProgress",
+        context,
         to: input.to,
         subject: `${input.reference} has been cancelled`,
         text: body([
@@ -827,6 +1047,7 @@ export function orderProgressed(input: OrderProgressInput): EmailMessage {
       // teaches people that ours are not worth opening.
       return {
         kind: "OrderProgress",
+        context,
         to: input.to,
         subject: `${input.reference} — update`,
         text: body([`Your order ${input.reference} has been updated.`]),

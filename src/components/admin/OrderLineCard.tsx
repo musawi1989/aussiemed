@@ -1,4 +1,5 @@
 "use client";
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -35,6 +36,10 @@ export function OrderLineCard({
     taxClass: string;
     qty: number;
     unitPrice: string;
+    /** What it would have cost at list, when that differs. Null otherwise. */
+    listUnitPrice?: string | null;
+    /** "Agreed price" / "2.5% off list", or null when it was bought at list. */
+    discountNote?: string | null;
     lineTotal: string;
     vat: string;
     status: string;
@@ -44,6 +49,9 @@ export function OrderLineCard({
     productHref: string | null;
     expiringSoon: boolean;
     expired: boolean;
+    /** We hold none of this today. The buyer was not told — see the note on
+     *  the order page. Staff-only, like every other fact on this screen. */
+    outOfStock: boolean;
   };
   statuses: readonly string[];
 }) {
@@ -53,6 +61,7 @@ export function OrderLineCard({
   const [showLot, setShowLot] = useState(false);
 
   const changeStatus = (status: string) => {
+    if (status === "Cancelled" && !window.confirm(`Cancel ${item.name} on ${reference}? It will no longer be included in outstanding fulfilment.`)) return;
     setError(null);
     startTransition(async () => {
       const result = await setLineStatusAction(item.id, status, reference);
@@ -64,6 +73,7 @@ export function OrderLineCard({
   return (
     <li className="rounded-card border border-border-base bg-surface p-4 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
+        <ProductThumbnail skuCode={item.skuCode} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-text">
             {item.productHref ? (
@@ -80,6 +90,13 @@ export function OrderLineCard({
               <span className="ml-1 font-bold text-success">zero rated</span>
             )}
           </p>
+          {/* Loud, because nothing else will say it: the buyer ordered this
+              without being told we have none, and somebody has to ring them. */}
+          {item.outOfStock && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-card bg-danger-soft px-2 py-1 text-xs font-bold text-danger">
+              Out of stock &mdash; offer an alternative
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -102,7 +119,17 @@ export function OrderLineCard({
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
         <Cell label="Quantity" value={String(item.qty)} />
-        <Cell label="Unit price" value={item.unitPrice} />
+        {/* Why this line was below list, if it was. Whoever is answering a
+            customer's query about a price needs to see the arrangement, not
+            just the figure it produced. */}
+        <Cell
+          label={item.discountNote ? `Unit price · ${item.discountNote}` : "Unit price"}
+          value={
+            item.listUnitPrice
+              ? `${item.unitPrice} (list ${item.listUnitPrice})`
+              : item.unitPrice
+          }
+        />
         <Cell label="VAT" value={item.vat} />
         <Cell label="Line total" value={item.lineTotal} strong />
       </dl>

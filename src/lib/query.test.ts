@@ -44,6 +44,7 @@ function product(overrides: Partial<Product> & { name: string }): Product {
     packs: [{ id: "base", sku: `SKU-${id}`, label: "Each", shortLabel: "Each", eachesPerPack: 1, priceAED: 10, tiers: [], outOfStock: false }],
     defaultPackId: "base",
     variants: [],
+    combinations: [],
     attributes: [],
     documents: [],
     badges: [],
@@ -228,13 +229,36 @@ describe("sorting", () => {
     assert.equal(desc.items[0].name, respirator.name); // 62.00, dearest
   });
 
-  it("puts in-stock and real products first under relevance", () => {
+  it("puts real products ahead of placeholders under relevance", () => {
     const result = queryProducts(CATALOGUE, resolve, { sort: "relevance" });
-    // The out-of-stock respirator must not lead the list.
-    assert.notEqual(result.items[0].name, respirator.name);
-    // The placeholder outranks only the out-of-stock line.
-    assert.equal(result.items.at(-1)!.name, respirator.name);
-    assert.equal(result.items.at(-2)!.name, bibs.name);
+    const names = result.items.map((p) => p.name);
+
+    assert.equal(names.at(-1), bibs.name);
+    // Everything else falls back to name order, so the list is stable.
+    const real = names.slice(0, -1);
+    assert.deepEqual(real, [...real].sort((a, b) => a.localeCompare(b)));
+  });
+
+  /**
+   * Stock must not be inferable from position.
+   *
+   * Relevance used to sort in-stock first, which published exactly what the
+   * storefront now hides: whatever sat at the bottom of every list was out of
+   * stock, and two page loads a week apart would say which lines had run out.
+   */
+  it("does not move a product because it is out of stock", () => {
+    const asIs = queryProducts(CATALOGUE, resolve, { sort: "relevance" });
+    const allInStock = queryProducts(
+      CATALOGUE.map((p) => ({ ...p, outOfStock: false })),
+      resolve,
+      { sort: "relevance" }
+    );
+
+    assert.deepEqual(
+      asIs.items.map((p) => p.name),
+      allInStock.items.map((p) => p.name)
+    );
+    assert.notEqual(asIs.items.at(-1)!.name, respirator.name);
   });
 
   it("is stable — equal prices fall back to name order", () => {

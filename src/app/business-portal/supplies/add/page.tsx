@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { UrlFilters } from "@/components/UrlFilters";
 import { AddSupplyButton } from "@/components/portal/AddSupplyButton";
 import { availableProducts, offersNeedApproval } from "@/lib/supply-offers";
+import { supplierPermission } from "@/lib/permissions";
+import { notFound } from "next/navigation";
 
 /**
  * The catalogue, for a supplier to pick from.
@@ -23,14 +25,26 @@ export default async function AddSupplyPage({
 }) {
   const filters = await searchParams;
 
-  const [products, categories, needsApproval] = await Promise.all([
+  const [products, categories, needsApproval, mode] = await Promise.all([
     availableProducts(filters),
     db.category.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
     offersNeedApproval(),
+    supplierPermission("addItems"),
   ]);
+
+  /*
+   * The route is closed, not just the button.
+   *
+   * The link to this page is already hidden when addItems is off, but a
+   * bookmark or a back button reaches it anyway, and a catalogue of things you
+   * cannot add is a page that exists only to disappoint. notFound rather than a
+   * refusal message: the page is not available to this account, and there is
+   * nothing here for them to correct.
+   */
+  if (mode === "off") notFound();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">

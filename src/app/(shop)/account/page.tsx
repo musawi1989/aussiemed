@@ -1,3 +1,5 @@
+import { getSessionUser } from "@/lib/auth";
+import { LogoEditor } from "@/components/LogoEditor";
 import type { Metadata } from "next";
 import { BranchFilter } from "@/components/account/BranchFilter";
 import { accountBranches } from "@/lib/account";
@@ -31,6 +33,7 @@ export default async function AccountPage({
   searchParams: Promise<{ branch?: string }>;
 }) {
   const { branch } = await searchParams;
+  const logoUser = await getSessionUser();
   const overview = await accountOverview(branch);
 
   // A personal login with no trade account has no orders or branches to show.
@@ -43,6 +46,8 @@ export default async function AccountPage({
 
   if (!overview) {
     return (
+      <>
+      {logoUser && <LogoEditor kind="user" id={logoUser.id} name={logoUser.name} />}
       <div className="rounded-card border border-border-base bg-surface px-4 py-12 text-center shadow-card">
         <h2 className="text-lg font-bold text-text">No trade account yet</h2>
         <p className="mx-auto mt-2 max-w-sm text-sm text-text-muted">
@@ -57,11 +62,13 @@ export default async function AccountPage({
           Browse the catalogue
         </Link>
       </div>
+      </>
     );
   }
 
   return (
     <>
+      {logoUser && <LogoEditor kind={logoUser.organisationId ? "organisation" : "user"} id={logoUser.organisationId ?? logoUser.id} name={overview?.organisationName ?? logoUser.name} />} 
       {/* Above the figures, because it changes every one of them. A filter
           below the numbers it governs reads as a filter on the list further
           down the page. */}

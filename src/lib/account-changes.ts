@@ -1,8 +1,7 @@
 import { db } from "./db";
-import { getSessionUser } from "./auth";
+import { requireAdmin as requireAdminAccess } from "./admin";
 import { accountChangeDecided } from "./email-message";
 import { sendQuietly } from "./mailer";
-import { notify } from "./notifications";
 import {
   branchDiff,
   checkReason,
@@ -101,24 +100,9 @@ export async function submitChange(input: {
 
   const row = await write({ ...input, reason: reason.reason });
 
-  // Only the held ones. A staff change that has already taken effect is not
-  // something anybody needs to be interrupted about.
-  if (held) {
-    await notify({
-      kind: "AccountChangeRequested",
-      subject: `Approval needed: ${row.summary}`,
-      body: [
-        `${input.actor.name} asked for this on behalf of their account.`,
-        "",
-        `Their reason: ${reason.reason}`,
-        "",
-        "Nothing changes until it is approved or turned down.",
-      ].join("\n"),
-      href: "/admin/approvals",
-      entity: "AccountChange",
-      entityId: row.id,
-    });
-  }
+  // A held change surfaces on Needs attention, which counts what is still
+  // outstanding. It used to write to the admin Inbox as well; that screen
+  // was removed on 28 Aug 2026 because it recorded the same things twice.
 
   return ok({ applied: !held });
 }
@@ -191,14 +175,13 @@ export async function pendingCountFor(organisationId: string): Promise<number> {
  * Reading — the admin's side
  * ------------------------------------------------------------------ */
 
-async function requireAdmin() {
-  const user = await getSessionUser();
-  if (!user || user.role !== "Admin") return null;
-  return user;
+async function requireAdmin(mode: "view" | "write" = "write") {
+  try { return await requireAdminAccess("approvals", mode); }
+  catch { return null; }
 }
 
 export async function pendingChanges() {
-  if (!(await requireAdmin())) return [];
+  if (!(await requireAdmin("view"))) return [];
 
   return db.accountChange.findMany({
     where: { status: "Pending" },
@@ -210,7 +193,7 @@ export async function pendingChanges() {
 }
 
 export async function pendingChangeCount(): Promise<number> {
-  if (!(await requireAdmin())) return 0;
+  if (!(await requireAdmin("view"))) return 0;
   return db.accountChange.count({ where: { status: "Pending" } });
 }
 
@@ -223,7 +206,7 @@ export async function pendingChangeCount(): Promise<number> {
 export async function changeDetail(changeId: string): Promise<{
   diff: FieldChange[];
 } | null> {
-  if (!(await requireAdmin())) return null;
+  if (!(await requireAdmin("view"))) return null;
 
   const change = await db.accountChange.findUnique({ where: { id: changeId } });
   if (!change?.payload) return { diff: [] };

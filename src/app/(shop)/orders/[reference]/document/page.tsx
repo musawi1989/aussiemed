@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PrintableDoc } from "@/components/PrintableDoc";
 import { getSessionUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin";
 import { readCartKey } from "@/lib/cart-cookie";
 import { DocTable, SellerBlock, aed, day, loadOrderForDocs } from "@/lib/order-docs";
 import { dueWording, paymentDueOn } from "@/lib/payment-options";
+import {
+  discountLabel,
+  lineDiscount,
+  orderDiscount,
+  sourceLabel,
+} from "@/lib/order-discounts";
 import { sellerIdentity } from "@/lib/seller-identity";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 import { PLACEHOLDER_NOTICE, invoiceCompliance } from "@/lib/trn";
@@ -59,6 +66,7 @@ export default async function OrderDocumentPage({
     !order.userId && Boolean(cartKey) && order.guestCartKey === cartKey;
 
   if (!isAdmin && !isOwner && !isGuestWithClaim) notFound();
+  if (isAdmin) await requireAdmin("orders", "view");
 
   const rate = order.vatRateBasisPoints / 100;
   const shipping = parseShippingAddress(order.shippingSnapshot);
@@ -79,6 +87,10 @@ export default async function OrderDocumentPage({
     })
   );
 
+  // Read from what was snapshotted on the lines, never recomputed from
+  // today's prices — see order-discounts.ts.
+  const saved = orderDiscount(order.items);
+
   const tax = invoiceCompliance({
     sellerTrn: seller.trn,
     buyerTrn: order.organisation?.trn,
@@ -88,6 +100,7 @@ export default async function OrderDocumentPage({
     <PrintableDoc
       title={`Order confirmation · ${order.reference}`}
       backHref={`/orders/${reference}`}
+      downloadHref={`/orders/${encodeURIComponent(reference)}/document/pdf`}
     >
       {(!tax.compliant || tax.usesPlaceholder) && (
         <div className="mt-3 rounded-card border-l-4 border-danger bg-danger-soft px-4 py-2.5 text-sm font-bold text-danger">
@@ -139,35 +152,62 @@ export default async function OrderDocumentPage({
           <p>Reference {order.reference}</p>
           <p>Placed {day(order.placedAt)}</p>
           {order.poReference && <p>Your PO {order.poReference}</p>}
+          {order.placedByName && <p>Placed by {order.placedByName}</p>}
+          <p>Order status: {order.status}</p>
+          <p>Payment: {order.paymentStatus}</p>
           <p className="mt-1 font-bold text-text">{dueText.headline}</p>
         </div>
       </div>
 
+      {order.customerNotes && <p className="mt-4 whitespace-pre-wrap text-sm"><strong>Delivery notes: </strong>{order.customerNotes}</p>}
       <DocTable
         head={
           <tr>
             <th className="py-1.5">Item code</th>
             <th className="py-1.5">Description</th>
             <th className="py-1.5 text-right">Qty</th>
+            {saved.discounted && (
+              <th className="py-1.5 text-right">List price</th>
+            )}
             <th className="py-1.5 text-right">Unit price</th>
             <th className="py-1.5 text-right">Net</th>
             <th className="py-1.5 text-right">VAT</th>
           </tr>
         }
       >
-        {order.items.map((item) => (
-          <tr key={item.id} className="border-b border-border-base">
+        {order.items.map((item) => {
+          const off = lineDiscount(item);
+          const note = discountLabel(off, order.accountDiscountBasisPoints);
+          const picture = item.sku.product.images.find(image => image.skuId === item.skuId)
+            ?? item.sku.product.images.find(image => !image.skuId);
+          return (
+          <tr key={item.id} className="break-inside-avoid border-b border-border-base">
             <td className="py-2 tnum font-semibold text-text">
               {item.skuCodeSnapshot}
             </td>
             <td className="py-2 text-text-muted">
+              <div className="flex items-start gap-2">
+              {picture ? <img src={picture.path} alt={picture.altText ?? item.nameSnapshot} width={56} height={56} loading="eager" className="h-14 w-14 shrink-0 object-contain" /> : <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border-base text-center text-[10px]">No image</span>}
+              <div>
               {item.nameSnapshot}
               <span className="block text-xs text-text-subtle">
                 {item.unitLabelSnapshot}
                 {item.taxClassSnapshot === "ZeroRated" ? " · zero rated" : ""}
+                {note ? ` · ${note}` : ""}
               </span>
+              </div>
+              </div>
             </td>
             <td className="py-2 text-right tnum text-text-muted">{item.qty}</td>
+            {saved.discounted && (
+              <td className="py-2 text-right tnum text-text-subtle">
+                {off.listUnitPriceFils === null
+                  ? "—"
+                  : off.discounted
+                    ? aed(off.listUnitPriceFils)
+                    : ""}
+              </td>
+            )}
             <td className="py-2 text-right tnum text-text-muted">
               {aed(item.unitPriceFils)}
             </td>
@@ -178,10 +218,28 @@ export default async function OrderDocumentPage({
               {aed(item.vatFils)}
             </td>
           </tr>
-        ))}
+          );
+        })}
       </DocTable>
 
       <dl className="mt-8 ml-auto max-w-xs space-y-1 border-t-2 border-border-strong pt-3 text-sm">
+        {saved.discounted && saved.listSubtotalFils !== null && (
+          <Line label="Subtotal at list" value={aed(saved.listSubtotalFils)} />
+        )}
+        {saved.sources.map((source) =>
+          saved.savingBySource[source] > 0 ? (
+            <Line
+              key={source}
+              label={sourceLabel(
+                source,
+                source === "AccountDiscount"
+                  ? order.accountDiscountBasisPoints
+                  : undefined
+              )}
+              value={`−${aed(saved.savingBySource[source])}`}
+            />
+          ) : null
+        )}
         <Line label="Subtotal" value={aed(order.subtotalFils)} />
         <Line label={`VAT at ${rate}%`} value={aed(order.vatFils)} />
         {order.deliveryPriceFils > 0 && (
@@ -196,7 +254,7 @@ export default async function OrderDocumentPage({
             This is an order confirmation, not a tax invoice.
           </span>{" "}
           It records what you ordered and what it came to. Your tax invoice is
-          issued separately when the order ships.
+          issued separately, when we confirm the order.
         </p>
         <p>{dueText.detail}</p>
         <p>

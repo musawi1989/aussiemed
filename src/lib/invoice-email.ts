@@ -6,6 +6,12 @@ import { invoiceCompliance } from "./trn";
 import { requireAdmin } from "./admin";
 import { accountSession } from "./account";
 import { isSendableAddress, taxInvoice } from "./email-message";
+import {
+  discountLabel,
+  lineDiscount,
+  orderDiscount,
+  sourceLabel,
+} from "./order-discounts";
 import { send } from "./mailer";
 import { publicUrl } from "./public-url";
 
@@ -33,7 +39,7 @@ export async function invoiceRecipient(reference: string): Promise<{
   reasons: string[];
   alreadySentTo: string | null;
 } | null> {
-  await requireAdmin();
+  await requireAdmin("orders", "view");
 
   const order = await db.order.findUnique({
     where: { reference },
@@ -94,7 +100,7 @@ export async function emailInvoice(
   reference: string,
   to: string
 ): Promise<Result<{ status: string; to: string }>> {
-  await requireAdmin();
+  await requireAdmin("orders");
   return sendInvoiceTo(reference, to);
 }
 
@@ -155,6 +161,11 @@ async function sendInvoiceTo(
     return { ok: false, error: "That order has no lines to invoice." };
   }
 
+  // What the account's terms took off, read from the snapshot on each line —
+  // the same function the printed invoice and the checkout summary use, so the
+  // three cannot disagree.
+  const saved = orderDiscount(order.items);
+
   // The two bases, exactly as the printed document splits them.
   const standardNetFils = order.items
     .filter((i) => i.taxClassSnapshot !== "ZeroRated")
@@ -186,7 +197,23 @@ async function sendInvoiceTo(
         vatFils: item.vatFils,
         lineTotalFils: item.lineTotalFils,
         zeroRated: item.taxClassSnapshot === "ZeroRated",
+        discountNote: discountLabel(
+          lineDiscount(item),
+          order.accountDiscountBasisPoints
+        ),
       })),
+      listSubtotalFils: saved.discounted ? saved.listSubtotalFils : null,
+      discountRows: saved.sources
+        .filter((source) => saved.savingBySource[source] > 0)
+        .map((source) => ({
+          label: sourceLabel(
+            source,
+            source === "AccountDiscount"
+              ? order.accountDiscountBasisPoints
+              : undefined
+          ),
+          amountFils: saved.savingBySource[source],
+        })),
       standardNetFils,
       zeroRatedNetFils,
       vatFils: order.vatFils,

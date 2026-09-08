@@ -1,3 +1,4 @@
+import { EntityLogo } from "@/components/EntityLogo";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
@@ -8,8 +9,10 @@ import { SUPPLIER_TABS } from "./tabs";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
-export default async function AdminSuppliersPage() {
+export default async function AdminSuppliersPage({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
+  const archived = (await searchParams).archived === "1";
   const suppliers = await db.supplier.findMany({
+    where: archived ? {} : { status: { not: "Archived" } },
     orderBy: [{ status: "asc" }, { companyName: "asc" }],
     include: {
       // What a supplier costs us and how much of the catalogue they cover,
@@ -33,6 +36,7 @@ export default async function AdminSuppliersPage() {
       </div>
 
       <SectionTabs tabs={SUPPLIER_TABS} />
+      <Link href={archived ? "/admin/suppliers" : "/admin/suppliers?archived=1"} className="mt-3 inline-block text-sm font-semibold text-navy underline">{archived ? "Hide archived suppliers" : "Show archived suppliers"}</Link>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[2fr_1fr]">
         <div className="overflow-x-auto rounded-card border border-border-base bg-surface shadow-card">
@@ -60,7 +64,7 @@ export default async function AdminSuppliersPage() {
                       href={`/admin/suppliers/${supplier.id}`}
                       className="font-semibold text-navy hover:underline"
                     >
-                      {supplier.companyName}
+                      <EntityLogo kind="supplier" id={supplier.id} name={supplier.companyName} />{supplier.companyName}
                     </Link>
                     <p className="mt-0.5 text-xs text-text-subtle">
                       {supplier.primaryEmail}

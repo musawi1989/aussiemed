@@ -10,6 +10,7 @@ import {
   nextCutoffAfter,
   parseCutoffHour,
   remainingLabel,
+  monthWindow,
 } from "./cutoff.ts";
 
 /** 14:00 Dubai on 16 Aug 2026, which is 10:00 UTC. */
@@ -195,5 +196,50 @@ describe("remainingLabel", () => {
 
   it("agrees with the closing-soon threshold", () => {
     assert.equal(remainingLabel(CLOSING_SOON_MS), "1 hour");
+  });
+});
+
+/**
+ * One purchase order per supplier per calendar month rests entirely on this
+ * window. Get a boundary wrong and a run either opens a second order for a
+ * month that already has one, or adds December's goods to November's invoice.
+ */
+describe("monthWindow", () => {
+  const iso = (d: Date) => d.toISOString();
+
+  it("covers the month the date falls in", () => {
+    const { from, to } = monthWindow(new Date("2026-08-14T09:00:00.000Z"));
+    assert.equal(iso(from), "2026-08-01T00:00:00.000Z");
+    assert.equal(iso(to), "2026-09-01T00:00:00.000Z");
+  });
+
+  it("is half-open, so the boundaries land in exactly one month", () => {
+    const august = monthWindow(new Date("2026-08-14T09:00:00.000Z"));
+    const firstOfAugust = new Date("2026-08-01T00:00:00.000Z");
+    const lastOfAugust = new Date("2026-08-31T23:59:59.999Z");
+    const firstOfSeptember = new Date("2026-09-01T00:00:00.000Z");
+
+    assert.ok(firstOfAugust >= august.from && firstOfAugust < august.to);
+    assert.ok(lastOfAugust >= august.from && lastOfAugust < august.to);
+    // The instant the next month starts must NOT fall in this one.
+    assert.ok(!(firstOfSeptember < august.to));
+  });
+
+  it("rolls December into the following January", () => {
+    const { from, to } = monthWindow(new Date("2026-12-25T12:00:00.000Z"));
+    assert.equal(iso(from), "2026-12-01T00:00:00.000Z");
+    assert.equal(iso(to), "2027-01-01T00:00:00.000Z");
+  });
+
+  it("gives the same window for any two dates in one month", () => {
+    const early = monthWindow(new Date("2026-02-01T00:00:00.000Z"));
+    const late = monthWindow(new Date("2026-02-28T23:59:00.000Z"));
+    assert.deepEqual(early, late);
+  });
+
+  it("gives different windows either side of a month end", () => {
+    const before = monthWindow(new Date("2026-08-31T23:59:59.999Z"));
+    const after = monthWindow(new Date("2026-09-01T00:00:00.000Z"));
+    assert.notDeepEqual(before, after);
   });
 });

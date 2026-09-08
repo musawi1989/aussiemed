@@ -2,7 +2,8 @@
 
 import { saveProductAction } from "@/app/admin/products/[id]/actions";
 import { AdminForm, Field, Panel, Select, TextArea } from "./AdminForm";
-import { CategoryChecklist, type Department } from "./admin/CategoryChecklist";
+import { CategoryChecklist } from "./admin/CategoryChecklist";
+import type { CategoryNode } from "@/lib/category-tree";
 
 /**
  * The product's own details.
@@ -16,7 +17,7 @@ export function ProductDetailsForm({
   product,
   brands,
   taxClasses,
-  departments,
+  tree,
   selectedCategoryIds,
 }: {
   product: {
@@ -30,7 +31,7 @@ export function ProductDetailsForm({
   };
   brands: { id: string; name: string }[];
   taxClasses: string[];
-  departments: Department[];
+  tree: CategoryNode[];
   selectedCategoryIds: string[];
 }) {
   return (
@@ -80,7 +81,7 @@ export function ProductDetailsForm({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Family key"
+          label="Related-product family key"
               name="variantGroup"
               defaultValue={product.variantGroup}
               placeholder="aqium-antibacterial-hand-sanitiser"
@@ -99,7 +100,7 @@ export function ProductDetailsForm({
 
       <div className="mt-5">
         <CategoryChecklist
-          departments={departments}
+          tree={tree}
           selectedCategoryIds={selectedCategoryIds}
         />
       </div>

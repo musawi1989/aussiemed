@@ -6,6 +6,8 @@ import {
 } from "@/app/admin/suppliers/actions";
 import { AdminForm, Field, Panel, Select } from "./AdminForm";
 import { CountryFields } from "@/components/CountryFields";
+import { PaymentTermsPicker } from "./PaymentTermsPicker";
+import { encodeCustomTerms } from "@/lib/payment-options";
 
 /**
  * One form for creating and editing, because the rules are identical and two
@@ -32,6 +34,8 @@ export function SupplierForm({
     status: string;
     promisedLeadTimeDays?: number | null;
     ackSlaHours?: number | null;
+    paymentTermsDays?: number | null;
+    paymentTermsLabel?: string | null;
   };
 }) {
   const editing = Boolean(supplier);
@@ -40,6 +44,7 @@ export function SupplierForm({
     <AdminForm
       action={editing ? updateSupplierAction : createSupplierAction}
       submitLabel={editing ? "Save supplier" : "Create supplier"}
+      confirmChange={data => supplier && supplier.status !== data.get("status") ? `Change ${supplier.companyName} to ${data.get("status")}? This changes whether new orders can be placed with them.${supplier.status === "Archived" ? " Their portal account remains disabled until separately re-enabled." : ""}` : null}
     >
       {supplier && <input type="hidden" name="id" value={supplier.id} />}
 
@@ -116,6 +121,7 @@ export function SupplierForm({
             />
           </div>
 
+          <PaymentTermsPicker supplier value={supplier?.paymentTermsDays == null ? "" : supplier.paymentTermsLabel || ![0, 7, 14, 30, 60].includes(supplier.paymentTermsDays) ? encodeCustomTerms(supplier.paymentTermsDays, supplier.paymentTermsLabel || `Net ${supplier.paymentTermsDays}`) : supplier.paymentTermsDays === 0 ? "Prepaid" : `Net${supplier.paymentTermsDays}`} />
           <Select
             label="Status"
             name="status"
@@ -123,6 +129,7 @@ export function SupplierForm({
             options={[
               { value: "Active", label: "Active" },
               { value: "Suspended", label: "Suspended" },
+              ...(supplier?.status === "Archived" ? [{ value: "Archived", label: "Archived" }] : []),
             ]}
             hint="Suspending hides the supplier from the storefront. Its products and invoices are untouched."
           />

@@ -1,9 +1,11 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PrintableDoc } from "@/components/PrintableDoc";
 import { StatusPill } from "@/components/StatusPill";
 import { formatAED } from "@/lib/money";
 import { myInvoice } from "@/lib/supplier-invoices";
+import { InvoicePaymentHistory } from "@/components/InvoicePaymentHistory";
 
 const aed = (fils: number) => formatAED(fils / 100);
 const day = (d: Date) =>
@@ -111,7 +113,7 @@ export default async function SupplierInvoicePage({
           <tbody>
             {invoice.lines.map((line, index) => (
               <tr
-                key={`${line.poNumber}-${line.code}-${index}`}
+                key={`$<ProductThumbnail skuCode={line.skuCode} />{line.poNumber}-${line.code}-${index}`}
                 className="border-b border-border-base last:border-0"
               >
                 <td className="px-3 py-2 font-semibold text-text">
@@ -147,6 +149,7 @@ export default async function SupplierInvoicePage({
         </table>
       </div>
 
+      <InvoicePaymentHistory entries={invoice.payments} />
       <p className="mt-4 text-xs leading-relaxed text-text-subtle">
         Compiled by AussieMed from goods received between{" "}
         {day(invoice.from)} and{" "}

@@ -73,7 +73,7 @@ export type CustomerReport = {
 };
 
 export async function customerReport(): Promise<CustomerReport> {
-  await requireAdmin();
+  await requireAdmin("reports", "view");
 
   const since = new Date();
   since.setUTCMonth(since.getUTCMonth() - MONTHS);
@@ -255,7 +255,7 @@ export type SupplierReport = {
 };
 
 export async function supplierReport(): Promise<SupplierReport> {
-  await requireAdmin();
+  await requireAdmin("reports", "view");
 
   const since = new Date();
   since.setUTCMonth(since.getUTCMonth() - MONTHS);
@@ -396,7 +396,7 @@ export async function productPerformance(): Promise<{
   performance: ProductPerformance[];
   orderCount: number;
 }> {
-  await requireAdmin();
+  await requireAdmin("reports", "view");
 
   const orders = await db.order.findMany({
     where: { status: { not: "Cancelled" } },

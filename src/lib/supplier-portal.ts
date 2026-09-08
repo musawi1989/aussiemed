@@ -8,15 +8,21 @@ import {
 import { db } from "./db";
 import { audit, type Result } from "./admin";
 import { recordStatus } from "./status-events";
-import { notify } from "./notifications";
 import { getSessionUser, type SessionUser } from "./auth";
 import {
   checkSupplyTerms,
   parseSupplyRows,
+  priceIntent,
   splitByKnownSkus,
+  NO_PRICE_REQUEST,
   type RowProblem,
   type SupplyTermsInput,
 } from "./supply-terms";
+import { ensure, supplierPermissions } from "./permissions";
+import { createDocket, docketPlan } from "./dockets";
+import type { ProposedDocketLine } from "./docket-maths";
+import { demoteOutOfStockPrimary } from "./supply-cover";
+import { writableSupplyFields } from "./permission-catalogue";
 
 /**
  * What a supplier can see and do — BE-39.
@@ -52,12 +58,69 @@ export async function requireSupplier(): Promise<SupplierSession> {
   return user as SupplierSession;
 }
 
-/** Their own purchase orders. Drafts are excluded — those are ours until sent. */
-export async function listPurchaseOrders() {
+/** What a supplier can filter by. Draft is ours and never reaches them. */
+export const SUPPLIER_PO_STATUSES = [
+  "Sent",
+  "Acknowledged",
+  "PartiallyDispatched",
+  "Dispatched",
+  "PartiallyReceived",
+  "Received",
+  "Cancelled",
+] as const;
+
+export type PurchaseOrderFilters = {
+  /** Their PO number, or a tracking number off a consignment. */
+  q?: string;
+  /** One of PURCHASE_ORDER_STATUSES. Anything else is ignored. */
+  status?: string;
+  /** ISO dates, inclusive. Either end may be given on its own. */
+  from?: string;
+  to?: string;
+};
+
+/**
+ * Their own purchase orders. Drafts are excluded — those are ours until sent.
+ *
+ * FILTERED HERE RATHER THAN IN THE PAGE. This screen was the whole list, 100
+ * at a time, with no way through it: fine for a supplier with three orders and
+ * unusable for one with a year of them, who wants "the one from March" and has
+ * to scroll for it. The supplier id still comes from the session and is part
+ * of the query, never a parameter — the filters narrow their own orders and
+ * cannot widen the set beyond them.
+ */
+export async function listPurchaseOrders(filters: PurchaseOrderFilters = {}) {
   const { supplierId } = await requireSupplier();
 
+  const q = (filters.q ?? "").trim();
+  const from = filters.from ? new Date(filters.from) : null;
+  const to = filters.to ? new Date(filters.to) : null;
+
+  // The end of the chosen day, not its first instant — otherwise "to: today"
+  // excludes everything ordered today, which reads as data loss.
+  if (to) to.setHours(23, 59, 59, 999);
+
+  const valid = (d: Date | null) => (d && !Number.isNaN(d.getTime()) ? d : null);
+
   return db.purchaseOrder.findMany({
-    where: { supplierId, status: { not: "Draft" } },
+    where: {
+      supplierId,
+      status: { not: "Draft" },
+      ...(filters.status && filters.status !== "all"
+        ? { status: filters.status }
+        : {}),
+      ...(q
+        ? { OR: [{ poNumber: { contains: q } }, { trackingNumber: { contains: q } }] }
+        : {}),
+      ...(valid(from) || valid(to)
+        ? {
+            createdAt: {
+              ...(valid(from) ? { gte: valid(from)! } : {}),
+              ...(valid(to) ? { lte: valid(to)! } : {}),
+            },
+          }
+        : {}),
+    },
     orderBy: [{ sentAt: "desc" }],
     take: 100,
     include: { lines: { select: { qtyOrdered: true, qtyReceived: true } } },
@@ -71,7 +134,14 @@ export async function getPurchaseOrder(poNumber: string) {
   // supplier's number simply does not resolve.
   return db.purchaseOrder.findFirst({
     where: { poNumber, supplierId, status: { not: "Draft" } },
-    include: { lines: { orderBy: { skuCodeSnapshot: "asc" } } },
+    include: {
+      lines: { orderBy: { skuCodeSnapshot: "asc" }, include: { docketLines: { select: { qty: true, docket: { select: { dispatchedAt: true } } } } } },
+      payments: { orderBy: [{ occurredAt: "asc" }, { recordedAt: "asc" }], select: { id: true, occurredAt: true, kind: true, amountFils: true } },
+      // Their own trading name, for the paperwork they print from here. Safe
+      // by construction: the lookup is already scoped to this supplier, so
+      // this can only ever be the name of the company asking.
+      supplier: { select: { companyName: true } },
+    },
   });
 }
 
@@ -89,6 +159,10 @@ async function loadOwn(id: string, supplierId: string) {
  */
 export async function acknowledgePurchaseOrder(id: string): Promise<Result> {
   const actor = await requireSupplier();
+
+  const allowed = await ensure("acknowledgeOrders");
+  if (!allowed.ok) return allowed;
+
   const po = await loadOwn(id, actor.supplierId);
 
   if (!po) return fail("That purchase order is not one of yours.");
@@ -116,14 +190,6 @@ export async function acknowledgePurchaseOrder(id: string): Promise<Result> {
     actor: { id: actor.id, name: actor.name, role: "Supplier" },
   });
 
-  await notify({
-    kind: "PurchaseOrderAcknowledged",
-    subject: `${po.poNumber} acknowledged`,
-    body: `${actor.name} confirmed they can supply purchase order ${po.poNumber}.`,
-    href: `/admin/purchasing/${po.poNumber}`,
-    entity: "PurchaseOrder",
-    entityId: po.id,
-  });
 
   return ok(undefined);
 }
@@ -131,52 +197,102 @@ export async function acknowledgePurchaseOrder(id: string): Promise<Result> {
 export type DispatchInput = {
   courier: string | null;
   trackingNumber: string | null;
+  note?: string | null;
+  /**
+   * What is physically in this consignment, line by line.
+   *
+   * Absent means "everything still outstanding", which is what the one-click
+   * despatch of a complete order means and what the old whole-order button
+   * did. Present means the supplier has said which of it is going.
+   */
+  lines?: ProposedDocketLine[];
 };
 
+/**
+ * What this order still owes us, and every docket already raised on it.
+ *
+ * Scoped by the session supplier id like everything else here, so another
+ * supplier's number does not resolve rather than resolving and being refused.
+ */
+export async function myDocketPlan(poNumber: string) {
+  const { supplierId } = await requireSupplier();
+  const po = await db.purchaseOrder.findFirst({
+    where: { poNumber, supplierId, status: { not: "Draft" } },
+    select: { id: true },
+  });
+  if (!po) return null;
+  return docketPlan(po.id);
+}
+
+/**
+ * Despatch, as one delivery docket.
+ *
+ * WHY THIS REPLACED A FLAG. It used to set status = Dispatched on the whole
+ * order and write one courier and one tracking number. A supplier who could
+ * send eight of ten today and the rest next week had no way to say so: the
+ * second despatch overwrote the first, replacing the tracking number of a box
+ * already in transit with one for a box that had not left, and the order read
+ * as fully dispatched from the first consignment onwards.
+ *
+ * ONE MECHANISM, TWO ENTRY POINTS. Sending everything outstanding is not a
+ * different operation from sending some of it — it is a docket that happens to
+ * cover the remainder. Keeping a separate whole-order path would mean two ways
+ * to dispatch and two places for the status rules to disagree.
+ */
 export async function markDispatched(
   id: string,
   input: DispatchInput
-): Promise<Result> {
+): Promise<Result<{ sequence: number; complete: boolean }>> {
   const actor = await requireSupplier();
+
+  const allowed = await ensure("markDispatched");
+  if (!allowed.ok) return allowed;
+
   const po = await loadOwn(id, actor.supplierId);
 
   if (!po) return fail("That purchase order is not one of yours.");
   if (po.status === "Draft") return fail("That purchase order has not been sent.");
-  if (po.receivedAt) return fail("It has already been received, so it cannot be re-dispatched.");
+  if (po.receivedAt) {
+    return fail("It has already been received, so nothing further can be sent against it.");
+  }
 
-  const trim = (v: string | null) => {
-    const s = (v ?? "").trim();
-    return s.length > 0 ? s : null;
-  };
+  const plan = await docketPlan(id);
+  if (!plan) return fail("That purchase order no longer exists.");
 
-  await db.purchaseOrder.update({
-    where: { id },
-    data: {
-      status: "Dispatched",
-      // Set once, like the acknowledgement: the first despatch is the one the
-      // delivery time is measured from.
-      dispatchedAt: po.dispatchedAt ?? new Date(),
-      // Acknowledging is implied by despatching, for a supplier who skips it.
-      acknowledgedAt: po.acknowledgedAt ?? new Date(),
-      courier: trim(input.courier),
-      trackingNumber: trim(input.trackingNumber),
-    },
-  });
+  // No explicit lines is the supplier saying "all of it" — the remainder, not
+  // the original quantities, so pressing it twice cannot send anything twice.
+  const lines =
+    input.lines ??
+    plan.lines
+      .filter((line) => line.outstanding > 0)
+      .map((line) => ({ purchaseOrderLineId: line.id, qty: line.outstanding }));
 
-  await audit(actor, "purchaseOrder.dispatch", "PurchaseOrder", po.poNumber, {
-    status: po.status,
-  }, { status: "Dispatched", courier: trim(input.courier) });
-
-  await recordStatus({
-    entity: "PurchaseOrder",
-    entityId: po.id,
-    entityRef: po.poNumber,
-    fromStatus: po.status,
-    toStatus: "Dispatched",
+  const result = await createDocket({
+    purchaseOrderId: id,
+    lines,
+    courier: input.courier,
+    trackingNumber: input.trackingNumber,
+    note: input.note ?? null,
+    dispatched: true,
     actor: { id: actor.id, name: actor.name, role: "Supplier" },
   });
+  if (!result.ok) return result;
 
-  return ok(undefined);
+  await audit(
+    actor,
+    "purchaseOrder.docket",
+    "PurchaseOrder",
+    po.poNumber,
+    { status: po.status },
+    {
+      docket: result.value.sequence,
+      units: lines.reduce((n, l) => n + l.qty, 0),
+      complete: result.value.complete,
+      courier: (input.courier ?? "").trim() || null,
+    }
+  );
+
+  return result;
 }
 
 /* ------------------------------------------------------------------ *
@@ -203,19 +319,31 @@ export async function listMySupplies() {
     select: {
       id: true,
       /*
-       * NO rank. Whether this supplier is our primary or our backup on an item
-       * is our commercial position, not theirs. It was on this screen until
-       * 24 Aug 2026 on the reasoning that it explained a quiet month; the
-       * client's decision is that a supplier should not know where they stand.
-       * A backup who knows they are the backup prices and prioritises
-       * differently, and one who is demoted learns it from a screen rather
-       * than from us.
+       * RANK IS SHOWN AGAIN, at the client's request on 28 Aug 2026.
        *
-       * Not selected, rather than selected and dropped — this file's standing
-       * rule. A column that is never read cannot be leaked by the next person
-       * who adds a field to the returned object.
+       * It was on this screen until 24 Aug, when the client's decision was
+       * that a supplier should not know where they stand — a backup who knows
+       * they are the backup prices and prioritises differently, and one who is
+       * demoted learns it from a screen rather than from us. That reasoning
+       * has not changed; the client has weighed it and decided the other way,
+       * on the grounds that a supplier who knows they are the primary knows
+       * the order matters.
+       *
+       * Recorded here rather than quietly reverted, because the next person to
+       * read this file will otherwise reinstate the old rule.
+       *
+       * Third is shown as Backup. From the supplier's side there are two
+       * positions worth knowing — first call or not — and telling somebody
+       * they are third rather than second is a distinction that only ever
+       * reads as a demotion.
        */
+      rank: true,
       costFils: true,
+      // Their own outstanding request. Safe to show them — it is what they
+      // asked for, and a supplier who cannot see that it is still waiting
+      // assumes the new price took effect and invoices against it.
+      proposedCostFils: true,
+      proposedAt: true,
       supplierPartNumber: true,
       leadTimeDays: true,
       isAvailable: true,
@@ -237,6 +365,10 @@ export async function listMySupplies() {
             select: {
               name: true,
               status: true,
+              // The public address of the product, so a supplier can open the
+              // listing a buyer sees. It is already public — this reveals
+              // nothing they could not reach from the shop.
+              slug: true,
               // One picture, so a supplier scanning forty rows can tell at a
               // glance which item a code refers to. Their part numbers rarely
               // match ours, and the wrong line marked discontinued takes a
@@ -257,10 +389,24 @@ export async function listMySupplies() {
     id: supply.id,
     skuCode: supply.sku.skuCode,
     productName: supply.sku.product.name,
+    productSlug: supply.sku.product.slug,
     unitLabel: supply.sku.unitLabel,
     /** Ours, not theirs: a retired pack explains why nothing is ordered. */
     listed: supply.sku.isActive && supply.sku.product.status === "Active",
+    /**
+     * Primary, Backup, or null where we have not given them cover.
+     * Third is folded into Backup — see the note in the select above.
+     */
+    standing:
+      supply.rank === "Primary"
+        ? ("Primary" as const)
+        : supply.rank === null
+          ? null
+          : ("Backup" as const),
     costFils: supply.costFils,
+    /** Asked for, not agreed. Null when nothing is outstanding. */
+    proposedCostFils: supply.proposedCostFils,
+    proposedAt: supply.proposedAt,
     supplierPartNumber: supply.supplierPartNumber,
     leadTimeDays: supply.leadTimeDays,
     isAvailable: supply.isAvailable,
@@ -334,12 +480,25 @@ export type SupplyUpdate = SupplyTermsInput & {
   supplyStatus?: string | null;
   /** Their suggested replacement, kept only while they cannot supply. */
   alternativeSkuId?: string | null;
+  /*
+   * No reason field.
+   *
+   * The form asked why the price was changing and the answer was optional, so
+   * it was usually blank — an empty box on every edit, buying nothing. What
+   * decides a price request is the movement and the line it is on, both of
+   * which the approvals screen already shows. If a supplier wants to explain
+   * themselves they ring, which is what they did anyway.
+   *
+   * priceIntent still takes a reason and the column still exists: the bulk
+   * upload could carry one later, and dropping stored reasons would lose the
+   * ones already recorded.
+   */
 };
 
 export async function updateMySupply(
   supplyId: string,
   input: SupplyUpdate
-): Promise<Result> {
+): Promise<Result<string | null>> {
   const actor = await requireSupplier();
 
   const existing = await db.productSupply.findFirst({
@@ -347,6 +506,7 @@ export async function updateMySupply(
     select: {
       id: true,
       costFils: true,
+      proposedCostFils: true,
       supplierPartNumber: true,
       leadTimeDays: true,
       isAvailable: true,
@@ -358,27 +518,135 @@ export async function updateMySupply(
   const checked = checkSupplyTerms(input);
   if (!checked.ok) return fail(checked.error);
 
+  /*
+   * This one form carries several separate permissions, so they are read once
+   * and applied field by field.
+   *
+   * WHAT THEY MAY NOT CHANGE IS IGNORED, NOT REFUSED, and that is deliberate.
+   * The portal hides a control a supplier does not have, and a hidden input
+   * posts nothing — which down the ordinary path reads as "clear this field"
+   * and would wipe a part number somebody spent a morning entering. Dropping
+   * the field instead means the worst a stale form can do is nothing at all.
+   */
+  const may = writableSupplyFields(await supplierPermissions());
+
+  /**
+   * THE PRICE IS NOT NORMALLY THEIRS TO SET.
+   *
+   * Everything else on this form describes the item — their part number, how
+   * long it takes to arrive, whether they have any. The supplier is the only
+   * person who knows those, so they take effect at once. What we pay them is
+   * an agreement between two companies, and one company changing it on a form
+   * is not an agreement.
+   *
+   * So by default the cost is split off and held as a request: costFils is
+   * untouched, and the buying run, the margin report and any purchase order
+   * raised meanwhile all go on using the agreed figure until an admin says yes.
+   * Roles and permissions can set changePrice to Allowed, which makes the
+   * submitted figure take effect at once — a deliberate choice carrying a
+   * warning, not the default.
+   */
+  const { costFils: requested, ...terms } = checked.terms;
+
+  const appliesNow = may.terms ? terms : {};
+
+  /*
+   * Whether they have any, and what to buy instead.
+   *
+   * THIS WAS BEING DROPPED. The form has posted supplyStatus since the state
+   * became three-way, and nothing here ever wrote it — availabilityFor and
+   * keepsAlternative were imported at the top of this file and never called,
+   * which is what gave it away. A supplier pressing "Out of stock" got a
+   * success message and no change, and the buying run went on ordering from
+   * them. Found while giving markOutOfStock something to gate: a permission
+   * over a field nobody writes is a switch wired to nothing.
+   *
+   * isAvailable is never set on its own — supply-state.ts derives it from the
+   * state, and db:check asserts the two agree.
+   */
+  const requestedState =
+    typeof input.supplyStatus === "string" && isSupplyState(input.supplyStatus)
+      ? input.supplyStatus
+      : null;
+
+  let stockData: Record<string, unknown> = {};
+  if (requestedState && may.stock) {
+    stockData = {
+      supplyStatus: requestedState,
+      isAvailable: availabilityFor(requestedState),
+    };
+
+    if (!keepsAlternative(requestedState)) {
+      // Back in stock, so a replacement offered while they were not is advice
+      // about a moment that has passed.
+      stockData.alternativeSkuId = null;
+    } else if (may.alternative) {
+      stockData.alternativeSkuId = input.alternativeSkuId ?? null;
+    }
+  }
+
+  let priceData: Record<string, unknown> = {};
+  let auditAs = "supply.update";
+
+  if (may.price === "agree") {
+    if (requested !== existing.costFils) {
+      // Agreed on the spot. Any outstanding request goes with it — leaving one
+      // behind would put a line in the approvals queue asking permission for a
+      // price that is already being paid.
+      priceData = { costFils: requested, ...NO_PRICE_REQUEST };
+      auditAs = "supply.price.set";
+    }
+  } else if (may.price === "request") {
+    const intent = priceIntent(
+      existing.costFils,
+      existing.proposedCostFils,
+      requested,
+      null,
+      actor.name,
+      new Date()
+    );
+    priceData = intent.data;
+    auditAs = intent.auditAs;
+  }
+
   await db.productSupply.update({
     where: { id: supplyId },
-    data: checked.terms,
+    data: { ...appliesNow, ...stockData, ...priceData },
   });
+
+  /*
+   * Losing the primary slot, if that is what just happened.
+   *
+   * AFTER the write, not before: the demotion reads isAvailable off the other
+   * cover rows to decide who can take over, and running it first would have it
+   * deciding against a state that is about to change. It is also deliberately
+   * not inside the same transaction — a failure to reshuffle ranks must not
+   * roll back a supplier telling us they are out of stock, which is the more
+   * important of the two facts and the one the buying run reads.
+   */
+  const demotion =
+    stockData.isAvailable === false
+      ? await demoteOutOfStockPrimary(supplyId, actor)
+      : { promotedTo: null, message: null };
 
   await audit(
     actor,
-    "supply.update",
+    auditAs,
     "ProductSupply",
     existing.sku.skuCode,
     {
       costFils: existing.costFils,
+      proposedCostFils: existing.proposedCostFils,
       supplierPartNumber: existing.supplierPartNumber,
       leadTimeDays: existing.leadTimeDays,
       isAvailable: existing.isAvailable,
     },
-    checked.terms
+    { ...appliesNow, ...stockData, ...priceData }
   );
 
-  return ok(undefined);
+  return ok(demotion.message);
 }
+
 
 /**
  * The whole company in or out.
@@ -388,6 +656,20 @@ export async function updateMySupply(
  */
 export async function setMyAvailability(available: boolean): Promise<Result> {
   const actor = await requireSupplier();
+
+  /*
+   * Guarded in one direction only.
+   *
+   * Turning themselves back ON is always allowed. The permission exists to
+   * stop a supplier taking themselves out of the buying run unilaterally; a
+   * supplier who is off and wants to work again is not the situation anybody
+   * meant to prevent, and refusing it would strand an account that the
+   * permission was switched off after.
+   */
+  if (!available) {
+    const allowed = await ensure("pauseAccount");
+    if (!allowed.ok) return allowed;
+  }
 
   const before = await db.supplier.findUnique({
     where: { id: actor.supplierId },
@@ -452,6 +734,22 @@ export async function applySupplyUpload(
 ): Promise<Result<UploadOutcome>> {
   const actor = await requireSupplier();
 
+  /*
+   * THE SAME PERMISSIONS AS THE FORM, AND FOR A BLUNTER REASON.
+   *
+   * This path writes every field the row form writes. Gating one and not the
+   * other would mean a supplier refused a price change on screen could reprice
+   * their entire range in a single upload — and the permissions panel would be
+   * describing a rule the system does not keep.
+   */
+  const may = writableSupplyFields(await supplierPermissions());
+
+  if (!may.terms && may.price === "no" && !may.stock) {
+    return fail(
+      "Updating your items by spreadsheet is not something your account can do. Get in touch and we will sort it out."
+    );
+  }
+
   const parsed = parseSupplyRows(cells);
 
   const mine = await db.productSupply.findMany({
@@ -468,6 +766,7 @@ export async function applySupplyUpload(
   );
 
   let updated = 0;
+  let demoted = 0;
   for (const row of applicable) {
     const id = byCode.get(row.skuCode.toLowerCase());
     if (!id) continue;
@@ -475,9 +774,29 @@ export async function applySupplyUpload(
     await db.productSupply.update({
       where: { id },
       data: {
-        supplierPartNumber: row.supplierPartNumber,
-        costFils: row.costFils,
-        leadTimeDays: row.leadTimeDays,
+        ...(may.terms
+          ? {
+              supplierPartNumber: row.supplierPartNumber,
+              leadTimeDays: row.leadTimeDays,
+            }
+          : {}),
+        // A price in a spreadsheet is a request, exactly as it is on the
+        // form — see the note in updateMySupply — unless changePrice is set
+        // to Allowed, in which case it is agreed, exactly as it is there.
+        ...(may.price === "no"
+          ? {}
+          : may.price === "agree"
+            ? {
+                costFils: row.costFils,
+                proposedCostFils: null,
+                proposedAt: null,
+                proposedByName: null,
+              }
+            : {
+                proposedCostFils: row.costFils,
+                proposedAt: row.costFils === null ? null : new Date(),
+                proposedByName: row.costFils === null ? null : actor.name,
+              }),
         // Blank means no change, so the current value is kept rather than
         // being defaulted to available.
         //
@@ -488,7 +807,7 @@ export async function applySupplyUpload(
         // means Available and "no" means out of stock: the milder of the two
         // reasons, since a supplier ending a line permanently should have to
         // say so on the screen where the word appears.
-        ...(row.isAvailable === null
+        ...(row.isAvailable === null || !may.stock
           ? {}
           : {
               isAvailable: row.isAvailable,
@@ -501,10 +820,23 @@ export async function applySupplyUpload(
       },
     });
     updated++;
+
+    /*
+     * The same demotion the row form applies.
+     *
+     * A supplier who can be demoted by pressing a button and not by uploading
+     * a spreadsheet has been shown the way round it, and this is the path that
+     * can take a whole range out of stock in one go.
+     */
+    if (row.isAvailable === false && may.stock) {
+      const demotion = await demoteOutOfStockPrimary(id, actor);
+      if (demotion.promotedTo) demoted++;
+    }
   }
 
   await audit(actor, "supply.bulkUpdate", "Supplier", actor.supplierId, null, {
     updated,
+    demoted,
     rejected: parsed.problems.length,
     notSupplied: notSupplied.length,
   });
@@ -538,17 +870,21 @@ export async function confirmQuantities(
   purchaseOrderId: string,
   quantities: { lineId: string; qty: number | null }[]
 ): Promise<Result> {
-  const { supplierId } = await requireSupplier();
+  const actor = await requireSupplier();
+  const { supplierId } = actor;
+
+  const allowed = await ensure("confirmQuantities");
+  if (!allowed.ok) return allowed;
 
   // The supplier id is part of the lookup, so another supplier's order simply
   // does not resolve — the same rule getPurchaseOrder follows.
   const po = await db.purchaseOrder.findFirst({
     where: { id: purchaseOrderId, supplierId },
-    include: { lines: { select: { id: true, qtyOrdered: true, nameSnapshot: true } } },
+    include: { lines: { select: { id: true, qtyOrdered: true, qtyReceived: true, nameSnapshot: true, docketLines: { select: { qty: true } } } } },
   });
   if (!po) return { ok: false, error: "That purchase order is not yours." };
 
-  if (po.status === "Received" || po.status === "Cancelled") {
+  if (["Draft", "Received", "Cancelled"].includes(po.status)) {
     return {
       ok: false,
       error: "This order is closed, so what you can supply no longer changes it.",
@@ -556,6 +892,7 @@ export async function confirmQuantities(
   }
 
   const byId = new Map(po.lines.map((l) => [l.id, l]));
+  if (new Set(quantities.map(q => q.lineId)).size !== quantities.length) return fail("Choose each line once.");
 
   for (const { lineId, qty } of quantities) {
     const line = byId.get(lineId);
@@ -570,16 +907,19 @@ export async function confirmQuantities(
         error: `${line.nameSnapshot}: we only ordered ${line.qtyOrdered}. Enter that or fewer.`,
       };
     }
+    const committed = Math.max(line.qtyReceived, line.docketLines.reduce((n, l) => n + l.qty, 0));
+    if (qty < committed) return fail(`${line.nameSnapshot}: ${committed} units are already received or on a docket.`);
   }
 
   await db.$transaction(
     quantities.map(({ lineId, qty }) =>
       db.purchaseOrderLine.update({
         where: { id: lineId },
-        data: { qtyConfirmed: qty },
+        data: { qtyConfirmed: qty, qtyReviewed: byId.get(lineId)!.qtyOrdered },
       })
     )
   );
 
+  await audit(actor, "purchaseOrder.confirmQuantities", "PurchaseOrder", po.poNumber, null, { quantities });
   return { ok: true, value: undefined };
 }

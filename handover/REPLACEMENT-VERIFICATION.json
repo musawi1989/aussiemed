@@ -1,0 +1,91 @@
+{
+  "date": "2026-09-08",
+  "cause": "The earlier ZIP omitted src/lib/logo-actions.ts, src/lib/logo-access.ts and src/lib/logo-access.test.ts.",
+  "archive": "AussieMed-Website-Handover-2026-09-08-FIXED.zip",
+  "bytes": 10770269,
+  "sha256": "0d20b2d0391f60201bfda74777fa4519af9fb5aafc13544a3aee7ef9f7989b52",
+  "verification": {
+    "archiveFiles": 849,
+    "manifestFiles": 848,
+    "allOriginalPackageFilesPreserved": true,
+    "allApplicationSourceAndMigrationsChecked": true,
+    "npmCi": "passed; 327 packages installed in extracted copy",
+    "prismaMigrations": 51,
+    "freshCatalogueSeed": "passed",
+    "freshAccountSeed": "passed",
+    "typecheck": "passed",
+    "unitTests": {
+      "passed": 1106,
+      "failed": 0
+    },
+    "packagingRegressionTests": 2,
+    "localDatabaseInitializer": "creates absent file; preserves existing bytes",
+    "browser": {
+      "base": "http://127.0.0.1:3004",
+      "checks": [
+        {
+          "path": "/",
+          "status": 200
+        },
+        {
+          "path": "/products",
+          "status": 200
+        },
+        {
+          "path": "/business-portal",
+          "status": 200
+        },
+        {
+          "path": "/business-portal/supplies",
+          "status": 200
+        },
+        {
+          "path": "/business-portal/packing-lists",
+          "status": 200
+        },
+        {
+          "path": "/business-portal",
+          "status": 200
+        },
+        {
+          "action": "Supplier saves and reloads own logo in isolated demo database",
+          "passed": true
+        },
+        {
+          "action": "Supplier removes own logo in isolated demo database",
+          "passed": true
+        },
+        {
+          "path": "/account",
+          "status": 200
+        },
+        {
+          "path": "/account/products",
+          "status": 200
+        },
+        {
+          "path": "/admin",
+          "status": 200
+        },
+        {
+          "path": "/admin/products",
+          "status": 200
+        },
+        {
+          "path": "/admin/suppliers",
+          "status": 200
+        },
+        {
+          "path": "/admin/customers",
+          "status": 200
+        },
+        {
+          "path": "/admin/orders",
+          "status": 200
+        }
+      ],
+      "errors": []
+    }
+  },
+  "scope": "Isolated fresh demo database; no live business records were changed. Production build was not run."
+}

@@ -1,16 +1,28 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { PrintableDoc } from "@/components/PrintableDoc";
 import { sellerIdentity } from "@/lib/seller-identity";
 import { DocTable, SellerBlock, day, loadOrderForDocs } from "@/lib/order-docs";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
 
 /**
- * The delivery note — the copy that travels with the goods.
+ * The packing list and delivery note — the copy that travels with the goods.
  *
- * Also priceless, for a different reason from the picking list: the person
- * receiving the delivery is often not the person who buys, and a ward clerk
- * should not be handed the commercial terms. What they do need is exactly what
- * is in the box, with the batch and expiry of each line, so goods-in can check
- * it against their own records.
+ * ONE DOCUMENT DOING BOTH JOBS, at the client's request. It is the list of what
+ * is in the box and it is the sheet somebody signs to say they got it; printing
+ * two pieces of paper that carry the same lines only invites them to disagree.
+ * The title says both names because a customer's goods-in will call it whichever
+ * one they are used to.
+ *
+ * THE PICKING LIST IS STILL SEPARATE AND STILL INTERNAL. It groups lines by
+ * supplier, which is how the stock is shelved — and which supplier each line
+ * came from is not something to hand a customer. Merging that one in would put
+ * our buying arrangements in the box.
+ *
+ * Priceless, for a different reason from the picking list: the person receiving
+ * the delivery is often not the person who buys, and a ward clerk should not be
+ * handed the commercial terms. What they do need is exactly what is in the box,
+ * with the batch and expiry of each line, so goods-in can check it against their
+ * own records — and now, room to sign for it.
  */
 export default async function DeliveryNotePage({
   params,
@@ -30,7 +42,7 @@ export default async function DeliveryNotePage({
 
   return (
     <PrintableDoc
-      title={`Delivery note · ${order.reference}`}
+      title={`Packing list & delivery note · ${order.reference}`}
       backHref={`/admin/orders/${reference}`}
     >
       <div className="mt-3 flex flex-wrap justify-between gap-6">
@@ -83,7 +95,7 @@ export default async function DeliveryNotePage({
         {shipped.map((item) => (
           <tr key={item.id} className="border-b border-border-base">
             <td className="py-2 tnum font-semibold text-text">
-              {item.skuCodeSnapshot}
+              <ProductThumbnail skuCode={item.skuCodeSnapshot} />{item.skuCodeSnapshot}
             </td>
             <td className="py-2 text-text-muted">{item.nameSnapshot}</td>
             <td className="py-2 text-text-muted">{item.unitLabelSnapshot}</td>
@@ -113,11 +125,40 @@ export default async function DeliveryNotePage({
         </p>
       )}
 
-      <p className="mt-6 text-xs leading-relaxed text-text-subtle">
-        No prices appear on this document. Please check the goods against this
-        note on receipt and report any discrepancy within 48 hours, quoting the
-        order number above.
-      </p>
+      {/*
+        Received by — the half that makes this a delivery note rather than a
+        packing list.
+
+        PRINTED EMPTY AND SIGNED BY HAND. There is no version of this that gets
+        filled in from our side: the whole worth of it is that the person who
+        took the goods wrote their own name on it. What comes back is
+        photographed onto the order.
+
+        break-inside-avoid so a long order cannot tear the signature off the
+        lines it belongs to, and the borders are print black rather than a
+        theme colour, because a pale grey rule is invisible on paper.
+      */}
+      <div className="mt-8 break-inside-avoid rounded-card border border-border-strong p-4">
+        <p className="text-xs font-bold uppercase tracking-wide text-text">
+          Received by
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-text-muted">
+          Please check the goods against this note before signing. Report any
+          shortage or damage within 48 hours, quoting the order number above.
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+          <SignatureLine label="Name in capitals" />
+          <SignatureLine label="Signature" />
+          <SignatureLine label="Date" />
+          <SignatureLine label="Company stamp, if you use one" />
+        </div>
+
+        <p className="mt-5 text-[11px] leading-relaxed text-text-subtle">
+          Signing acknowledges receipt of the quantities listed. It is not
+          agreement to the price &mdash; no prices appear on this document.
+        </p>
+      </div>
 
       <div className="mt-8 flex flex-wrap gap-12 text-sm">
         <div>
@@ -134,5 +175,24 @@ export default async function DeliveryNotePage({
         </div>
       </div>
     </PrintableDoc>
+  );
+}
+
+/**
+ * A ruled line to write on.
+ *
+ * A bare bottom border rather than a box: a box invites somebody to write
+ * inside it and a signature does not fit in one. The height is set so there is
+ * actually room for a hand — the usual mistake with these is a line so tight
+ * the name runs into the label above it.
+ */
+function SignatureLine({ label }: { label: string }) {
+  return (
+    <div>
+      <div className="h-10 border-b border-text-subtle" />
+      <p className="mt-1 text-[11px] uppercase tracking-wide text-text-subtle">
+        {label}
+      </p>
+    </div>
   );
 }

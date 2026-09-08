@@ -38,7 +38,7 @@ export default async function CatalogueUploadPage() {
       <div className="mt-6">
         <Link
           href="/admin/products"
-          className="text-sm font-semibold text-text-muted hover:text-navy"
+          className="inline-flex min-h-11 items-center gap-2 rounded-card border-2 border-navy bg-navy px-4 py-2 font-bold text-white text-sm"
         >
           &larr; All products
         </Link>

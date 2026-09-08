@@ -1,8 +1,10 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useMemo, useState } from "react";
 import { bulkCoverAction, setCoverAction } from "@/app/admin/suppliers/cover/actions";
 import type { FormState } from "@/components/AdminForm";
+import type { Rank } from "@/lib/ranks";
 
 export type CoverRowView = {
   skuId: string;
@@ -12,6 +14,13 @@ export type CoverRowView = {
   categoryName: string | null;
   primary: { supplierId: string; supplierName: string } | null;
   backup: { supplierId: string; supplierName: string } | null;
+  third: { supplierId: string; supplierName: string } | null;
+  demoted: {
+    supplierName: string;
+    rank: string;
+    at: Date;
+    backInStock: boolean;
+  } | null;
 };
 
 export type SupplierOption = { id: string; name: string };
@@ -81,7 +90,8 @@ export function CoverTable({
               <th className="px-3 py-2 font-bold">SKU</th>
               <th className="px-3 py-2 font-bold">Category</th>
               <th className="px-3 py-2 font-bold">Primary</th>
-              <th className="px-3 py-2 font-bold">Backup</th>
+              <th className="px-3 py-2 font-bold">Secondary</th>
+              <th className="px-3 py-2 font-bold">Third</th>
             </tr>
           </thead>
           <tbody>
@@ -108,6 +118,24 @@ export function CoverTable({
                       {row.unitLabel}
                     </span>
                   )}
+                  {/* Said on the row that changed, not gathered into a list
+                      somewhere else: the decision it asks for — put them back
+                      or leave them — is made in the selects to the right, and
+                      a notice on another screen would be read nowhere near
+                      the controls that answer it. */}
+                  {row.demoted && (
+                    <span
+                      className={`mt-1 block text-xs ${
+                        row.demoted.backInStock ? "text-accent" : "text-text-subtle"
+                      }`}
+                    >
+                      {row.demoted.supplierName} went out of stock and is now{" "}
+                      {row.demoted.rank.toLowerCase()}
+                      {row.demoted.backInStock
+                        ? " — back in stock, still demoted"
+                        : " — still out of stock"}
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2 tnum text-text-muted">{row.skuCode}</td>
                 <td className="px-3 py-2 text-text-muted">
@@ -126,6 +154,14 @@ export function CoverTable({
                     skuId={row.skuId}
                     rank="Backup"
                     current={row.backup?.supplierId ?? ""}
+                    suppliers={suppliers}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <RankSelect
+                    skuId={row.skuId}
+                    rank="Third"
+                    current={row.third?.supplierId ?? ""}
                     suppliers={suppliers}
                   />
                 </td>
@@ -158,7 +194,7 @@ function RankSelect({
   suppliers,
 }: {
   skuId: string;
-  rank: "Primary" | "Backup";
+  rank: Rank;
   current: string;
   suppliers: SupplierOption[];
 }) {
@@ -168,7 +204,7 @@ function RankSelect({
   );
 
   return (
-    <form action={submit}>
+    <RestoringForm state={state} saveAll={true} action={submit}>
       <input type="hidden" name="skuId" value={skuId} />
       <input type="hidden" name="rank" value={rank} />
       <select
@@ -190,7 +226,7 @@ function RankSelect({
           {state.error}
         </span>
       )}
-    </form>
+    </RestoringForm>
   );
 }
 
@@ -236,7 +272,8 @@ function BulkBar({
             className="h-9 cursor-pointer rounded-card border border-border-strong bg-surface px-2 text-sm text-text"
           >
             <option value="Primary">Primary</option>
-            <option value="Backup">Backup</option>
+            <option value="Backup">Secondary</option>
+            <option value="Third">Third</option>
           </select>
         </label>
 

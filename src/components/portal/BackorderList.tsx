@@ -1,3 +1,4 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import Link from "next/link";
 import type { BackorderLine } from "@/lib/backorders";
 
@@ -76,7 +77,7 @@ export function BackorderList({ lines }: { lines: BackorderLine[] }) {
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-text">
-                        {line.name}
+                        <ProductThumbnail skuCode={line.skuCode} />{line.name}
                       </span>
                       <span className="block text-xs tnum text-text-subtle">
                         {line.skuCode}

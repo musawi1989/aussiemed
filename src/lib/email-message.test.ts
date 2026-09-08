@@ -10,7 +10,7 @@ import {
   isSendableAddress,
   orderConfirmation,
   purchaseOrderSent,
-  forwarded,
+  quoteReply,
   restockAlert,
   staffAlert,
   taxInvoice,
@@ -423,37 +423,6 @@ describe("tax invoice", () => {
   });
 });
 
-describe("forwarded", () => {
-  const item = {
-    to: "someone@example.com",
-    subject: "Account change waiting",
-    body: "Al Barsha Family Clinic asked to remove a branch.",
-  };
-
-  it("passes the original wording through unchanged", () => {
-    // The person forwarding has read that text and is vouching for it.
-    // Rewriting it means they sent one thing and the recipient got another.
-    assert.match(forwarded(item).text, /Al Barsha Family Clinic asked to remove a branch\./);
-    assert.equal(forwarded(item).subject, "Account change waiting");
-  });
-
-  it("puts their note above the original, not mixed into it", () => {
-    const message = forwarded({ ...item, note: "Can you call them?" });
-    const noteAt = message.text.indexOf("Can you call them?");
-    const bodyAt = message.text.indexOf("Al Barsha");
-    assert.ok(noteAt >= 0 && noteAt < bodyAt);
-  });
-
-  it("leaves no empty note block when there is no note", () => {
-    assert.ok(!/^\s*\n\s*-{10,}\s*\n\s*Al Barsha/.test(forwarded(item).text));
-  });
-
-  it("adds the link when there is one", () => {
-    const message = forwarded({ ...item, link: "https://aussiemed.com/admin/approvals" });
-    assert.match(message.text, /admin\/approvals/);
-  });
-});
-
 describe("invoice column alignment", () => {
   it("lines the figures up whatever the VAT rate is called", () => {
     // A monospaced client shows these as a column; a hand-counted run of
@@ -481,5 +450,173 @@ describe("invoice column alignment", () => {
         .map((l) => l.indexOf("AED"));
       assert.equal(new Set(columns).size, 1, `rate ${rate} misaligned: ${columns}`);
     }
+  });
+});
+
+describe("the answer to a quote request", () => {
+  const QUOTE = {
+    to: "musawi1989@gmail.com",
+    contactName: "Musawi",
+    reference: "AM-Q-2026-0058",
+    askedAt: new Date("2026-08-24T19:15:00Z"),
+    theirNotes: "Same again plus the pipettes — what can you do on the larger quantity?",
+    lines: [
+      { qty: 60, name: "Gauze Swabs Non-Sterile", unitLabel: "Each" },
+      { qty: 15, name: "Plastic Transfer Pipette", unitLabel: "Each" },
+    ],
+    reply: [
+      "We can do the swabs at AED 18.40 a box and the pipettes at AED 42.00",
+      "a pack of 500. That holds for 30 days.",
+    ].join("\n"),
+  };
+
+  it("carries the reference in the subject, for the inbox search later", () => {
+    assert.match(quoteReply(QUOTE).subject, /AM-Q-2026-0058/);
+  });
+
+  it("reproduces the reply exactly as it was typed", () => {
+    // The number in it is one a person committed to. Nothing between the box
+    // and the customer is allowed to reword it.
+    assert.ok(quoteReply(QUOTE).text.includes(QUOTE.reply));
+  });
+
+  it("echoes back what they asked about", () => {
+    const text = quoteReply(QUOTE).text;
+    assert.match(text, /60 x Gauze Swabs Non-Sterile/);
+    assert.match(text, /15 x Plastic Transfer Pipette/);
+  });
+
+  it("quotes their own note back, when they left one", () => {
+    assert.match(quoteReply(QUOTE).text, /You told us: Same again plus the pipettes/);
+    const silent = quoteReply({ ...QUOTE, theirNotes: null }).text;
+    assert.ok(!/You told us/.test(silent));
+  });
+
+  it("names no supplier", () => {
+    // A quote is worked out from a supplier price list, which is exactly why
+    // this one is worth asserting — DEC-24.
+    for (const forbidden of ["Livingstone", "Chemist Warehouse", "supplier"]) {
+      assert.ok(
+        !new RegExp(forbidden, "i").test(quoteReply(QUOTE).text),
+        forbidden
+      );
+    }
+  });
+
+  it("is addressed to the person who asked, and filed as a customer email", () => {
+    const message = quoteReply(QUOTE);
+    assert.equal(message.to, "musawi1989@gmail.com");
+    assert.equal(AUDIENCE[message.kind], "Customer");
+  });
+
+  it("leaves a way back that is not another form", () => {
+    // A price with no way to say yes dies in an inbox. Reply, not a link to
+    // a form they would have to fill in a second time.
+    assert.match(quoteReply(QUOTE).text, /reply to\s+this email/);
+  });
+
+  it("survives a quote with no lines and no note", () => {
+    const bare = quoteReply({ ...QUOTE, lines: [], theirNotes: null });
+    assert.ok(bare.text.includes(QUOTE.reply));
+    assert.ok(!/\n{3,}/.test(bare.text), "double gap where the lines were");
+  });
+});
+
+describe("discounts on the emailed invoice", () => {
+  const DISCOUNTED = {
+    to: "buyer@clinic.test",
+    contactName: "Max",
+    organisationName: "KAD3D",
+    reference: "AM-2026-000004",
+    placedAt: new Date("2026-09-03T06:00:00Z"),
+    lines: [
+      {
+        name: "Alcohol Prep Pads",
+        skuCode: "ALCOHOLP-LGE",
+        qty: 1,
+        unitPriceFils: 1352,
+        vatFils: 68,
+        lineTotalFils: 1352,
+        zeroRated: false,
+        discountNote: "Agreed price",
+      },
+      {
+        name: "Face Masks",
+        skuCode: "FACEMASK-BLK",
+        qty: 1,
+        unitPriceFils: 1550,
+        vatFils: 78,
+        lineTotalFils: 1550,
+        zeroRated: false,
+        discountNote: "2.5% off list",
+      },
+    ],
+    standardNetFils: 2902,
+    zeroRatedNetFils: 0,
+    vatFils: 146,
+    totalFils: 3048,
+    vatRatePercent: 5,
+    listSubtotalFils: 3280,
+    discountRows: [
+      { label: "Agreed prices", amountFils: 338 },
+      { label: "Account discount 2.5%", amountFils: 40 },
+    ],
+    documentUrl: "http://localhost:3000/x",
+  };
+
+  it("names each line's discount on the line itself", () => {
+    // An order can carry a negotiated rate on one SKU and the account
+    // percentage on the rest, so one note at the foot would be wrong about
+    // one of them.
+    const text = taxInvoice(DISCOUNTED).text;
+    assert.match(text, /ALCOHOLP-LGE.*Agreed price/);
+    assert.match(text, /FACEMASK-BLK.*2\.5% off list/);
+  });
+
+  it("shows what it would have cost and what came off it", () => {
+    const text = taxInvoice(DISCOUNTED).text;
+    assert.match(text, /Subtotal at list\s+AED 32\.80/);
+    assert.match(text, /Agreed prices\s+-AED 3\.38/);
+    assert.match(text, /Account discount 2\.5%\s+-AED 0\.40/);
+  });
+
+  it("keeps a space between a long label and its figure", () => {
+    /*
+     * THE BUG THIS EXISTS TO CATCH, and it reached a real invoice before
+     * anything here saw it.
+     *
+     * The money column was a hard padEnd(20). "Account discount 2.5%" is 21
+     * characters, so the amount printed flush against the label:
+     * "Account discount 2.5%-AED 0.40". The four original labels were fixed
+     * strings; these carry a rate the account chooses, so their width is not
+     * something this file can know in advance.
+     */
+    const text = taxInvoice(DISCOUNTED).text;
+    assert.ok(!/%-AED/.test(text), String(text.match(/Account discount.*/)));
+
+    // Every figure in the totals block, not just the one that broke.
+    const totals = text
+      .split("\n")
+      .filter((line) => /^ {2}\S/.test(line) && /AED/.test(line));
+    assert.ok(totals.length >= 6);
+    for (const line of totals) {
+      assert.match(line, / {2,}-?AED/, line);
+    }
+  });
+
+  it("says nothing about discounts on an order that had none", () => {
+    // A row reading "Account discount 0.00" is noise on every list-priced
+    // invoice we send.
+    const plain = taxInvoice({
+      ...DISCOUNTED,
+      lines: DISCOUNTED.lines.map((line) => ({ ...line, discountNote: null })),
+      listSubtotalFils: null,
+      discountRows: [],
+    }).text;
+    assert.ok(!/Subtotal at list/.test(plain));
+    assert.ok(!/Account discount/.test(plain));
+    assert.ok(!/Agreed price/.test(plain));
+    // ...and the fixed labels still line up on the column they always used.
+    assert.match(plain, /Standard rated {6}AED/);
   });
 });

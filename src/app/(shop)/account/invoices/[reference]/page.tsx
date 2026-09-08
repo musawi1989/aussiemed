@@ -1,7 +1,9 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/account/PrintButton";
+import { InvoicePaymentHistory } from "@/components/InvoicePaymentHistory";
 import { StatusPill } from "@/components/StatusPill";
 import { invoiceForAccount } from "@/lib/account-reports";
 import { formatAED } from "@/lib/money";
@@ -246,7 +248,7 @@ export default async function AccountInvoicePage({
                   className="border-b border-border-base"
                 >
                   <td className="py-2 pr-3 text-text">
-                    {item.nameSnapshot}
+                    <ProductThumbnail skuCode={item.skuCodeSnapshot} />{item.nameSnapshot}
                     <span className="block text-xs tnum text-text-subtle">
                       {item.skuCodeSnapshot} &middot; {item.unitLabelSnapshot}
                       {item.taxClassSnapshot === "ZeroRated" && (
@@ -292,6 +294,7 @@ export default async function AccountInvoicePage({
         {/* ---------------------------------------------------------- *
          * How to pay, and the small print
          * ---------------------------------------------------------- */}
+        <InvoicePaymentHistory entries={invoice.payments} />
         <footer className="mt-8 border-t border-border-strong pt-4 avoid-break">
           {!settled && (
             <p className="text-sm text-text">

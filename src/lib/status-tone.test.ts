@@ -12,6 +12,7 @@ import {
   paymentStatusOf,
   spaceOut,
   paymentFilterWhere,
+  paymentCriteriaWhere,
   statusMeaning,
   statusTone,
   type Axis,
@@ -426,6 +427,7 @@ function matchesWhere(clause: unknown, row: Record<string, unknown>): boolean {
     if (key === "OR") {
       return (expected as unknown[]).some((c) => matchesWhere(c, row));
     }
+    if (key === "AND") return (expected as unknown[]).every((c) => matchesWhere(c, row));
 
     const actual = row[key];
 
@@ -454,6 +456,26 @@ function matchesWhere(clause: unknown, row: Record<string, unknown>): boolean {
     return actual === expected;
   });
 }
+
+describe("combined payment and due filters", () => {
+  const now = new Date("2026-09-07T12:00:00Z");
+  const overdue = { paymentStatus: "PartiallyPaid", paidFils: 100, paymentDueOn: new Date("2026-09-01") };
+  it("finds only partial AND overdue invoices", () => {
+    const where = paymentCriteriaWhere(["PartiallyPaid"], ["Overdue"], now);
+    assert.ok(matchesWhere(where, overdue));
+    assert.ok(!matchesWhere(where, { ...overdue, paymentStatus: "Unpaid", paidFils: 0 }));
+    assert.ok(!matchesWhere(where, { ...overdue, paymentDueOn: new Date("2026-09-20") }));
+    assert.ok(!matchesWhere(where, { ...overdue, paymentStatus: "Paid" }));
+  });
+  it("a partial payment remains findable after its due date", () => {
+    assert.ok(matchesWhere(paymentCriteriaWhere(["PartiallyPaid"], [], now), overdue));
+  });
+  it("accepts older combined payment URLs and unknown filters fail closed", () => {
+    assert.ok(matchesWhere(paymentCriteriaWhere(["PartiallyPaid", "Overdue"], [], now), overdue));
+    assert.ok(!matchesWhere(paymentCriteriaWhere([], ["unknown"], now), overdue));
+    assert.equal(paymentCriteriaWhere([], [], now), null);
+  });
+});
 
 describe("the payment filter agrees with the payment pill", () => {
   /**

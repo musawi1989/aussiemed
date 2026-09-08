@@ -1,3 +1,4 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { PrintableDoc } from "@/components/PrintableDoc";
 import { DocTable, day, loadOrderForDocs } from "@/lib/order-docs";
 
@@ -65,7 +66,7 @@ export default async function PickingListPage({
             {order.items.map((item) => (
               <tr key={item.id} className="border-b border-border-base">
                 <td className="py-2 tnum font-semibold text-text">
-                  {item.skuCodeSnapshot}
+                  <ProductThumbnail skuCode={item.skuCodeSnapshot} />{item.skuCodeSnapshot}
                 </td>
                 <td className="py-2 text-text-muted">{item.nameSnapshot}</td>
                 <td className="py-2 text-text-muted">{item.unitLabelSnapshot}</td>

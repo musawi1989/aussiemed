@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { setToneColour } from "@/lib/tone-colours";
 import { setNotifyStep } from "@/lib/order-notices";
 import { requireAdmin } from "@/lib/admin";
-import { setOffersNeedApproval } from "@/lib/supply-offers";
 import {
   archiveCourier,
   createCourier,
@@ -74,7 +73,7 @@ export async function setNotifyStepAction(
   _state: FormState,
   data: FormData
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireAdmin("settings");
 
   const step = String(data.get("step") ?? "");
   const enabled = data.getAll("enabled").at(-1) === "1";
@@ -131,28 +130,8 @@ export async function restoreCourierAction(
   return { ok: true, message: "Back on the courier pickers." };
 }
 
-/**
- * Whether a supplier adding an item to their own list needs us to accept it.
- *
- * Off by default: additions land immediately, which is the client's decision.
- * On, they arrive unapproved for somebody here to look at.
+/*
+ * setSupplyApprovalAction lived here and is now setPermissionAction on
+ * admin/roles, as the addItems permission. Removed rather than kept as a
+ * wrapper: two ways to write one setting is how they end up disagreeing.
  */
-export async function setSupplyApprovalAction(
-  _state: FormState,
-  data: FormData
-): Promise<FormState> {
-  // getAll().at(-1): a checkbox posts its hidden "0" partner first, so the
-  // last value is the one the person actually left it on.
-  const on = data.getAll("enabled").at(-1) === "1";
-  const result = await setOffersNeedApproval(on);
-  if (!result.ok) return { ok: false, error: result.error };
-
-  revalidatePath("/admin/settings");
-  revalidatePath("/business-portal/supplies/add");
-  return {
-    ok: true,
-    message: on
-      ? "Suppliers' additions will wait for you to accept them."
-      : "Suppliers' additions take effect straight away.",
-  };
-}

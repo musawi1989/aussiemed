@@ -1,13 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const COLUMNS = [
+/**
+ * The footer takes the signed-in state so it can stop offering "Sign in" to
+ * somebody who already is. The header got this right and the footer did not,
+ * which is the kind of small contradiction that makes a person doubt the rest
+ * of the page.
+ */
+const columnsFor = (signedIn: boolean) => [
   {
     title: "Shop",
     links: [
       { label: "Product range", href: "/products" },
       { label: "Get bulk prices", href: "/bulk-buy" },
-      { label: "Quote request", href: "/quote" },
+      { label: "Bulk buy request", href: "/quote" },
       { label: "My products", href: "/account/products" },
       { label: "Cart", href: "/cart" },
     ],
@@ -16,8 +22,8 @@ const COLUMNS = [
     title: "Your account",
     links: [
       { label: "Business portal (suppliers)", href: "/business-portal" },
-      { label: "Sign in", href: "/sign-in" },
-      { label: "Reorder", href: "/account" },
+      ...(signedIn ? [] : [{ label: "Sign in", href: "/sign-in" }]),
+      { label: signedIn ? "Your account" : "Reorder", href: "/account" },
     ],
   },
   {
@@ -37,7 +43,7 @@ const COLUMNS = [
   },
 ];
 
-export function Footer() {
+export function Footer({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <footer className="mt-20 bg-navy-deep text-white/70">
       <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-5">
@@ -68,7 +74,7 @@ export function Footer() {
           </p>
         </div>
 
-        {COLUMNS.map((column) => (
+        {columnsFor(signedIn).map((column) => (
           <div key={column.title}>
             <h2 className="text-sm font-bold uppercase tracking-wide text-white">
               {column.title}

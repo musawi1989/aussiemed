@@ -13,6 +13,7 @@ import {
 } from "@/components/AdminForm";
 import { formatAED } from "@/lib/money";
 import type { AgreedPriceRow } from "@/lib/customer-admin";
+import { ConfirmSubmit } from "./ConfirmSubmit";
 
 const aed = (fils: number) => formatAED(fils / 100);
 
@@ -182,21 +183,21 @@ export function AgreedPrices({
 
                           {/* Its own form, so a mis-click on Remove cannot be
                             the thing that saves an edit. */}
-                          <form action={remove} className="inline">
+                          <RestoringForm state={removeState} saveAll={false} action={remove} className="inline">
                             <input type="hidden" name="id" value={id} />
                             <input
                               type="hidden"
                               name="priceId"
                               value={row.id}
                             />
-                            <button
-                              type="submit"
-                              disabled={removing}
+                            <ConfirmSubmit
+                              what="this agreed price"
+                              consequence="The customer goes back to list price on this item. What was negotiated is not recorded anywhere else."
+                              pending={removing}
+                              pendingLabel="Removing…"
                               className="cursor-pointer text-xs font-bold text-danger hover:underline disabled:opacity-60"
-                            >
-                              Remove
-                            </button>
-                          </form>
+                            />
+                          </RestoringForm>
                         </span>
                       </td>
                     </tr>

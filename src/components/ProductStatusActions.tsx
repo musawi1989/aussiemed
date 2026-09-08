@@ -43,7 +43,7 @@ export function ProductStatusActions({
         </p>
       )}
 
-      <AdminForm action={setStatusAction} submitLabel="Change status" className="mt-3">
+      <AdminForm action={setStatusAction} submitLabel="Change status" className="mt-3" confirmChange={data => data.get("status") !== status ? `Change this product to ${data.get("status")}? This changes its storefront availability.` : null}>
         <input type="hidden" name="id" value={productId} />
         <Select
           label="Move to"

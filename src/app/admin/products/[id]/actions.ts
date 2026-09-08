@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  addProductDocument,
   addProductImage,
+  removeProductDocument,
   removeProductImage,
   replaceTiers,
   setPrimaryProductImage,
@@ -11,6 +13,9 @@ import {
   updateSku,
   type Result,
 } from "@/lib/admin";
+import { addPack, removePack } from "@/lib/sku-packs";
+import { setSkuOptionValues } from "@/lib/product-options";
+import { isRank, RANK_LABELS, setProductCover } from "@/lib/supply-cover";
 import type { FormState } from "@/components/AdminForm";
 
 /**
@@ -97,6 +102,68 @@ export async function saveSkuAction(
   return toState(result, "SKU saved.");
 }
 
+export async function addPackAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+
+  const result = await addPack(productId, {
+    skuCode: text(data, "skuCode"),
+    baseUnitName: text(data, "baseUnitName"),
+    unitLabel: text(data, "unitLabel"),
+    unitShortLabel: text(data, "unitShortLabel"),
+    eachesPerPack: num(data, "eachesPerPack"),
+    priceAED: num(data, "priceAED"),
+    manualOutOfStock: false,
+    // Live straight away. A pack created and left invisible is one somebody
+    // adds a second time next week because the first never appeared.
+    isActive: true,
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.error,
+      // React clears an uncontrolled form when its action returns, so a
+      // refusal would otherwise wipe six fields somebody just typed.
+      values: {
+        skuCode: text(data, "skuCode"),
+        baseUnitName: text(data, "baseUnitName"),
+        unitLabel: text(data, "unitLabel"),
+        unitShortLabel: text(data, "unitShortLabel"),
+        eachesPerPack: text(data, "eachesPerPack"),
+        priceAED: text(data, "priceAED"),
+      },
+    };
+  }
+
+  /*
+   * The variant it was opened for, set on the pack that was just made.
+   *
+   * Done here rather than inside addPack because a pack does not have to be a
+   * variant of anything — most are not — and threading an optional list of
+   * option values through the creation path would put a variant concept in
+   * front of every product that has none.
+   */
+  const forValue = text(data, "forValueId");
+  if (forValue) await setSkuOptionValues(result.value, [forValue]);
+
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true, message: "Pack added." };
+}
+
+export async function removePackAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const result = await removePack(text(data, "skuId"));
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath(`/admin/products/${text(data, "productId")}`);
+  return { ok: true, message: "Pack removed." };
+}
+
 /* ------------------------------------------------------------------ *
  * Images — BE-29
  * ------------------------------------------------------------------ */
@@ -129,7 +196,7 @@ export async function uploadImageAction(
   // this arrived over HTTP as multipart form data.
   const bytes = Buffer.from(await file.arrayBuffer());
 
-  const result = await addProductImage(productId, bytes, text(data, "altText") || null);
+  const result = await addProductImage(productId, bytes, text(data, "altText") || null, text(data, "skuId") || null);
   if (result.ok) revalidateProduct(productId, slug);
   return toState(result, "Image added.");
 }
@@ -152,6 +219,100 @@ export async function makePrimaryImageAction(
   const result = await setPrimaryProductImage(text(data, "imageId"));
   if (result.ok) revalidateProduct(productId, text(data, "slug") || null);
   return toState(result, "That is now the image the catalogue shows.");
+}
+
+/* ------------------------------------------------------------------ *
+ * Supplier cover
+ * ------------------------------------------------------------------ */
+
+/**
+ * Set or clear the primary or backup supplier for a whole product.
+ *
+ * An empty supplierId is a deliberate clear, not a missing field: the select
+ * offers "Nobody" as its first option, which is how cover is removed.
+ */
+export async function setProductCoverAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const rank = text(data, "rank");
+
+  if (!isRank(rank)) return { ok: false, error: "That is not a rank." };
+
+  const result = await setProductCover(
+    productId,
+    rank,
+    text(data, "supplierId") || null,
+    Object.fromEntries(Array.from(data.entries()).filter(([key]) => key.startsWith("buyingPrice:")).map(([key, value]) => [key.slice(12), String(value).trim() ? Number(value) : NaN]))
+  );
+
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidateProduct(productId, text(data, "slug") || null);
+  revalidatePath("/admin/suppliers/cover");
+
+  const { changed, notOffered, skipped } = result.value;
+  const parts = [
+    `${RANK_LABELS[rank]} supplier set on ${changed} pack${changed === 1 ? "" : "s"}.`,
+  ];
+
+  // Said plainly rather than folded into the count: a pack left uncovered
+  // because the supplier does not carry it is the thing worth noticing.
+  if (notOffered > 0) {
+    parts.push(
+      `${notOffered} pack${notOffered === 1 ? " is" : "s are"} not on their list and ${notOffered === 1 ? "was" : "were"} left alone.`
+    );
+  }
+  if (skipped.length > 0) {
+    parts.push(`${skipped.length} could not be changed: ${skipped[0].why}`);
+  }
+
+  return { ok: true, message: parts.join(" ") };
+}
+
+/* ------------------------------------------------------------------ *
+ * Documents — DA-13
+ * ------------------------------------------------------------------ */
+
+export async function uploadDocumentAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const slug = text(data, "slug") || null;
+  const file = data.get("file");
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Choose a file first." };
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  // The uploader's own filename is the fallback name, minus its extension. It
+  // is usually more informative than anything a hurried admin would type, and
+  // "SDS-Nitrile-2026" reads better on a product page than "Document 1".
+  const label =
+    text(data, "label") || file.name.replace(/\.[^.]+$/, "") || "Document";
+
+  const result = await addProductDocument(
+    productId,
+    bytes,
+    label,
+    text(data, "kind") || "Specification"
+  );
+  if (result.ok) revalidateProduct(productId, slug);
+  return toState(result, "Document added.");
+}
+
+export async function removeDocumentAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const productId = text(data, "productId");
+  const result = await removeProductDocument(text(data, "documentId"));
+  if (result.ok) revalidateProduct(productId, text(data, "slug") || null);
+  return toState(result, "Document removed.");
 }
 
 /**

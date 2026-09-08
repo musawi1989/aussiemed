@@ -18,7 +18,19 @@ import { formatTrn, isRealTrn } from "@/lib/trn";
 export default async function ApplicationsPage() {
   const applications = await pendingApplications();
 
-  const ready = applications.filter((a) => a.isVerified);
+  /*
+   * ONE QUEUE. Unconfirmed applications used to be parked in a greyed list
+   * marked "nothing to do", which was right when the code was the only way in
+   * and wrong as soon as an account manager could open an account by hand: a
+   * company somebody had already spoken to sat below the fold, undecidable.
+   *
+   * They are still ordered so the confirmed ones come first — a proved address
+   * is the ordinary case — and each unconfirmed card says what approving it
+   * would mean.
+   */
+  const queue = [...applications].sort(
+    (a, b) => Number(b.isVerified) - Number(a.isVerified)
+  );
   const unconfirmed = applications.filter((a) => !a.isVerified);
 
   const day = (d: Date | null) =>
@@ -38,21 +50,21 @@ export default async function ApplicationsPage() {
           Account applications
         </h1>
         <p className="mt-1 text-sm text-text-muted tnum">
-          {ready.length} waiting for a decision
+          {queue.length} waiting for a decision
           {unconfirmed.length > 0
-            ? ` · ${unconfirmed.length} not yet confirmed their email`
+            ? ` · ${unconfirmed.length} with an unconfirmed address`
             : ""}
         </p>
       </div>
 
-      {ready.length === 0 && unconfirmed.length === 0 ? (
+      {queue.length === 0 ? (
         <p className="mt-5 rounded-card border border-border-base bg-surface px-4 py-10 text-center text-sm text-text-muted shadow-card">
-          Nothing waiting. Applications arrive here once somebody has confirmed
-          their email address.
+          Nothing waiting. Applications arrive here as soon as somebody applies,
+          whether or not they have confirmed their email address yet.
         </p>
       ) : (
         <div className="mt-5 space-y-3">
-          {ready.map((application) => {
+          {queue.map((application) => {
             const trn = application.organisation?.trn;
             return (
               <section
@@ -89,10 +101,44 @@ export default async function ApplicationsPage() {
                         <span className="tnum">{application.phone ?? "—"}</span>
                       </Fact>
                       <Fact label="Applied">{day(application.appliedAt)}</Fact>
+                      <Fact label="Email address">
+                        {application.isVerified ? (
+                          <span className="font-semibold text-success">
+                            confirmed
+                          </span>
+                        ) : (
+                          <span className="font-bold text-accent">
+                            not confirmed
+                          </span>
+                        )}
+                      </Fact>
                     </dl>
                   </div>
                   <StatusPill status="Pending" axis="record" />
                 </div>
+
+                {/*
+                  Said at the moment of deciding, not in a report afterwards.
+                  Approving is allowed — an account manager who has met the
+                  company has already done what the code exists to do — but an
+                  approved typo is an account whose owner never receives an
+                  order confirmation or an invoice, and nobody finds out until
+                  they ring up asking where it is.
+                */}
+                {!application.isVerified && (
+                  <p className="mt-3 rounded-card border-l-4 border-accent-border bg-accent-soft px-3 py-2 text-sm text-text">
+                    <span className="font-bold">
+                      This address has not been confirmed.
+                    </span>{" "}
+                    You can still open the account — approving lets them sign in
+                    without the code. Check{" "}
+                    <span className="font-semibold tnum">
+                      {application.email}
+                    </span>{" "}
+                    is right first: if it is wrong, everything we send them goes
+                    nowhere and they will not know.
+                  </p>
+                )}
 
                 <div className="mt-4 border-t border-border-base pt-4">
                   <ApplicationDecision
@@ -104,27 +150,6 @@ export default async function ApplicationsPage() {
             );
           })}
 
-          {unconfirmed.length > 0 && (
-            <section className="rounded-card border border-border-base bg-surface-sunken p-5">
-              <h2 className="text-sm font-bold text-text">
-                Not yet confirmed their email
-              </h2>
-              <p className="mt-1 text-xs text-text-muted">
-                Nothing to do. These may be mistyped addresses, and they appear
-                above once the code has been entered.
-              </p>
-              <ul className="mt-3 space-y-1.5">
-                {unconfirmed.map((a) => (
-                  <li key={a.id} className="text-sm text-text-muted">
-                    {a.organisation?.name ?? "—"} &middot; {a.email}
-                    <span className="ml-2 text-xs text-text-subtle tnum">
-                      {day(a.appliedAt)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
         </div>
       )}
     </>

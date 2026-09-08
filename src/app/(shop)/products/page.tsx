@@ -5,11 +5,12 @@ import { FilterPanel } from "@/components/FilterPanel";
 import { ViewMore } from "@/components/ViewMore";
 import { ProductCard } from "@/components/ProductCard";
 import { SortSelect } from "@/components/SortSelect";
-import { getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
+import { getAllProducts, getCategoryBySlug, queryProducts, type SortKey } from "@/lib/catalog";
 import { departmentsFor } from "@/lib/business-types";
 import { emptyMessage, emptyReason } from "@/lib/empty-state";
 import { PAGE_SIZE } from "@/lib/query";
 import { logSearch } from "@/lib/search-log";
+import { currentAgreedPrices } from "@/lib/account-pricing";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -54,6 +55,14 @@ export default async function ProductsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  /*
+   * What this account has agreed, if anybody is signed in to one.
+   *
+   * Empty for a guest, which is what keeps one company's negotiated
+   * prices off a page rendered for anybody else.
+   */
+  const agreed = await currentAgreedPrices();
+
   const raw = await searchParams;
   const params = {
     category: one(raw.category),
@@ -86,10 +95,14 @@ export default async function ProductsPage({
   );
 
   const result = await queryProducts({
+    groupFamilies: true,
     categorySlug: params.category,
     brand: params.brand,
     q: params.q,
-    inStockOnly: params.inStock === "1",
+    // Stock never narrows the shop. Honouring ?inStock=1 would let anyone
+    // work out what we hold by comparing two result counts — see
+    // ProductBadges. The capability stays in query.ts for staff use.
+    inStockOnly: false,
     minPriceAED: price(params.minPrice),
     maxPriceAED: price(params.maxPrice),
     withBreaksOnly: params.breaks === "1",
@@ -132,7 +145,6 @@ export default async function ProductsPage({
             // a brand is, so an empty result reads as over-filtering rather
             // than as a category nobody has stocked.
             inStock:
-              params.inStock === "1" ||
               params.breaks === "1" ||
               Boolean(params.business) ||
               Boolean(params.minPrice) ||
@@ -141,6 +153,28 @@ export default async function ProductsPage({
           { categoryName: category?.name, q: params.q }
         )
       : null;
+
+  /*
+   * The other sizes of each product, so a card can swap between them without
+   * navigating away from the grid.
+   *
+   * Built from the results already on this page rather than fetched: every
+   * member of a family is its own card in the same grid, so the objects are
+   * here anyway and this is a reference to them.
+   *
+   * A family whose other members are filtered out of the current results is
+   * left alone — the picker hides itself below two members, so a card cannot
+   * offer a size the shopper's own filters have excluded.
+   */
+  const byFamily = new Map<string, typeof result.items>();
+  for (const item of await getAllProducts()) {
+    if (!item.variantGroup) continue;
+    const list = byFamily.get(item.variantGroup);
+    if (list) list.push(item);
+    else byFamily.set(item.variantGroup, [item]);
+  }
+  const familyOf = (item: (typeof result.items)[number]) =>
+    item.variantGroup ? byFamily.get(item.variantGroup) : undefined;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -227,7 +261,12 @@ export default async function ProductsPage({
             <>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 {result.items.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={`${product.slug}:${product.defaultPackId}`}
+                    product={product}
+                    agreed={agreed}
+                    siblings={familyOf(product)}
+                  />
                 ))}
               </div>
               <div className="mt-8">

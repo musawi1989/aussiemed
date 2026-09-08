@@ -1,9 +1,15 @@
 import "server-only";
+import { fillEmailHtml, safeEmailHtml, validateAttachments } from "./email-html";
 
 import { db } from "./db";
 import { requireAdmin } from "./admin";
 import { isSendableAddress, type EmailMessage } from "./email-message";
-import { findCustomerLeaks, findTemplate } from "./email-templates";
+import {
+  fillPlaceholders,
+  findCustomerLeaks,
+  findTemplate,
+  type TemplateAudience,
+} from "./email-templates";
 import { send } from "./mailer";
 import { formatAED } from "./money";
 
@@ -40,7 +46,7 @@ export async function recipients(): Promise<{
   customers: RecipientOption[];
   suppliers: RecipientOption[];
 }> {
-  await requireAdmin();
+  await requireAdmin("email", "view");
 
   const [users, supplierRows] = await Promise.all([
     db.user.findMany({
@@ -94,7 +100,7 @@ export async function recipients(): Promise<{
 
 /** Orders an admin might be writing about, newest first. */
 export async function recentOrders(limit = 40) {
-  await requireAdmin();
+  await requireAdmin("email", "view");
 
   const orders = await db.order.findMany({
     orderBy: { placedAt: "desc" },
@@ -122,7 +128,7 @@ export async function recentOrders(limit = 40) {
 }
 
 export async function recentPurchaseOrders(limit = 40) {
-  await requireAdmin();
+  await requireAdmin("email", "view");
 
   const orders = await db.purchaseOrder.findMany({
     where: { status: { not: "Draft" } },
@@ -184,13 +190,64 @@ const dubaiDay = (at: Date | null) =>
       }).format(at)
     : null;
 
+/**
+ * The template behind an id, whether it is one of ours or one of theirs.
+ *
+ * SAVED TEMPLATES ARE ADAPTED TO THE SAME SHAPE rather than given their own
+ * branch through the drafting code. Everything below this line — the order
+ * lookup, the item lists, the leak check on the way out — has to behave
+ * identically for both, and the surest way to get that is for there to be only
+ * one path. What differs is one function: ours writes with code, theirs fills
+ * in blanks.
+ *
+ * The "saved:" prefix keeps the two id spaces apart. A saved template called
+ * the same thing as a built-in cannot shadow it, and an id in a stale form
+ * that no longer resolves is a clean refusal rather than the wrong email.
+ */
+const SAVED_PREFIX = "saved:";
+
+type Resolved = {
+  audience: TemplateAudience;
+  needsOrder: boolean;
+  render: (context: Record<string, unknown>) => { subject: string; body: string; html?: string };
+};
+
+async function resolveTemplate(id: string): Promise<Resolved | null> {
+  if (!id.startsWith(SAVED_PREFIX)) {
+    const built = findTemplate(id);
+    return built
+      ? {
+          audience: built.audience,
+          needsOrder: built.needsOrder,
+          render: (context) =>
+            built.render(context as never),
+        }
+      : null;
+  }
+
+  const saved = await db.savedEmailTemplate.findUnique({
+    where: { id: id.slice(SAVED_PREFIX.length) },
+  });
+  if (!saved) return null;
+
+  return {
+    audience: saved.audience === "Supplier" ? "Supplier" : "Customer",
+    needsOrder: saved.needsOrder,
+    render: (context) => ({
+      subject: fillPlaceholders(saved.subject, context),
+      body: fillPlaceholders(saved.body, context),
+      html: saved.html ? fillEmailHtml(saved.html, context) : undefined,
+    }),
+  };
+}
+
 export async function draftFromTemplate(input: {
   templateId: string;
   reference?: string | null;
-}): Promise<Result<{ subject: string; body: string }>> {
-  await requireAdmin();
+}): Promise<Result<{ subject: string; body: string; html?: string }>> {
+  await requireAdmin("email", "view");
 
-  const template = findTemplate(input.templateId);
+  const template = await resolveTemplate(input.templateId);
   if (!template) return { ok: false, error: "That template no longer exists." };
 
   if (template.audience === "Customer") {
@@ -333,12 +390,18 @@ export async function sendComposed(input: {
   audience: "Customer" | "Supplier";
   subject: string;
   body: string;
+  html?: string;
+  attachments?: EmailMessage["attachments"];
 }): Promise<Result<{ status: string }>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("email");
 
   const to = input.to.trim();
   const subject = input.subject.trim();
   const body = input.body.trim();
+  const html = input.html?.trim() ? safeEmailHtml(input.html) : undefined;
+  if ((input.html?.length ?? 0) > 100000 || body.length > 100000) return { ok: false, error: "Keep the message under 100,000 characters." };
+  const attachmentError = validateAttachments(input.attachments ?? []);
+  if (attachmentError) return { ok: false, error: attachmentError };
 
   if (!isSendableAddress(to)) {
     return { ok: false, error: "That does not look like an email address." };
@@ -368,7 +431,8 @@ export async function sendComposed(input: {
       ...orders.map((o) => o.reference),
     ].filter(Boolean);
 
-    const leaks = findCustomerLeaks(`${subject}\n${body}`, identifiers);
+    const signature = await db.user.findUnique({ where: { id: actor.id }, select: { emailSignatureHtml: true } });
+    const leaks = findCustomerLeaks(`${subject}\n${body}\n${html ?? ""}\n${signature?.emailSignatureHtml ?? ""}`, identifiers);
     if (leaks.length > 0) {
       return {
         ok: false,
@@ -387,9 +451,11 @@ export async function sendComposed(input: {
     to,
     subject,
     text: body,
+    html,
+    attachments: input.attachments,
   };
 
-  const outcome = await send(message, { entity: "Composed", entityId: actor.id });
+  const outcome = await send(message, { entity: "Composed", entityId: actor.id, senderUserId: actor.id });
 
   if (outcome.status === "Failed" || outcome.status === "Suppressed") {
     return {

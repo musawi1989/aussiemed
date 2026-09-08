@@ -9,14 +9,21 @@ import { useStore } from "@/lib/store";
 import { quoteRequestAction, type EnquiryState } from "@/app/(shop)/enquiry-actions";
 
 /**
- * Quote requests are indicative, not an order: we show the published price as a
+ * Bulk buy requests are indicative, not an order: we show the published price as a
  * reference but never a VAT line or a total to pay, because the whole point is
  * that the final number comes back from the sales team.
  *
  * FN-02: this used to resolve to a message on screen and discard the request.
  * It is now recorded with a reference the customer can quote back.
  */
-export function QuoteView() {
+type Account = {
+  contactName: string;
+  email: string;
+  phone: string;
+  company: string;
+};
+
+export function QuoteView({ account }: { account?: Account | null }) {
   const { quoteLines, setQuoteQty, removeFromQuote, clearQuote, ready } =
     useStore();
   const [state, submit, pending] = useActionState<EnquiryState, FormData>(
@@ -54,7 +61,7 @@ export function QuoteView() {
   if (sent) {
     return (
       <div className="mx-auto max-w-lg rounded-panel border border-border-base bg-surface p-8 text-center shadow-card">
-        <h2 className="text-lg font-semibold text-text">Quote request received</h2>
+        <h2 className="text-lg font-semibold text-text">Bulk buy request received</h2>
         {state?.ok && state.reference && (
           <p className="mt-2 text-2xl font-bold tracking-wide tnum text-navy">
             {state.reference}
@@ -78,10 +85,10 @@ export function QuoteView() {
     return (
       <div className="rounded-panel border border-border-base bg-surface p-12 text-center">
         <h2 className="text-lg font-medium text-text">
-          No lines on your quote request
+          Nothing on your bulk buy request yet
         </h2>
         <p className="mt-2 text-sm text-text-muted">
-          Use &ldquo;Add to quote request&rdquo; on any product to build up an
+          Use &ldquo;Add to bulk buy request&rdquo; on any product to build up an
           enquiry.
         </p>
         <Link
@@ -178,7 +185,7 @@ export function QuoteView() {
             onClick={clearQuote}
             className="text-sm text-text-muted hover:text-danger"
           >
-            Clear quote request
+            Clear this request
           </button>
         </div>
       </div>
@@ -215,11 +222,27 @@ export function QuoteView() {
           </p>
 
           <div className="mt-4 space-y-3">
-            <Field label="Contact name" name="contact" required />
-            <Field label="Email" name="email" type="email" required />
+            {/* Signed in, so not asked again — see BulkBuyForm for the
+                reasoning, and enquiries.ts for why the server reads the
+                account rather than trusting anything posted from here. */}
+            {account ? (
+              <div className="rounded-card border border-border-base bg-surface-sunken px-3 py-2 text-sm">
+                <p className="font-semibold text-text">
+                  Sending as {account.company || account.contactName}
+                </p>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  {account.contactName} &middot; {account.email}
+                </p>
+              </div>
+            ) : (
+              <>
+                <Field label="Contact name" name="contact" required />
+                <Field label="Email" name="email" type="email" required />
+              </>
+            )}
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-text">
-                Notes
+                Notes and requests
               </span>
               <textarea
                 name="notes"
@@ -235,7 +258,7 @@ export function QuoteView() {
             disabled={pending}
             className="mt-4 h-11 w-full rounded-card bg-brand font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:opacity-60"
           >
-            {pending ? "Sending…" : "Send quote request"}
+            {pending ? "Sending…" : "Send bulk buy request"}
           </button>
 
           {state?.ok === false && (

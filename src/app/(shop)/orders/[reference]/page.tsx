@@ -6,8 +6,14 @@ import { getOrderByReference } from "@/lib/orders";
 import { getSessionUser } from "@/lib/auth";
 import { readCartKey } from "@/lib/cart-cookie";
 import { formatAED } from "@/lib/money";
+import { LineSaving } from "@/components/LineSaving";
+import { orderDiscount, sourceLabel } from "@/lib/order-discounts";
 import { orderProgress, splitDeliveryNote } from "@/lib/order-progress";
 import { addressLines, parseShippingAddress } from "@/lib/shipping-address";
+import { ProductThumb } from "@/components/ProductThumb";
+import { stableId } from "@/lib/catalog";
+import { CustomerShipments } from "@/components/CustomerShipments";
+import { requireAdmin } from "@/lib/admin";
 
 type Params = Promise<{ reference: string }>;
 
@@ -39,12 +45,17 @@ export default async function OrderPage({ params }: { params: Params }) {
   const [user, cartKey] = await Promise.all([getSessionUser(), readCartKey()]);
 
   const isAdmin = user?.role === "Admin";
+  if (isAdmin) await requireAdmin("orders", "view");
   const isOwner = Boolean(user && order.userId === user.id);
   // A guest order belongs to whoever still holds the cart that placed it.
   const isGuestWithClaim =
     !order.userId && Boolean(cartKey) && order.guestCartKey === cartKey;
 
   if (!isAdmin && !isOwner && !isGuestWithClaim) notFound();
+
+  // What their account took off, as recorded on the lines at the time. Never
+  // recomputed from today's prices — see order-discounts.ts.
+  const saved = orderDiscount(order.items);
 
   // Shared with the admin screen and the delivery note. A snapshot written by
   // an older checkout no longer throws JSON.parse on the page a customer opens
@@ -160,6 +171,7 @@ export default async function OrderPage({ params }: { params: Params }) {
         )}
       </section>
 
+      <CustomerShipments order={order} />
       {shipping && (
         <section className="mt-6 rounded-card border border-border-base bg-surface p-5 shadow-card">
           <h2 className="text-base font-bold text-text">Delivering to</h2>
@@ -202,22 +214,90 @@ export default async function OrderPage({ params }: { params: Params }) {
                 {order.items.map((item) => (
                     <tr key={item.id} className="border-b border-border-base last:border-0">
                       <td className="px-4 py-2.5">
-                        <Link
-                          href={`/products/${item.sku.product.slug}`}
-                          className="text-text hover:text-navy"
-                        >
-                          {/* The snapshot, not the current name — a later
-                              rename must not rewrite this order. */}
-                          {item.nameSnapshot}
-                        </Link>
-                        <span className="block text-xs text-text-subtle tnum">
-                          {item.skuCodeSnapshot} &middot; {item.unitLabelSnapshot}
-                          {item.taxClassSnapshot === "ZeroRated" && (
-                            <span className="ml-1.5 font-bold text-success">
-                              VAT free
+                        <div className="flex items-start gap-3">
+                          {/*
+                            The photograph, so a buyer reading an order back
+                            recognises what they bought. On a trade catalogue
+                            the names are long and near-identical — three
+                            nitrile gloves differing only by a size and a
+                            standard — and a column of that text is genuinely
+                            hard to check against what turned up in the box.
+
+                            LINKED WITH THE NAME, not beside it: two adjacent
+                            links to the same place is one target that happens
+                            to look like two, and a thumbnail is the easier
+                            thing to hit on a phone.
+
+                            The image is the product's CURRENT one, unlike the
+                            name and price which are snapshots. There is no
+                            image snapshot to take — nothing on the order line
+                            records what the photograph looked like — and a
+                            missing tile is a worse answer than a slightly
+                            newer photograph of the same item.
+                          */}
+                          <Link
+                            href={`/products/${item.sku.product.slug}`}
+                            className="shrink-0"
+                            aria-hidden="true"
+                            tabIndex={-1}
+                          >
+                            <ProductThumb
+                              size="sm"
+                              product={{
+                                id: stableId(item.sku.product.slug),
+                                name: item.nameSnapshot,
+                                brand: item.sku.product.brand?.name ?? null,
+                                images: item.sku.product.images
+                                  // A SKU-specific photograph beats the range
+                                  // shot: the black glove, not the family.
+                                  .filter(
+                                    (image) =>
+                                      image.skuId === null ||
+                                      image.skuId === item.skuId
+                                  )
+                                  .sort(
+                                    (a, b) =>
+                                      Number(b.skuId === item.skuId) -
+                                      Number(a.skuId === item.skuId)
+                                  )
+                                  .map((image) => image.path),
+                                categoryPath: item.sku.product.categories.map(
+                                  (link) => ({
+                                    id: stableId(link.category.slug),
+                                  })
+                                ),
+                              }}
+                              className="h-14 w-14 rounded-card border border-border-base"
+                              sizes="56px"
+                            />
+                          </Link>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/products/${item.sku.product.slug}`}
+                              className="text-text hover:text-navy"
+                            >
+                              {/* The snapshot, not the current name — a later
+                                  rename must not rewrite this order. */}
+                              {item.nameSnapshot}
+                            </Link>
+                            <span className="block text-xs text-text-subtle tnum">
+                              {item.skuCodeSnapshot} &middot; {item.unitLabelSnapshot}
+                              {item.taxClassSnapshot === "ZeroRated" && (
+                                <span className="ml-1.5 font-bold text-success">
+                                  VAT free
+                                </span>
+                              )}
+                              {/* What their account took off this line, as it
+                                  was recorded when the order was placed. */}
+                              <LineSaving
+                                line={item}
+                                accountBasisPoints={order.accountDiscountBasisPoints}
+                                struck
+                                className="ml-1.5"
+                              />
                             </span>
-                          )}
-                        </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-2.5 text-right tnum text-text">{item.qty}</td>
                       <td className="px-4 py-2.5 text-right tnum text-text-muted">
@@ -233,6 +313,29 @@ export default async function OrderPage({ params }: { params: Params }) {
                   ))}
               </tbody>
               <tfoot className="bg-surface-sunken">
+                {saved.discounted && saved.listSubtotalFils !== null && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">Subtotal at list</td>
+                    <td className="px-4 py-1.5 text-right tnum text-text-muted">{aed(saved.listSubtotalFils)}</td>
+                  </tr>
+                )}
+                {saved.sources.map((source) =>
+                  saved.savingBySource[source] > 0 ? (
+                    <tr key={source}>
+                      <td colSpan={4} className="px-4 py-1.5 text-right text-accent">
+                        {sourceLabel(
+                          source,
+                          source === "AccountDiscount"
+                            ? order.accountDiscountBasisPoints
+                            : undefined
+                        )}
+                      </td>
+                      <td className="px-4 py-1.5 text-right font-bold tnum text-accent">
+                        &minus;{aed(saved.savingBySource[source])}
+                      </td>
+                    </tr>
+                  ) : null
+                )}
                 <tr>
                   <td colSpan={4} className="px-4 py-1.5 text-right text-text-muted">Subtotal</td>
                   <td className="px-4 py-1.5 text-right tnum text-text">{aed(order.subtotalFils)}</td>
@@ -254,6 +357,29 @@ export default async function OrderPage({ params }: { params: Params }) {
       <section className="mt-8 rounded-card border border-border-base bg-surface p-5 shadow-card">
         <h2 className="text-base font-bold text-text">Order total</h2>
         <dl className="mt-3 space-y-2 text-sm">
+          {saved.discounted && saved.listSubtotalFils !== null && (
+            <div className="flex justify-between">
+              <dt className="text-text-muted">Subtotal at list</dt>
+              <dd className="tnum text-text-muted">{aed(saved.listSubtotalFils)}</dd>
+            </div>
+          )}
+          {saved.sources.map((source) =>
+            saved.savingBySource[source] > 0 ? (
+              <div key={source} className="flex justify-between">
+                <dt className="text-accent">
+                  {sourceLabel(
+                    source,
+                    source === "AccountDiscount"
+                      ? order.accountDiscountBasisPoints
+                      : undefined
+                  )}
+                </dt>
+                <dd className="font-bold tnum text-accent">
+                  &minus;{aed(saved.savingBySource[source])}
+                </dd>
+              </div>
+            ) : null
+          )}
           <div className="flex justify-between">
             <dt className="text-text-muted">Subtotal</dt>
             <dd className="font-bold tnum text-text">{aed(order.subtotalFils)}</dd>

@@ -8,13 +8,20 @@ import {
 } from "./order-views";
 import { db } from "./db";
 import { getSessionUser, type SessionUser } from "./auth";
-import { putProductImage, removeStoredImage } from "./storage";
+import { canUseSection } from "./admin-permissions";
+import {
+  putProductDocument,
+  putProductImage,
+  removeStoredDocument,
+  removeStoredImage,
+} from "./storage";
 import { restockAlert } from "./email-message";
 import { sendQuietly } from "./mailer";
 import { publicUrl } from "./public-url";
 import { recordStatus } from "./status-events";
 import { notifyOrderProgress } from "./order-notices";
 import { checkReason, summarise } from "./account-change-plan";
+import { DOCUMENT_KINDS, type DocumentKind } from "./documents";
 import {
   normaliseOrganisation,
   organisationChanges,
@@ -57,10 +64,20 @@ const fail = (error: string): Result<never> => ({ ok: false, error });
  * not a validation problem the user can correct, and the caller should not be
  * able to carry on by ignoring a return value.
  */
-export async function requireAdmin(): Promise<SessionUser> {
+export async function requireAdmin(section?: string, mode: "view" | "write" = "write"): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user || user.role !== "Admin") {
     throw new Error("Admin access required");
+  }
+  if (section) {
+    const account = await db.user.findUnique({
+      where: { id: user.id },
+      select: { isMasterAdmin: true, isDisabled: true, adminDenials: { select: { key: true } } },
+    });
+    if (!account || account.isDisabled || !canUseSection(section, mode, {
+      isMaster: account.isMasterAdmin,
+      denied: account.adminDenials.map((permission) => permission.key),
+    })) throw new Error(`Not permitted to ${mode === "view" ? "view" : "change"} ${section}.`);
   }
   return user;
 }
@@ -82,9 +99,16 @@ export async function audit(
   before?: unknown,
   after?: unknown
 ): Promise<void> {
+  const account = actor.role === "Admin"
+    ? await db.user.findUnique({ where: { id: actor.id }, select: { isMasterAdmin: true } })
+    : null;
   await db.auditLog.create({
     data: {
       actorUserId: actor.id,
+      // Snapshotted as well as linked. The link goes stale the moment somebody
+      // leaves; the trail has to stay readable after that.
+      actorName: actor.name,
+      actorRole: account?.isMasterAdmin ? "MasterAdmin" : actor.role,
       action,
       entity,
       entityId,
@@ -182,6 +206,9 @@ export type ProductEdit = {
  * rather than the last field on a long form.
  */
 export type ProductCreate = ProductEdit & {
+  brandName?: string;
+  supplierId?: string | null;
+  buyingPriceAED?: number | null;
   skuCode: string;
   unitLabel: string;
   unitShortLabel: string;
@@ -193,7 +220,7 @@ export type ProductCreate = ProductEdit & {
 export async function createProduct(
   input: ProductCreate
 ): Promise<Result<{ id: string; slug: string }>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const name = input.name.trim();
   if (!name) return fail("A product needs a name.");
@@ -230,9 +257,17 @@ export async function createProduct(
     return fail("One of those categories no longer exists. Reload and try again.");
   }
 
-  if (input.brandId) {
+  if (!input.brandId) return fail("Choose a brand, including Generic for an unbranded product.");
+  if (input.brandId === "__new__" && (!(input.brandName ?? "").trim() || !slugify(input.brandName ?? "") || (input.brandName?.length ?? 0) > 100)) return fail("Enter a valid new brand name.");
+  if (input.brandId && !["__generic__", "__new__"].includes(input.brandId)) {
     const brand = await db.brand.findUnique({ where: { id: input.brandId } });
-    if (!brand) return fail("That brand no longer exists.");
+    if (!brand?.isActive) return fail("That brand is no longer available.");
+  }
+  if (input.supplierId) {
+    if (input.buyingPriceAED == null || !Number.isFinite(input.buyingPriceAED) || input.buyingPriceAED < 0.01) return fail("Enter a buying price of at least AED 0.01 for the primary supplier.");
+    await requireAdmin("suppliers");
+    const supplier = await db.supplier.findFirst({ where: { id: input.supplierId, status: "Active" } });
+    if (!supplier) return fail("Choose an active supplier.");
   }
 
   // Slugs are unique across the catalogue and are the product's URL. A second
@@ -246,12 +281,18 @@ export async function createProduct(
   }
 
   const product = await db.$transaction(async (tx) => {
+    let brandId = input.brandId;
+    if (brandId === "__generic__" || brandId === "__new__") {
+      const name = brandId === "__generic__" ? "Generic" : input.brandName!.trim();
+      const brand = await tx.brand.upsert({ where: { slug: slugify(name) }, create: { name, slug: slugify(name) }, update: { isActive: true } });
+      brandId = brand.id;
+    }
     const created = await tx.productMaster.create({
       data: {
         name,
         slug,
         description: trim(input.description),
-        brandId: input.brandId || null,
+        brandId,
         taxClass: input.taxClass,
         variantGroup: trim(input.variantGroup),
         variantLabel: trim(input.variantLabel),
@@ -267,7 +308,7 @@ export async function createProduct(
       })),
     });
 
-    await tx.productSku.create({
+    const sku = await tx.productSku.create({
       data: {
         productMasterId: created.id,
         skuCode,
@@ -278,6 +319,7 @@ export async function createProduct(
         priceFils: toFils(input.priceAED),
       },
     });
+    if (input.supplierId) await tx.productSupply.create({ data: { skuId: sku.id, supplierId: input.supplierId, rank: "Primary", costFils: toFils(input.buyingPriceAED!) } });
 
     return created;
   });
@@ -289,6 +331,8 @@ export async function createProduct(
     taxClass: input.taxClass,
     categoryIds: input.categoryIds,
     skuCode,
+    supplierId: input.supplierId ?? null,
+    brandId: product.brandId,
     priceFils: toFils(input.priceAED),
   });
   await invalidateCatalog();
@@ -299,7 +343,7 @@ export async function updateProduct(
   id: string,
   input: ProductEdit
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const existing = await db.productMaster.findUnique({
     where: { id },
@@ -359,7 +403,7 @@ export async function setProductStatus(
   id: string,
   status: string
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   if (!PRODUCT_STATUSES.includes(status as (typeof PRODUCT_STATUSES)[number])) {
     return fail("That is not a status we recognise.");
@@ -423,9 +467,10 @@ export async function setProductStatus(
 export async function addProductImage(
   productId: string,
   bytes: Buffer,
-  altText: string | null
+  altText: string | null,
+  skuId: string | null = null
 ): Promise<Result<{ url: string }>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const product = await db.productMaster.findUnique({
     where: { id: productId },
@@ -433,6 +478,9 @@ export async function addProductImage(
   });
   if (!product) return fail("That product no longer exists.");
 
+  if (skuId && !await db.productSku.findFirst({ where: { id: skuId, productMasterId: productId }, select: { id: true } })) {
+    return fail("Choose a pack belonging to this product.");
+  }
   const stored = await putProductImage(bytes, product.slug);
   if (!stored.ok) return fail(stored.error);
 
@@ -448,6 +496,7 @@ export async function addProductImage(
     data: {
       productMasterId: productId,
       path: stored.url,
+      skuId,
       // Falls back to the product name so the image is never announced to a
       // screen reader as an empty string.
       altText: trim(altText) ?? product.name,
@@ -455,6 +504,7 @@ export async function addProductImage(
     },
   });
 
+  await db.productMaster.update({ where: { id: productId }, data: { updatedAt: new Date() } });
   await audit(actor, "product.image.add", "ProductMaster", productId, null, {
     imageId: image.id,
     path: image.path,
@@ -464,12 +514,13 @@ export async function addProductImage(
 }
 
 export async function removeProductImage(imageId: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const image = await db.productImage.findUnique({ where: { id: imageId } });
   if (!image) return fail("That image has already been removed.");
 
   await db.productImage.delete({ where: { id: imageId } });
+  await db.productMaster.update({ where: { id: image.productMasterId }, data: { updatedAt: new Date() } });
 
   // The file is only deleted if we are the ones who stored it. Seed
   // photography is referenced from elsewhere in public/ and is left alone —
@@ -489,9 +540,91 @@ export async function removeProductImage(imageId: string): Promise<Result> {
   return ok(undefined);
 }
 
+/* ------------------------------------------------------------------ *
+ * Documents — DA-13
+ * ------------------------------------------------------------------ */
+
+export async function addProductDocument(
+  productId: string,
+  bytes: Buffer,
+  label: string,
+  kind: string
+): Promise<Result<{ url: string }>> {
+  const actor = await requireAdmin("products");
+
+  const cleanLabel = trim(label);
+  if (!cleanLabel) return fail("Give the document a name buyers will read.");
+
+  // Validated here rather than trusted from the form: a server action is a
+  // public endpoint, and an unknown kind would render as a blank chip.
+  if (!DOCUMENT_KINDS.includes(kind as DocumentKind)) {
+    return fail(`"${kind}" is not a kind of document.`);
+  }
+
+  const product = await db.productMaster.findUnique({
+    where: { id: productId },
+    select: { id: true, slug: true },
+  });
+  if (!product) return fail("That product no longer exists.");
+
+  const stored = await putProductDocument(bytes, cleanLabel);
+  if (!stored.ok) return fail(stored.error);
+
+  // Appended, like images: adding a second sheet should not reorder the first.
+  const last = await db.productDocument.findFirst({
+    where: { productMasterId: productId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  const document = await db.productDocument.create({
+    data: {
+      productMasterId: productId,
+      label: cleanLabel,
+      path: stored.url,
+      kind,
+      sortOrder: (last?.sortOrder ?? -1) + 1,
+    },
+  });
+
+  await audit(actor, "product.document.add", "ProductMaster", productId, null, {
+    documentId: document.id,
+    label: document.label,
+    kind: document.kind,
+    path: document.path,
+  });
+  await invalidateCatalog();
+  return ok({ url: stored.url });
+}
+
+export async function removeProductDocument(documentId: string): Promise<Result> {
+  const actor = await requireAdmin("products");
+
+  const document = await db.productDocument.findUnique({
+    where: { id: documentId },
+  });
+  if (!document) return fail("That document has already been removed.");
+
+  await db.productDocument.delete({ where: { id: documentId } });
+
+  // Same rule as the images: only a file we stored is deleted from disk.
+  await removeStoredDocument(document.path);
+
+  await audit(
+    actor,
+    "product.document.remove",
+    "ProductMaster",
+    document.productMasterId,
+    { documentId, label: document.label, path: document.path },
+    null
+  );
+  await invalidateCatalog();
+  return ok(undefined);
+}
+
 /** Promotes one image to the front, which is what the storefront displays. */
 export async function setPrimaryProductImage(imageId: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const image = await db.productImage.findUnique({ where: { id: imageId } });
   if (!image) return fail("That image has already been removed.");
@@ -544,7 +677,7 @@ export type SkuEdit = {
 };
 
 export async function updateSku(id: string, input: SkuEdit): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const existing = await db.productSku.findUnique({ where: { id } });
   if (!existing) return fail("That SKU no longer exists.");
@@ -577,6 +710,7 @@ export async function updateSku(id: string, input: SkuEdit): Promise<Result> {
 
   const diff = changed(existing as unknown as Record<string, unknown>, data);
   await db.productSku.update({ where: { id }, data });
+  await db.productMaster.update({ where: { id: existing.productMasterId }, data: { updatedAt: new Date() } });
 
   await audit(actor, "sku.update", "ProductSku", id, diff.before, diff.after);
   await invalidateCatalog();
@@ -669,7 +803,7 @@ export async function replaceTiers(
   skuId: string,
   tiers: TierEdit[]
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const sku = await db.productSku.findUnique({
     where: { id: skuId },
@@ -715,6 +849,7 @@ export async function replaceTiers(
         unitsPerLevel: tier.unitsPerLevel,
       })),
     });
+    await tx.productMaster.update({ where: { id: sku.productMasterId }, data: { updatedAt: new Date() } });
   });
 
   await audit(
@@ -755,6 +890,8 @@ export type SupplierEdit = {
    */
   promisedLeadTimeDays: string | null;
   ackSlaHours: string | null;
+  paymentTermsDays?: string | null;
+  paymentTermsLabel?: string | null;
 };
 
 /**
@@ -814,7 +951,7 @@ function validateSupplier(input: SupplierEdit): string | null {
       return "The two emails must be different, or the second one adds nothing.";
     }
   }
-  if (!["Active", "Suspended"].includes(input.status)) {
+  if (!["Active", "Suspended", "Archived"].includes(input.status)) {
     return "That is not a supplier status we recognise.";
   }
 
@@ -822,6 +959,10 @@ function validateSupplier(input: SupplierEdit): string | null {
   if (!lead.ok) return `Promised lead time: ${lead.error}`;
   const ack = promisedNumber(input.ackSlaHours, 720);
   if (!ack.ok) return `Acknowledgement window: ${ack.error}`;
+  const terms = input.paymentTermsDays?.trim();
+  if ((input.paymentTermsLabel?.length ?? 0) > 180 || (input.paymentTermsLabel?.trim() && !terms)) return "Custom payment terms need a due-day value and no more than 180 characters.";
+  if (terms && (!/^\d+$/.test(terms) || Number(terms) > 365)) return "Payment terms must be between 0 and 365 days, or blank if not agreed.";
+  if (!/^[A-Za-z]{2}$/.test(input.countryCode)) return "Choose a country.";
 
   return null;
 }
@@ -829,7 +970,7 @@ function validateSupplier(input: SupplierEdit): string | null {
 export async function createSupplier(
   input: SupplierEdit
 ): Promise<Result<string>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("suppliers");
 
   const problem = validateSupplier(input);
   if (problem) return fail(problem);
@@ -845,6 +986,10 @@ export async function createSupplier(
       secondaryEmail: input.secondaryEmail.trim(),
       phone: trim(input.phone),
       address: trim(input.address),
+      countryCode: input.countryCode.toUpperCase(),
+      emirate: trim(input.emirate),
+      paymentTermsDays: input.paymentTermsDays?.trim() ? Number(input.paymentTermsDays) : null,
+      paymentTermsLabel: input.paymentTermsLabel?.trim() || null,
       trn: trim(input.trn),
       status: input.status,
       promisedLeadTimeDays: promisedValue(input.promisedLeadTimeDays, 365),
@@ -866,7 +1011,7 @@ export async function updateSupplier(
   id: string,
   input: SupplierEdit
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("suppliers");
 
   const existing = await db.supplier.findUnique({ where: { id } });
   if (!existing) return fail("That supplier no longer exists.");
@@ -886,8 +1031,13 @@ export async function updateSupplier(
     secondaryEmail: input.secondaryEmail.trim(),
     phone: trim(input.phone),
     address: trim(input.address),
+    countryCode: input.countryCode.toUpperCase(),
+    emirate: trim(input.emirate),
+    paymentTermsDays: input.paymentTermsDays?.trim() ? Number(input.paymentTermsDays) : null,
+    paymentTermsLabel: input.paymentTermsLabel?.trim() || null,
     trn: trim(input.trn),
     status: input.status,
+    ...(existing.status === "Archived" && input.status === "Active" ? { isAvailable: true } : {}),
     promisedLeadTimeDays: promisedValue(input.promisedLeadTimeDays, 365),
     // Falls back to the schema default rather than to null: the column is not
     // nullable, and 24 hours is the standing expectation when nothing else
@@ -903,6 +1053,24 @@ export async function updateSupplier(
   return ok(undefined);
 }
 
+export async function removeSupplier(id: string): Promise<Result<{ archived: boolean }>> {
+  const actor = await requireAdmin("suppliers");
+  const result = await db.$transaction(async tx => {
+    const before = await tx.supplier.findUnique({ where: { id }, include: { _count: { select: { purchaseOrders: true, supplies: true, uploads: true } } } });
+    if (!before) return null;
+    const archived = before._count.purchaseOrders > 0 || before._count.supplies > 0 || before._count.uploads > 0;
+    if (before.userId) await tx.user.update({ where: { id: before.userId }, data: { isDisabled: true } });
+    if (archived) await tx.supplier.update({ where: { id }, data: { status: "Archived", isAvailable: false } });
+    else await tx.supplier.delete({ where: { id } });
+    return { before, archived };
+  });
+  if (!result) return fail("That supplier no longer exists.");
+  await audit(actor, result.archived ? "supplier.archive" : "supplier.delete", "Supplier", id, result.before,
+    result.archived ? { status: "Archived", isAvailable: false } : null);
+  await invalidateCatalog();
+  return ok({ archived: result.archived });
+}
+
 /* ------------------------------------------------------------------ *
  * Categories
  * ------------------------------------------------------------------ */
@@ -911,7 +1079,7 @@ export async function createCategory(
   name: string,
   parentId: string | null
 ): Promise<Result<string>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const clean = name.trim();
   if (!clean) return fail("A category needs a name.");
@@ -960,7 +1128,7 @@ export async function renameCategory(
   id: string,
   name: string
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const existing = await db.category.findUnique({ where: { id } });
   if (!existing) return fail("That category no longer exists.");
@@ -1001,7 +1169,7 @@ export async function renameCategory(
  * would struggle to find afterwards.
  */
 export async function deleteCategory(id: string): Promise<Result<string>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const category = await db.category.findUnique({
     where: { id },
@@ -1099,7 +1267,7 @@ export async function deleteCategory(id: string): Promise<Result<string>> {
  * reads as the button not having worked.
  */
 export async function deleteEmptyCategories(): Promise<Result<number>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("products");
 
   const removed: { id: string; name: string; slug: string }[] = [];
 
@@ -1140,7 +1308,7 @@ export async function setOrderStatus(
   reference: string,
   status: string
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("orders");
 
   if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
     return fail("That is not an order status we recognise.");
@@ -1203,7 +1371,7 @@ export async function setOrderLineStatus(
   itemId: string,
   status: string
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("orders");
 
   if (
     !ORDER_LINE_STATUSES.includes(status as (typeof ORDER_LINE_STATUSES)[number])
@@ -1260,7 +1428,7 @@ export async function setOrderLineBatch(
   batchCode: string | null,
   expiresOn: string | null
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("orders");
 
   const item = await db.orderItem.findUnique({ where: { id: itemId } });
   if (!item) return fail("That order line no longer exists.");
@@ -1310,67 +1478,9 @@ export async function setOrderPayment(
   paidAED: number | null,
   dueOn: string | null
 ): Promise<Result> {
-  const actor = await requireAdmin();
-
-  if (
-    !PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])
-  ) {
-    return fail("That is not a payment status we recognise.");
-  }
-
-  const order = await db.order.findUnique({ where: { reference } });
-  if (!order) return fail("That order no longer exists.");
-
-  const paidFils =
-    paidAED === null || Number.isNaN(paidAED) ? order.paidFils : toFils(paidAED);
-  if (paidFils < 0) return fail("A payment cannot be negative.");
-  if (paidFils > order.totalFils && paymentStatus !== "Refunded") {
-    return fail(
-      `That is more than the order total of ${(order.totalFils / 100).toFixed(2)}. Record an overpayment as a refund instead.`
-    );
-  }
-  if (paymentStatus === "PartiallyPaid" && paidFils <= 0) {
-    return fail("A part payment needs the amount that was received.");
-  }
-
-  let due: Date | null = order.paymentDueOn;
-  if (dueOn !== null) {
-    if (dueOn === "") due = null;
-    else {
-      const parsed = new Date(dueOn);
-      if (Number.isNaN(parsed.getTime())) return fail("That due date is not a date.");
-      due = parsed;
-    }
-  }
-
-  const data = {
-    paymentStatus,
-    paidFils: paymentStatus === "Paid" ? order.totalFils : paidFils,
-    // Stamp the moment it was settled, and clear it if it is unsettled again.
-    paidAt:
-      paymentStatus === "Paid"
-        ? (order.paidAt ?? new Date())
-        : paymentStatus === "Unpaid"
-          ? null
-          : order.paidAt,
-    paymentDueOn: due,
-  };
-
-  await db.order.update({ where: { reference }, data });
-
-  await audit(
-    actor,
-    "order.payment",
-    "Order",
-    order.id,
-    {
-      paymentStatus: order.paymentStatus,
-      paidFils: order.paidFils,
-      paymentDueOn: order.paymentDueOn,
-    },
-    data
-  );
-  return ok(undefined);
+  const { adjustInvoiceBalance } = await import("./payment-ledger");
+  return adjustInvoiceBalance({ entity: "Order", identifier: reference,
+    paidFils: paidAED === null ? null : toFils(paidAED), paymentStatus, dueOn });
 }
 
 /** Courier, tracking and the date the warehouse expects to ship. */
@@ -1383,7 +1493,7 @@ export async function setOrderDelivery(
     estimatedShipmentOn: string | null;
   }
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("orders");
 
   if (!["Delivery", "PickUp"].includes(input.deliveryType)) {
     return fail("That is not a delivery type we recognise.");
@@ -1418,7 +1528,7 @@ export async function setOrderInternalNotes(
   reference: string,
   notes: string | null
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("orders");
 
   const order = await db.order.findUnique({ where: { reference } });
   if (!order) return fail("That order no longer exists.");
@@ -1449,7 +1559,7 @@ export async function setOrderInternalNotes(
  * this cannot rewrite a document a customer already holds.
  */
 export async function setVatRate(percent: number): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
     return fail("The VAT rate must be a percentage between 0 and 100.");
@@ -1515,7 +1625,7 @@ async function organisationOrFail(id: string) {
 export async function createOrganisation(
   input: OrganisationInput
 ): Promise<Result<string>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const problem = validateOrganisation(input);
   if (problem) return fail(problem.message);
@@ -1547,6 +1657,7 @@ export async function createOrganisation(
       // abandoned self-registration from an account somebody set up on purpose
       // — applications.ts deletes the former and must never touch the latter.
       isSelfRegistered: false,
+      ...(account.paymentTerms ? { paymentTerms: account.paymentTerms } : {}),
     },
     select: { id: true },
   });
@@ -1582,7 +1693,7 @@ export async function updateOrganisation(
   id: string,
   input: OrganisationInput
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const existing = await organisationOrFail(id);
   if (!existing) return fail("That account no longer exists.");

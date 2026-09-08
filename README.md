@@ -21,6 +21,7 @@ and no `.env`, because neither belongs to source control.
 ```bash
 cp .env.example .env       # Windows: copy .env.example .env
 npm install
+node scripts/init-local-db.mjs  # creates the SQLite file only if absent
 npx prisma migrate deploy  # creates dev.db from prisma/migrations
 npx prisma generate        # the typed client, into src/generated/prisma
 npm run db:seed            # catalogue
@@ -64,7 +65,9 @@ Three doors, one per role — DEC-09.
 | `/business-portal` | Suppliers | `supplier1`, `supplier2` |
 | `/admin` | Staff | `admin` |
 
-Password `123456` for all four. **Test credentials for local use only — SEC-01.**
+Password `AussieMed2026!` for all four — the value of `PASSWORD` in
+`prisma/seed-accounts.ts`, which is also printed on each sign-in page.
+**Test credentials for local use only — SEC-01.**
 Signing in at the wrong door names the right one rather than admitting you.
 
 ## Things that need attention

@@ -12,16 +12,24 @@ export function OpsShell({
   brand,
   groups,
   user,
+  searchPlaceholder,
   children,
 }: {
   brand: { label: string; href: string };
   groups: OpsGroup[];
   user: { name: string; email: string; initials: string; context: string };
+  /** Passed through to the sidebar. Omitted, there is no search box. */
+  searchPlaceholder?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <OpsSidebar brand={brand} groups={groups} user={user} />
+      <OpsSidebar
+        brand={brand}
+        groups={groups}
+        user={user}
+        searchPlaceholder={searchPlaceholder}
+      />
       <div className="min-w-0 flex-1 bg-surface-sunken print:bg-surface">
         <main id="main" className="px-4 py-5 lg:px-6 print:px-0 print:py-0">
           {children}

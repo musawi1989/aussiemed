@@ -179,3 +179,54 @@ export function formatInvoiceNumber(reference: string, index: number): string {
 
 /** Fils to AED, for display at the very edge of the system. */
 export const filsToAed = (fils: number) => Math.round(fils) / 100;
+
+export type PriceComparison = {
+  /** What this account actually pays, in fils. */
+  yoursFils: number;
+  /** What it would cost without their agreement, at this quantity. */
+  listFils: number;
+  /** Positive only when they are genuinely better off. */
+  savingFils: number;
+  /** For a percentage, in basis points. 1250 = 12.5%. */
+  savingBasisPoints: number;
+  /** Whether there is anything worth showing a struck-through price for. */
+  betterThanList: boolean;
+};
+
+/**
+ * Their price against the one everybody else sees, for display.
+ *
+ * The comparison is against the price they WOULD pay at this quantity with no
+ * agreement — so at twelve it is measured against the volume break, not
+ * against the single-unit price. Measuring against the base price would show a
+ * bigger number and it would be a lie: the break is available to anybody.
+ *
+ * betterThanList CAN BE FALSE, and that is not a bug to paper over. An agreed
+ * price wins outright over volume breaks (see accountUnitPriceFils), so an
+ * account that negotiated a rate a year ago can be paying above a break that
+ * has since been added. Showing a struck-through price there would invent a
+ * saving that does not exist; the caller shows the price plainly instead, and
+ * somebody here gets to notice the arrangement has gone stale.
+ */
+export function comparePriceFils(
+  basePriceFils: number,
+  tiers: TierFils[],
+  qty: number,
+  terms: AccountTerms = {}
+): PriceComparison {
+  const listFils = unitPriceFilsFor(basePriceFils, tiers, qty);
+  const yoursFils = accountUnitPriceFils(basePriceFils, tiers, qty, terms);
+
+  const savingFils = Math.max(0, listFils - yoursFils);
+
+  return {
+    yoursFils,
+    listFils,
+    savingFils,
+    // Guarded against a zero list price, which would otherwise divide by zero
+    // and render NaN% on a free line.
+    savingBasisPoints:
+      listFils > 0 ? Math.round((savingFils / listFils) * 10_000) : 0,
+    betterThanList: savingFils > 0,
+  };
+}

@@ -2,6 +2,26 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The optimizer does not forward authentication to protected source images.
+  // Let the browser fetch them with its preview credentials while the gate is on.
+  images: { unoptimized: Boolean(process.env.PREVIEW_PASSWORD?.trim()) },
+  // Keep the local preview's build cache separate from the shared preview.
+  distDir: process.env.AUSSIEMED_LOCAL_PREVIEW === "1" ? `.next/local-preview${process.env.AUSSIEMED_LOCAL_PORT ? `-${process.env.AUSSIEMED_LOCAL_PORT}` : ""}` : ".next",
+  /**
+   * Origins allowed to reach the dev server, beyond localhost.
+   *
+   * The site is shared for testing through a Cloudflare quick tunnel, which
+   * serves it from a random *.trycloudflare.com hostname. Next blocks
+   * cross-origin requests to dev-only endpoints by default, so without this the
+   * pages load and then the dev toolkit, hot reload and anything that posts
+   * back quietly fail from that hostname — which looks like the app being
+   * broken rather than the dev server defending itself.
+   *
+   * The hostname changes every time the tunnel restarts, so this is a wildcard
+   * over the domain rather than one address. DEV ONLY: the option has no effect
+   * on a production build, so it cannot widen anything that ships.
+   */
+  allowedDevOrigins: ["*.trycloudflare.com", "*.serveousercontent.com"],
   // Chromium cannot be bundled, and the tracer should not try. The order
   // confirmation PDF renders the HTML document with Playwright — see
   // src/app/(shop)/orders/[reference]/document/pdf/route.ts and IN-11.
@@ -38,12 +58,11 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      // Product image uploads post through a server action, and the default
-      // ceiling is 1 MB. MAX_IMAGE_BYTES in src/lib/storage.ts is 5 MB; this
+      // Email attachments allow 10 MB in total; product images allow 5 MB. This
       // sits above it because the limit applies to the whole multipart body,
       // including boundaries and part headers. The refusal a person reads
       // should be ours, naming the size, not the framework's.
-      bodySizeLimit: "6mb",
+      bodySizeLimit: "12mb",
     },
   },
 };

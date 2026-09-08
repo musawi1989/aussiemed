@@ -1,5 +1,10 @@
+import { EntityLogo } from "@/components/EntityLogo";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { contains } from "@/lib/db-search";
+import { FilterBar } from "@/components/admin/FilterBar";
+import { parseMulti } from "@/lib/order-views";
+import { paymentCriteriaWhere, paymentStatusOf, SETTLEMENT_STATES, PAYMENT_DUE_STATES } from "@/lib/status-tone";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import {
@@ -7,6 +12,7 @@ import {
   BuildButton,
   CancelDraftButton,
   SendButton,
+  SendAllButton,
 } from "@/components/admin/PurchasingControls";
 import {
   getAutoSend,
@@ -36,12 +42,17 @@ const hourLabel = (hour: number) =>
  * carries no customer at all, which is the model rather than a detail of the
  * layout — see SEC-05.
  */
-export default async function PurchasingPage() {
+export default async function PurchasingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  const q = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim() ?? "";
+  const now = new Date();
+  const paymentWhere = paymentCriteriaWhere(parseMulti(params.payment, SETTLEMENT_STATES), parseMulti(params.due, PAYMENT_DUE_STATES), now);
   const [cutoffHour, autoSend] = await Promise.all([getCutoffHour(), getAutoSend()]);
   const cutoffAt = lastCutoffBefore(new Date(), cutoffHour);
 
-  const [orders, plan] = await Promise.all([
+  const [orders, plan, draftCount] = await Promise.all([
     db.purchaseOrder.findMany({
+      where: { AND: [paymentWhere ?? {}, ...(q ? [{ OR: [{ poNumber: contains(q) }, { supplier: { companyName: contains(q) } }] }] : [])] },
       orderBy: [{ status: "asc" }, { cutoffAt: "desc" }],
       take: 50,
       include: {
@@ -50,6 +61,11 @@ export default async function PurchasingPage() {
       },
     }),
     previewPurchaseOrders(cutoffAt),
+    // Counted, not derived from `orders` above: that list is the most recent
+    // fifty and sorts Draft fourth alphabetically, so a busy month could push
+    // a draft off the end and the button would offer to send fewer than it
+    // actually will.
+    db.purchaseOrder.count({ where: { status: "Draft" } }),
   ]);
 
   const waiting = plan.orders.reduce((n, o) => n + o.lines.length, 0);
@@ -70,19 +86,23 @@ export default async function PurchasingPage() {
               a supplier has since said they cannot send. */}
           <Link
             href="/admin/purchasing/backorders"
-            className="rounded-card border border-border-strong bg-surface px-3 py-2 text-sm font-bold text-text transition-colors hover:border-navy hover:text-navy"
+            className="inline-flex min-h-11 items-center gap-2 rounded-card border-2 border-navy bg-navy px-4 py-2 font-bold text-white border border-border-strong bg-surface px-3 text-sm transition-colors hover:border-navy"
           >
             Back orders
           </Link>
           <AutoSendToggle on={autoSend} />
+          {/* Only when there is something to send. The cutoff pools demand,
+              it does not fire — so this is how a run goes out ahead of the
+              usual daily rhythm when a customer or a supplier cannot wait. */}
+          {draftCount > 0 && <SendAllButton count={draftCount} />}
           <BuildButton cutoffLabel={`${dubai(cutoffAt)} Dubai`} />
         </div>
       </div>
 
       {autoSend && (
         <p className="mt-4 rounded-card border-l-4 border-danger bg-danger-soft px-4 py-2.5 text-sm font-semibold text-danger">
-          Auto-send is on. Purchase orders go to suppliers at the cutoff with
-          nobody reviewing them first.
+          Auto-send is on. Purchase orders go to their suppliers the moment a
+          run is built, with nobody reviewing them first.
         </p>
       )}
 
@@ -183,10 +203,14 @@ export default async function PurchasingPage() {
       <h2 className="mt-8 text-base font-bold tracking-tight text-text">
         Purchase orders
       </h2>
+      <FilterBar basePath="/admin/purchasing" searchPlaceholder="Purchase order or supplier" chips={[
+        { kind: "multi", key: "payment", label: "Payment", options: SETTLEMENT_STATES.map(value => ({ value, label: value === "PartiallyPaid" ? "Partially paid" : value })) },
+        { kind: "multi", key: "due", label: "Due date", options: PAYMENT_DUE_STATES.map(value => ({ value, label: value === "DueSoon" ? "Due soon" : value === "NotDue" ? "Not overdue" : value })) },
+      ]} />
 
       {orders.length === 0 ? (
         <p className="mt-3 rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
-          None yet. Build the first one when there is demand waiting.
+          No purchase orders match these filters.
         </p>
       ) : (
         <ul className="mt-3 space-y-2">
@@ -208,6 +232,8 @@ export default async function PurchasingPage() {
                         {po.poNumber}
                       </Link>
                       <StatusPill axis="fulfilment" status={po.status} />
+                      <StatusPill axis="payment" status={po.paymentStatus} />
+                      {paymentStatusOf(po, now) !== po.paymentStatus && <StatusPill axis="payment" status={paymentStatusOf(po, now)} />}
                       {fallbacks > 0 && (
                         <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent">
                           {fallbacks} fallback{fallbacks === 1 ? "" : "s"}
@@ -215,7 +241,7 @@ export default async function PurchasingPage() {
                       )}
                     </div>
                     <p className="mt-1 text-sm text-text">
-                      {po.supplier.companyName}
+                      <EntityLogo kind="supplier" id={po.supplierId} name={po.supplier.companyName} />{po.supplier.companyName}
                     </p>
                     <p className="text-xs tnum text-text-subtle">
                       {po.lines.length} line{po.lines.length === 1 ? "" : "s"}{" "}

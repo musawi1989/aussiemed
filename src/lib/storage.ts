@@ -86,6 +86,74 @@ async function deleteLocal(url: string): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ *
+ * Public document store — catalogue paperwork, under public/
+ * ------------------------------------------------------------------ */
+
+/**
+ * A THIRD store, and the reason it is not the private one.
+ *
+ * A safety data sheet is the opposite of a TRN certificate. The manufacturer
+ * publishes it, a laboratory buyer is frequently required to hold one before
+ * the goods arrive, and making somebody sign in to read it would be a
+ * compliance obstacle we invented ourselves. So product paperwork is served
+ * straight off disk, like a photograph.
+ *
+ * It sits in its own folder rather than beside the images because the two are
+ * emptied and migrated on different terms — the seed photography goes when the
+ * real catalogue lands (DA-03), the paperwork does not — and because a
+ * directory that mixes glove photographs with safety data sheets is harder for
+ * a human to audit.
+ *
+ * What may be uploaded is still decided by document-file.ts, so a PDF is
+ * accepted here and refused as a product image, and neither can be steered by
+ * renaming a file.
+ */
+const PUBLIC_DOCUMENT_PREFIX = "/uploads/documents";
+
+function localDocumentRoot(): string {
+  return resolve(process.cwd(), "public", "uploads", "documents");
+}
+
+async function putPublicDocumentLocal(
+  key: string,
+  bytes: Buffer
+): Promise<StorageResult> {
+  const target = join(localDocumentRoot(), key);
+
+  // Belt and braces: the key is generated, never supplied, but a traversal
+  // here would write anywhere on the disk the server can reach.
+  if (!resolve(target).startsWith(localDocumentRoot())) {
+    return { ok: false, error: "Refusing to write outside the document folder" };
+  }
+
+  try {
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, bytes);
+    return { ok: true, url: `${PUBLIC_DOCUMENT_PREFIX}/${key}` };
+  } catch (error) {
+    return {
+      ok: false,
+      error: `Could not save the file: ${(error as Error).message}`,
+    };
+  }
+}
+
+async function deletePublicDocumentLocal(url: string): Promise<void> {
+  // Only ever removes something we put there, on the same reasoning as the
+  // images: a document referenced from elsewhere in public/ keeps its file
+  // when the row goes.
+  if (!url.startsWith(`${PUBLIC_DOCUMENT_PREFIX}/`)) return;
+
+  const target = join(
+    localDocumentRoot(),
+    url.slice(PUBLIC_DOCUMENT_PREFIX.length + 1)
+  );
+  if (!resolve(target).startsWith(localDocumentRoot())) return;
+
+  await unlink(target).catch(() => {});
+}
+
+/* ------------------------------------------------------------------ *
  * Private document store — NOT under public/
  * ------------------------------------------------------------------ */
 
@@ -178,6 +246,30 @@ export async function putProductImage(
 export async function removeStoredImage(url: string): Promise<void> {
   await driver().remove(url);
 }
+
+/**
+ * Validates and stores one product document, returning the URL to record.
+ *
+ * A URL, unlike its private sibling below — a safety data sheet is meant to be
+ * downloaded without asking anyone's permission. The label seeds the filename
+ * so a directory listing is legible; it never becomes a path on its own.
+ */
+export async function putProductDocument(
+  bytes: Buffer,
+  label: string
+): Promise<StorageResult> {
+  const checked = checkDocument(bytes);
+  if (!checked.ok) return { ok: false, error: checked.error };
+
+  return putPublicDocumentLocal(documentKey(label, checked.ext), bytes);
+}
+
+/** Removes a stored product document. Ignores anything we did not store. */
+export async function removeStoredDocument(url: string): Promise<void> {
+  await deletePublicDocumentLocal(url);
+}
+
+export { MAX_DOCUMENT_BYTES, ACCEPTED_DOCUMENTS } from "./document-file";
 
 /**
  * Validates and stores one private document, returning the KEY to record.

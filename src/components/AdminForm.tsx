@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useActionState } from "react";
+import { createContext, useContext, useState, useActionState, useLayoutEffect, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useFormStatus } from "react-dom";
 
 /**
  * The pieces every admin form is made of.
@@ -16,6 +18,8 @@ export type FormState = {
   ok: boolean;
   error?: string;
   message?: string;
+  newVariantId?: string;
+  redirectTo?: string;
   /**
    * What was submitted, echoed back so a refused form can be redrawn with it.
    *
@@ -47,6 +51,33 @@ export type FormState = {
  */
 const Restored = createContext<FormData | null>(null);
 
+function FormPendingSignal() {
+  const { pending } = useFormStatus();
+  return <span hidden data-form-pending={String(pending)} />;
+}
+
+function RestoreInputs({ data, attempt }: { data: FormData | null; attempt: number }) {
+  const marker = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const form = marker.current?.closest("form");
+    if (!form || !data) return;
+    const offsets = new Map<string, number>();
+    for (const input of Array.from(form.elements)) {
+      if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) || !input.name) continue;
+      if (input instanceof HTMLInputElement && ["hidden", "file", "submit", "button"].includes(input.type)) continue;
+      const values = data.getAll(input.name).filter((v): v is string => typeof v === "string");
+      if (input instanceof HTMLInputElement && ["checkbox", "radio"].includes(input.type)) input.checked = values.includes(input.value);
+      else if (input instanceof HTMLSelectElement && input.multiple) for (const option of input.options) option.selected = values.includes(option.value);
+      else {
+        const index = offsets.get(input.name) ?? 0;
+        input.value = values[index] ?? "";
+        offsets.set(input.name, index + 1);
+      }
+    }
+  }, [data, attempt]);
+  return <span hidden ref={marker} />;
+}
+
 /** A single value as it was submitted, or undefined on a clean form. */
 export function useRestored(name: string): string | undefined {
   const data = useContext(Restored);
@@ -71,13 +102,21 @@ export function AdminForm({
   children,
   submitLabel = "Save changes",
   className = "",
+  confirmChange,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   children: React.ReactNode;
   submitLabel?: string;
   className?: string;
+  confirmChange?: (data: FormData) => string | null;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const workspaceSubmission = useRef(false);
+  const router = useRouter();
+  useEffect(() => {
+    if (state?.ok && state.redirectTo && !workspaceSubmission.current) router.push(state.redirectTo);
+  }, [state, router]);
   const [submitted, setSubmitted] = useState<FormData | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -96,13 +135,27 @@ export function AdminForm({
 
   return (
     <form
+      ref={formRef}
       action={formAction}
+      data-managed-form
+      data-save-all={/^(save|update|set|apply|create|add|open account)/i.test(submitLabel)}
+      data-action-result={state?.ok === true ? "saved" : state?.ok === false ? "error" : "idle"}
       onSubmit={(event) => {
-        setSubmitted(new FormData(event.currentTarget));
+        workspaceSubmission.current = event.currentTarget.dataset.workspaceSaving === "true";
+        const data = new FormData(event.currentTarget);
+        const warning = confirmChange?.(data);
+        if (warning && !window.confirm(warning)) {
+          event.preventDefault();
+          event.currentTarget.dispatchEvent(new CustomEvent("form-save-cancelled", { bubbles: true }));
+          return;
+        }
+        setSubmitted(data);
         setAttempt((n) => n + 1);
       }}
       className={className}
     >
+      <FormPendingSignal />
+      <RestoreInputs data={restored} attempt={attempt} />
       {/* Keyed so the inputs genuinely remount and take the restored values:
           changing defaultValue on a mounted uncontrolled input does nothing.
           The key only moves on a refusal, so a form that is behaving is never
@@ -151,12 +204,16 @@ export function RestoringForm({
   state,
   children,
   className = "",
+  saveAll = true,
+  onSubmit,
+  ...formProps
 }: {
   action: (formData: FormData) => void;
   state: FormState;
   children: React.ReactNode;
   className?: string;
-}) {
+  saveAll?: boolean;
+} & Omit<React.ComponentPropsWithRef<"form">, "action" | "children">) {
   const [submitted, setSubmitted] = useState<FormData | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -171,20 +228,28 @@ export function RestoringForm({
 
   return (
     <form
+      {...formProps}
       action={action}
+      data-managed-form
+      data-save-all={saveAll}
+      data-action-result={state?.ok === true ? "saved" : state?.ok === false ? "error" : "idle"}
       onSubmit={(event) => {
+        onSubmit?.(event);
+        if (event.defaultPrevented) return;
         setSubmitted(new FormData(event.currentTarget));
         setAttempt((n) => n + 1);
       }}
       className={className}
     >
+      <FormPendingSignal />
+      <RestoreInputs data={restored} attempt={attempt} />
       {/* Keyed for the same reason as AdminForm: changing defaultValue on a
           mounted uncontrolled input does nothing, so the inputs have to
           genuinely remount to take the restored values. The key moves only on
           a refusal, so a form that is behaving is never torn down under
           somebody's hands. */}
       <Restored.Provider value={restored}>
-        <div key={restored ? attempt : "clean"}>{children}</div>
+        <div className="contents" key={restored ? attempt : "clean"}>{children}</div>
       </Restored.Provider>
     </form>
   );
@@ -200,6 +265,8 @@ export function Field({
   placeholder,
   step,
   min,
+  max,
+  maxLength,
 }: {
   label: string;
   name: string;
@@ -216,6 +283,8 @@ export function Field({
    */
   step?: string;
   min?: string;
+  max?: string;
+  maxLength?: number;
 }) {
   // What was typed wins over what was stored: after a refusal the person is
   // correcting their own entry, not starting again from the saved record.
@@ -235,7 +304,9 @@ export function Field({
         defaultValue={restored ?? defaultValue ?? ""}
         // Prices and quantities are typed often enough that the step matters.
         step={type === "number" ? (step ?? "any") : undefined}
-        min={type === "number" ? min : undefined}
+        min={min}
+        max={max}
+        maxLength={maxLength}
         className="mt-1 w-full rounded-card border border-border-strong bg-surface px-3 py-2 text-sm text-text focus:border-navy focus:outline-none"
       />
       {hint && <span className="mt-1 block text-xs text-text-subtle">{hint}</span>}

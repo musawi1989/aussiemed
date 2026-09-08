@@ -1,12 +1,18 @@
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { PurchaseOrderPayment } from "@/components/admin/PurchaseOrderPayment";
+import { PaymentLedger } from "@/components/admin/PaymentLedger";
 import { paymentStatusOf } from "@/lib/status-tone";
 import { CancelDraftButton, SendButton } from "@/components/admin/PurchasingControls";
+import { LineQuantities } from "@/components/admin/LineQuantities";
 import { GoodsInForm } from "@/components/admin/GoodsInForm";
+import { RecordDocket } from "@/components/admin/RecordDocket";
+import { docketPlan } from "@/lib/dockets";
+import { courierOptions } from "@/lib/couriers";
 import { historyOf } from "@/lib/status-events";
 import { humanDuration, stages, timeBetween } from "@/lib/lifecycle";
 
@@ -32,6 +38,7 @@ export default async function PurchaseOrderPage({
   const po = await db.purchaseOrder.findUnique({
     where: { poNumber: decodeURIComponent(poNumber) },
     include: {
+      payments: { orderBy: [{ occurredAt: "asc" }, { recordedAt: "asc" }] },
       supplier: {
         select: {
           id: true,
@@ -47,6 +54,14 @@ export default async function PurchaseOrderPage({
   });
 
   if (!po) notFound();
+
+  // What has been sent in consignments and what is still owed. Loaded after
+  // the guard, so a purchase order that does not exist costs one query rather
+  // than three.
+  const [plan, couriers] = await Promise.all([
+    docketPlan(po.id),
+    courierOptions(po.courier),
+  ]);
 
   // Read separately from the order itself: the log outlives what it describes,
   // and a cancelled draft still has a history worth seeing.
@@ -64,7 +79,7 @@ export default async function PurchaseOrderPage({
         <div>
           <Link
             href="/admin/purchasing"
-            className="text-sm font-semibold text-text-muted hover:text-navy"
+            className="inline-flex min-h-11 items-center gap-2 rounded-card border-2 border-navy bg-navy px-4 py-2 font-bold text-white text-sm"
           >
             &larr; All purchase orders
           </Link>
@@ -82,12 +97,26 @@ export default async function PurchaseOrderPage({
           </p>
         </div>
 
-        {po.status === "Draft" && (
-          <div className="flex flex-wrap items-center gap-2">
-            <SendButton id={po.id} poNumber={po.poNumber} />
-            <CancelDraftButton id={po.id} poNumber={po.poNumber} />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Not on a draft: a packing list for an order nobody has sent is a
+              sheet for a delivery that cannot be coming. The supplier can print
+              their own from the portal — this copy is for when they don't. */}
+          {po.status !== "Draft" && (
+            <Link
+              href={`/admin/purchasing/${encodeURIComponent(po.poNumber)}/packing-list`}
+              className="rounded-card border border-border-strong bg-surface px-3 py-1.5 text-xs font-bold text-text transition-colors hover:bg-surface-hover"
+            >
+              Packing list
+            </Link>
+          )}
+          {po.status !== "Draft" && po.status !== "Cancelled" && <SendButton id={po.id} poNumber={po.poNumber} amendment />}
+          {po.status === "Draft" && (
+            <>
+              <SendButton id={po.id} poNumber={po.poNumber} />
+              <CancelDraftButton id={po.id} poNumber={po.poNumber} />
+            </>
+          )}
+        </div>
       </div>
 
       {!costsKnown && (
@@ -128,7 +157,7 @@ export default async function PurchaseOrderPage({
                       )}
                     </td>
                     <td className="py-2 text-text-muted">
-                      {line.nameSnapshot}
+                      <ProductThumbnail skuCode={line.skuCodeSnapshot} />{line.nameSnapshot}
                       <span className="block text-xs text-text-subtle tnum">
                         our code {line.skuCodeSnapshot}
                         {line.wasFallback && (
@@ -165,6 +194,25 @@ export default async function PurchaseOrderPage({
             </table>
           </div>
 
+          {/* Above Goods in, because it happens first: they tell us what is
+              coming, then it arrives. Offered on a draft too, where what we
+              ask for is still ours to change. */}
+          {po.status !== "Cancelled" && po.status !== "Received" && (
+            <LineQuantities
+              purchaseOrderId={po.id}
+              poNumber={po.poNumber}
+              ordersEditable={po.status === "Draft"}
+              lines={po.lines.map((line) => ({
+                id: line.id,
+                name: line.nameSnapshot,
+                skuCode: line.skuCodeSnapshot,
+                supplierPartNumber: line.supplierPartNumberSnapshot,
+                qtyOrdered: line.qtyOrdered,
+                qtyConfirmed: line.qtyConfirmed,
+              }))}
+            />
+          )}
+
           {po.status !== "Draft" && po.status !== "Cancelled" && (
             <div className="mt-5 border-t border-border-base pt-4">
               <h3 className="text-sm font-bold text-text">Goods in</h3>
@@ -186,6 +234,31 @@ export default async function PurchaseOrderPage({
                 }))}
               />
             </div>
+          )}
+
+          {/* Consignments, between what was ordered and what arrived — which
+              is where they sit in real life too. Hidden on a draft: nothing
+              can have been sent against an order the supplier has not seen. */}
+          {po.status !== "Draft" && plan && (
+            <RecordDocket
+              id={po.id}
+              poNumber={po.poNumber}
+              complete={plan.complete}
+              dockets={plan.dockets}
+              courier={po.courier}
+              courierOptions={couriers}
+              trackingNumber={po.trackingNumber}
+              outstanding={plan.lines
+                .filter((line) => line.outstanding > 0)
+                .map((line) => ({
+                  id: line.id,
+                  code: line.skuCode,
+                  name: line.name,
+                  qtyOrdered: line.qtyOrdered,
+                  outstanding: line.outstanding,
+                  suggested: line.suggested,
+                }))}
+            />
           )}
         </section>
 
@@ -286,6 +359,7 @@ export default async function PurchaseOrderPage({
           {/* Money out. Below the goods rather than beside them, because
               receiving is the job somebody usually came here to do and paying
               is the one they come back for. */}
+          <PaymentLedger entity="PurchaseOrder" id={po.id} entries={po.payments} />
           <PurchaseOrderPayment
             id={po.id}
             paymentStatus={po.paymentStatus}
@@ -294,7 +368,7 @@ export default async function PurchaseOrderPage({
             totalAED={po.totalCostFils === null ? "—" : aed(po.totalCostFils)}
             paymentDueOn={
               po.paymentDueOn
-                ? po.paymentDueOn.toISOString().slice(0, 10)
+                ? dubai(po.paymentDueOn).slice(0, 10)
                 : ""
             }
           />

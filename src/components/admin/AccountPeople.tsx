@@ -12,6 +12,7 @@ import {
   useRestored,
   type FormState,
 } from "@/components/AdminForm";
+import { ConfirmSubmit } from "./ConfirmSubmit";
 
 export type PersonRow = {
   id: string;
@@ -154,17 +155,17 @@ export function AccountPeople({
                       {openId === person.id ? "Close" : "Edit"}
                     </button>
 
-                    <form action={remove} className="shrink-0">
+                    <RestoringForm state={removeState} saveAll={false} action={remove} className="shrink-0">
                       <input type="hidden" name="id" value={id} />
                       <input type="hidden" name="personId" value={person.id} />
-                      <button
-                        type="submit"
-                        disabled={removing}
+                      <ConfirmSubmit
+                        what={person.name}
+                        consequence="They can no longer order for this account. Orders they have already placed are unaffected."
+                        pending={removing}
+                        pendingLabel="Removing…"
                         className="cursor-pointer rounded-card border border-border-strong bg-surface px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:border-danger disabled:opacity-60"
-                      >
-                        Remove
-                      </button>
-                    </form>
+                      />
+                    </RestoringForm>
                   </div>
 
                   {openId === person.id && (

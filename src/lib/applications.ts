@@ -308,7 +308,7 @@ async function announceApplication(userId: string): Promise<void> {
  * ------------------------------------------------------------------ */
 
 export async function pendingApplications() {
-  await requireAdmin();
+  await requireAdmin("customers", "view");
 
   return db.user.findMany({
     where: { role: "Customer", approvalStatus: "Pending", isDisabled: false },
@@ -332,7 +332,7 @@ export async function decideApplication(input: {
   approve: boolean;
   reason?: string | null;
 }): Promise<Result<{ email: string }>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("customers");
 
   const user = await db.user.findUnique({
     where: { id: input.userId },

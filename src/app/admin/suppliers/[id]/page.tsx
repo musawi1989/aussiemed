@@ -1,10 +1,16 @@
+import { LogoEditor } from "@/components/LogoEditor";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatAED } from "@/lib/money";
 import { StatusPill } from "@/components/StatusPill";
 import { SupplierForm } from "@/components/SupplierForm";
+import { RemoveSupplier } from "@/components/admin/RemoveSupplier";
 import { TrnDocument } from "@/components/admin/TrnDocument";
+import { AddSupplierItems } from "@/components/admin/AddSupplierItems";
+import { RemoveSupplierItem } from "@/components/admin/RemoveSupplierItem";
+import { packsForSupplier } from "@/lib/supplier-items";
+import { rankLabel } from "@/lib/ranks";
 import { ACCEPTED_DOCUMENTS, MAX_DOCUMENT_BYTES } from "@/lib/document-file";
 import {
   RETIRED,
@@ -16,10 +22,15 @@ const aed = (fils: number) => formatAED(fils / 100);
 
 export default async function AdminSupplierPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ items?: string }>;
 }) {
   const { id } = await params;
+  // Named "items" rather than "q": this page may well grow a second search
+  // one day, and two things called q is how one of them stops working.
+  const { items: itemQuery } = await searchParams;
 
   const supplier = await db.supplier.findUnique({
     where: { id },
@@ -30,6 +41,7 @@ export default async function AdminSupplierPage({
       supplies: {
         orderBy: { rank: "asc" },
         select: {
+          id: true,
           rank: true,
           costFils: true,
           isAvailable: true,
@@ -85,6 +97,13 @@ export default async function AdminSupplierPage({
   if (!supplier) notFound();
 
   /*
+   * Loaded after the guard, so a bad id 404s without running a catalogue
+   * query first — and after the supplier, because the search marks which
+   * packs are already theirs and needs their id to do it.
+   */
+  const packs2 = await packsForSupplier(supplier.id, { q: itemQuery });
+
+  /*
    * Grouped for reading rather than left flat.
    *
    * Twelve packs is a list; a real supplier's two hundred is a wall, and the
@@ -109,10 +128,11 @@ export default async function AdminSupplierPage({
 
   return (
     <>
+      <LogoEditor kind="supplier" id={supplier.id} name={supplier.companyName} />
       <div className="mt-6">
         <Link
           href="/admin/suppliers"
-          className="text-sm font-semibold text-text-muted hover:text-navy"
+          className="inline-flex min-h-11 items-center gap-2 rounded-card border-2 border-navy bg-navy px-4 py-2 font-bold text-white text-sm"
         >
           &larr; All suppliers
         </Link>
@@ -128,6 +148,8 @@ export default async function AdminSupplierPage({
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
+        <div>
+        <Link href={`/admin/products/new?supplierId=${supplier.id}`} className="mb-3 inline-block text-sm font-semibold text-navy">Add a product from this supplier</Link>
         <SupplierForm
           supplier={{
             id: supplier.id,
@@ -141,9 +163,13 @@ export default async function AdminSupplierPage({
             trn: supplier.trn,
             status: supplier.status,
             promisedLeadTimeDays: supplier.promisedLeadTimeDays,
+            paymentTermsDays: supplier.paymentTermsDays,
+            paymentTermsLabel: supplier.paymentTermsLabel,
             ackSlaHours: supplier.ackSlaHours,
           }}
         />
+        {supplier.status !== "Archived" && <RemoveSupplier id={supplier.id} name={supplier.companyName} />}
+        </div>
 
         <div className="space-y-5">
           {/* Beside the form rather than inside it: a file input among text
@@ -217,14 +243,23 @@ export default async function AdminSupplierPage({
                               ? "no cost"
                               : aed(supply.costFils)}
                           </span>
+                          {/* A null rank rendered as an empty pill, which
+                              read as a missing value rather than as what it
+                              is: an offer, meaning they can supply it and we
+                              have not allocated it to them. */}
                           <span
                             className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                               supply.rank === "Primary"
                                 ? "bg-navy-soft text-navy"
                                 : "bg-surface-sunken text-text-muted"
                             }`}
+                            title={
+                              supply.rank === null
+                                ? "They can supply this. We have not allocated it to them — that is Cover."
+                                : undefined
+                            }
                           >
-                            {supply.rank}
+                            {rankLabel(supply.rank)}
                           </span>
                           {supply.sku.product.status !== "Active" && (
                             /* On the row as well as in the heading: a
@@ -239,6 +274,13 @@ export default async function AdminSupplierPage({
                               unavailable
                             </span>
                           )}
+                          {supply.rank === null && (
+                            <RemoveSupplierItem
+                              supplierId={supplier.id}
+                              supplyId={supply.id}
+                              name={supply.sku.product.name}
+                            />
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -246,6 +288,13 @@ export default async function AdminSupplierPage({
                 ))}
               </div>
             )}
+
+            <AddSupplierItems
+              supplierId={supplier.id}
+              packs={packs2}
+              query={itemQuery ?? ""}
+              total={supplier.supplies.length}
+            />
           </section>
 
           <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">

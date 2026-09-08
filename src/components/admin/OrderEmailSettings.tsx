@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import { setNotifyStepAction } from "@/app/admin/settings/actions";
 import type { FormState } from "@/components/AdminForm";
@@ -69,7 +70,7 @@ function StepToggle({
         <p className="text-xs text-text-subtle tnum">{step}</p>
       </div>
 
-      <form action={submit} className="flex items-center gap-2">
+      <RestoringForm state={state} saveAll={true} action={submit} className="flex items-center gap-2">
         <input type="hidden" name="step" value={step} />
         {/* The hidden "0" means an unticked box still posts: an absent key is
             indistinguishable from a field that was never rendered. */}
@@ -102,7 +103,7 @@ function StepToggle({
             {state.error}
           </span>
         )}
-      </form>
+      </RestoringForm>
     </li>
   );
 }

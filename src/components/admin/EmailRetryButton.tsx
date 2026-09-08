@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import { retryEmailAction } from "@/app/admin/emails/actions";
 
@@ -8,7 +9,7 @@ export function EmailRetryButton({ id }: { id: string }) {
   const [state, submit, pending] = useActionState(retryEmailAction, null);
 
   return (
-    <form action={submit} className="flex items-center gap-2">
+    <RestoringForm state={state} saveAll={false} action={submit} className="flex items-center gap-2">
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
@@ -22,6 +23,6 @@ export function EmailRetryButton({ id }: { id: string }) {
           {state.error}
         </span>
       )}
-    </form>
+    </RestoringForm>
   );
 }

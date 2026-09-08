@@ -31,6 +31,57 @@ const trim = (v: string | null | undefined) => {
   return s.length > 0 ? s : null;
 };
 
+/* ------------------------------------------------------------------ *
+ * Who is asking
+ * ------------------------------------------------------------------ */
+
+/**
+ * The contact details of the buyer who is signed in, taken from their account.
+ *
+ * WHY THE SESSION RATHER THAN THE FORM. A signed-in buyer should not be typing
+ * their own name and email into a form on a site they are already identified
+ * on — it is a small insult and a reliable source of typos, and a typo'd email
+ * on an enquiry is one nobody can answer.
+ *
+ * ⚠ IT IS ALSO THE ONLY SAFE READING. Once the fields are not on screen, a
+ * post that still carries them is either stale or forged, so the identity has
+ * to come from the session or not at all. Trusting the body would let anybody
+ * file an enquiry under somebody else's name, which is worse than the typing.
+ *
+ * Null for a guest, and for a supplier or an admin — the storefront enquiry
+ * forms are for buyers, and putting a supplier's own details on a bulk-buy
+ * enquiry would be filing it against the wrong kind of company entirely.
+ */
+export async function signedInBuyer(): Promise<{
+  contactName: string;
+  email: string;
+  phone: string;
+  company: string;
+} | null> {
+  const session = await getSessionUser();
+  if (!session || session.role !== "Customer") return null;
+
+  const user = await db.user.findUnique({
+    where: { id: session.id },
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+      organisation: { select: { name: true } },
+    },
+  });
+  if (!user) return null;
+
+  return {
+    contactName: user.name,
+    email: user.email,
+    phone: user.phone ?? "",
+    // The account they buy for, which is what an enquiry is really from. Their
+    // own name stands in only when they have no account behind them.
+    company: user.organisation?.name ?? "",
+  };
+}
+
 /** Deliberately forgiving. A rejected enquiry is a lost customer. */
 function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -70,50 +121,26 @@ export async function subscribeToRestock(
 }
 
 /* ------------------------------------------------------------------ *
- * Bulk buy — FN-03
+ * Bulk buy requests — FN-02, and what FN-03 became
  * ------------------------------------------------------------------ */
 
-export type BulkBuyInput = {
-  company: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  message: string;
-};
-
-export async function createBulkBuyEnquiry(
-  input: BulkBuyInput
-): Promise<Result> {
-  const email = trim(input.email);
-  const contactName = trim(input.contactName);
-  const message = trim(input.message);
-
-  if (!contactName) return fail("Please give us a contact name.");
-  if (!email || !looksLikeEmail(email)) {
-    return fail("Please give us an email address we can reply to.");
-  }
-  if (!message) return fail("Please tell us what you are looking for.");
-
-  const user = await getSessionUser();
-
-  await db.enquiry.create({
-    data: {
-      kind: "BulkBuy",
-      company: trim(input.company),
-      contactName,
-      email,
-      phone: trim(input.phone),
-      message,
-      userId: user?.id ?? null,
-    },
-  });
-
-  return ok(undefined);
-}
-
-/* ------------------------------------------------------------------ *
- * Quote requests — FN-02
- * ------------------------------------------------------------------ */
+/*
+ * THE FREE-TEXT BULK-BUY ENQUIRY IS GONE, and so is everything that read it.
+ *
+ * There were two paths doing this job: an Enquiry row holding prose somebody
+ * had to interpret, and a QuoteRequest holding real pack codes at real
+ * quantities. Two admin queues, two sets of wording, and a customer choosing
+ * between them with no way to know that one could be priced and one could not.
+ *
+ * The mechanism below survived because it can be priced; the NAME "bulk buy
+ * request" survived because that is what the client and the buyer both call
+ * it. The table is still QuoteRequest — renaming a column across fifteen
+ * files and a migration would change nothing anybody can see.
+ *
+ * The Enquiry model itself is left in the schema. It is generic (`kind`), it
+ * holds no rows, and a contact or support form is the obvious next thing to
+ * want; dropping the table would be a migration to undo later.
+ */
 
 export type QuoteLineInput = { skuCode: string; qty: number };
 
@@ -131,8 +158,12 @@ function quoteReference(sequence: number): string {
 export async function createQuoteRequest(
   input: QuoteInput
 ): Promise<Result<{ reference: string }>> {
-  const contactName = trim(input.contactName);
-  const email = trim(input.email);
+  // Same rule as the bulk-buy enquiry: signed in, and the details come from
+  // the account rather than from a form we no longer show them.
+  const account = await signedInBuyer();
+
+  const contactName = account?.contactName ?? trim(input.contactName);
+  const email = account?.email ?? trim(input.email);
 
   if (!contactName) return fail("Please give us a contact name.");
   if (!email || !looksLikeEmail(email)) {
@@ -179,6 +210,22 @@ export async function createQuoteRequest(
         contactEmail: email,
         notes: trim(input.notes),
         userId: user?.id ?? null,
+        /*
+         * ⚠ THE ACCOUNT, NOT JUST THE PERSON. This is what the buyer's own
+         * panel scopes by, and leaving it null made a request invisible to the
+         * clinic that sent it — the send succeeded, the reference came back,
+         * and nothing appeared under Bulk buy requests.
+         *
+         * It was null on every new request for exactly as long as this feature
+         * existed: the migration backfilled the old rows from their author's
+         * account, so the panel looked right until somebody sent a new one.
+         * Caught by sending one and going to look.
+         *
+         * Taken from the session, never from the form — the same rule the cart
+         * and checkout follow, because an organisation id from a request body
+         * is another account's data for the asking.
+         */
+        organisationId: user?.organisationId ?? null,
         items: { create: lines.map((l) => ({ skuId: l.skuId, qty: l.qty })) },
       },
     });

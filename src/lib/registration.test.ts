@@ -7,6 +7,7 @@ import {
   canSignIn,
   checkOtp,
   isAwaitingDecision,
+  needsAddressWarning,
   normaliseOtp,
   otpExpiry,
   validateApplication,
@@ -134,9 +135,31 @@ describe("who may sign in", () => {
   });
 
   it("holds an unverified address and offers the code again", () => {
-    const verdict = canSignIn({ ...base, isVerified: false });
+    // Still the rule for anybody we have not positively said yes to.
+    const verdict = canSignIn({ ...base, isVerified: false, approvalStatus: "Pending" });
     assert.equal(verdict.allowed, false);
     assert.equal(verdict.allowed === false && verdict.canResendOtp, true);
+  });
+
+  it("lets an approved account in even without the code", () => {
+    // An account manager who has met the company and opened the account by
+    // hand has already done what the code exists to do. Holding that buyer at
+    // the door until they find an email they were never waiting for is the
+    // platform being pedantic at a paying customer's expense.
+    assert.deepEqual(canSignIn({ ...base, isVerified: false }), { allowed: true });
+  });
+
+  it("does not let approval rescue a rejected or closed account", () => {
+    // Approval is checked before verification, so the ordering has to be
+    // proved not to have opened a hole underneath it.
+    assert.equal(
+      canSignIn({ isVerified: false, approvalStatus: "Rejected", isDisabled: false }).allowed,
+      false
+    );
+    assert.equal(
+      canSignIn({ isVerified: false, approvalStatus: "Approved", isDisabled: true }).allowed,
+      false
+    );
   });
 
   it("tells a waiting applicant they are waiting", () => {
@@ -175,23 +198,42 @@ describe("who may sign in", () => {
 });
 
 describe("what an admin has to look at", () => {
-  it("counts only applications that have proved their email", () => {
-    // An unverified application may be a typo and is not worth a person's time
-    // until the applicant has shown the address reaches them.
-    assert.equal(
-      isAwaitingDecision({ isVerified: true, approvalStatus: "Pending", isDisabled: false }),
-      true
-    );
-    assert.equal(
-      isAwaitingDecision({ isVerified: false, approvalStatus: "Pending", isDisabled: false }),
-      false
-    );
+  it("counts every pending application, confirmed or not", () => {
+    // It used to require the code. That left a company an account manager had
+    // already spoken to sitting in a greyed list marked "nothing to do".
+    for (const isVerified of [true, false]) {
+      assert.equal(
+        isAwaitingDecision({ isVerified, approvalStatus: "Pending", isDisabled: false }),
+        true,
+        `isVerified ${isVerified}`
+      );
+    }
+  });
+
+  it("drops one that has been decided or closed", () => {
     assert.equal(
       isAwaitingDecision({ isVerified: true, approvalStatus: "Approved", isDisabled: false }),
       false
     );
     assert.equal(
+      isAwaitingDecision({ isVerified: true, approvalStatus: "Rejected", isDisabled: false }),
+      false
+    );
+    assert.equal(
       isAwaitingDecision({ isVerified: true, approvalStatus: "Pending", isDisabled: true }),
+      false
+    );
+  });
+
+  it("flags a pending application whose address has never been proved", () => {
+    // Approving it opens an account we cannot email, which is worth saying at
+    // the moment of deciding rather than in a report afterwards.
+    assert.equal(
+      needsAddressWarning({ isVerified: false, approvalStatus: "Pending", isDisabled: false }),
+      true
+    );
+    assert.equal(
+      needsAddressWarning({ isVerified: true, approvalStatus: "Pending", isDisabled: false }),
       false
     );
   });

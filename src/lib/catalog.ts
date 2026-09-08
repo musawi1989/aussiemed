@@ -66,8 +66,13 @@ async function storedVersion(): Promise<string> {
  * next time the catalogue was re-seeded.
  *
  * FNV-1a, masked to 31 bits so it stays a positive JS integer.
+ *
+ * Exported so the order screens can build the same id for a product they read
+ * straight from the database rather than through the catalogue. A second
+ * implementation of this would be a second answer to "which product is this",
+ * and the two would drift the first time either was touched.
  */
-function stableId(key: string): number {
+export function stableId(key: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < key.length; i += 1) {
     hash ^= key.charCodeAt(i);
@@ -284,17 +289,52 @@ async function load() {
       return depth;
     };
 
-    const path = p.categories
-      .map((pc) => categoryById.get(catNumeric.get(pc.categoryId)!))
-      .filter((c): c is CategoryRef & { parentId: number | null } => Boolean(c))
+    /**
+     * The categories a product is filed in, PLUS every ancestor of each.
+     *
+     * IT USED TO BE THE DIRECT LINKS ONLY, and that is not a path — it is a
+     * list. The consequences were quiet and everywhere: a product filed under
+     * "Wound Care, First Aid & Safety › Antiseptics" did not count towards its
+     * own department, so the filter sidebar showed a column of zeros next to
+     * twenty-eight products. Searching "dental" found nothing under Dental
+     * unless the word was in the product's own name, because matchesSearch
+     * reads these names. And a breadcrumb had no department to start from.
+     *
+     * Expanded here rather than at each reader, because every one of those
+     * three is a different file and they would have drifted.
+     *
+     * Deduplicated: two categories under one department must not count it
+     * twice, or a facet reads higher than the number of products it holds —
+     * the counts-don't-match-results bug this module exists to prevent.
+     */
+    const withAncestors = new Map<number, CategoryRef & { parentId: number | null }>();
+    for (const link of p.categories) {
+      let current = categoryById.get(catNumeric.get(link.categoryId)!);
+      // Guarded against a cycle in data somebody can edit: a category that is
+      // its own ancestor would otherwise hang the whole catalogue build.
+      const seen = new Set<number>();
+      while (current && !seen.has(current.id)) {
+        seen.add(current.id);
+        withAncestors.set(current.id, current);
+        current =
+          current.parentId === null
+            ? undefined
+            : categoryById.get(current.parentId);
+      }
+    }
+
+    const path = [...withAncestors.values()]
       .sort((a, b) => depthOf(a) - depthOf(b))
       .map((c) => ({ id: c.id, name: c.name, slug: c.slug }));
 
-    const packs = p.skus.map((s) => ({
-      id: s.eachesPerPack > 1 ? "outer" : "base",
+    const toPack = (s: (typeof p.skus)[number]) => ({
+      // Unique within one combination, which is the array the UI indexes into.
+      id: s.id,
+      images: p.images.filter(image => image.skuId === s.id).map(image => image.path),
       sku: s.skuCode,
       label: s.unitLabel,
       shortLabel: s.unitShortLabel,
+      baseUnitName: s.baseUnitName,
       eachesPerPack: s.eachesPerPack,
       priceAED: fromFils(s.priceFils),
       tiers: s.tiers.map((t) => ({
@@ -304,19 +344,87 @@ async function load() {
         unitsPerLevel: t.unitsPerLevel,
       })),
       outOfStock: s.manualOutOfStock,
+    });
+
+    /**
+     * Which option values each SKU carries — { Size: "Large", Colour: "Blue" }.
+     *
+     * Read from the option side rather than the SKU side because that is the
+     * shape the query already returns, and because it is the only place the
+     * axis NAME is known: a SkuOptionValue row knows its value but not what
+     * kind of value it is.
+     */
+    const valuesBySku = new Map<string, Record<string, string>>();
+    for (const option of p.options) {
+      for (const value of option.values) {
+        for (const join of value.skus) {
+          const carried = valuesBySku.get(join.skuId) ?? {};
+          carried[option.name] = value.value;
+          valuesBySku.set(join.skuId, carried);
+        }
+      }
+    }
+
+    const axisNames = p.options.map((o) => o.name);
+    const signature = (values: Record<string, string>) =>
+      axisNames.map((name) => values[name] ?? "").join("   ");
+
+    // Built in SKU order, so the combination a buyer lands on is the one the
+    // catalogue lists first rather than whichever the map happened to key.
+    const grouped = new Map<
+      string,
+      { values: Record<string, string>; packs: ReturnType<typeof toPack>[] }
+    >();
+
+    for (const sku of p.skus) {
+      if (!axisNames.length) continue;
+      const values = valuesBySku.get(sku.id) ?? {};
+
+      const key = signature(values);
+      const existing = grouped.get(key);
+      if (existing) existing.packs.push(toPack(sku));
+      else grouped.set(key, { values, packs: [toPack(sku)] });
+    }
+
+    const combinations = [...grouped.values()].map((c) => ({
+      values: c.values,
+      // Smallest pack first, so the price on screen is the one a buyer
+      // compares — the box, not the carton.
+      packs: [...c.packs].sort((a, b) => a.eachesPerPack - b.eachesPerPack),
+      outOfStock: c.packs.every((pack) => pack.outOfStock),
     }));
 
-    const base = packs[0];
+    /**
+     * A product with a real matrix opens on its first combination that can
+     * actually be bought — landing a buyer on something out of stock makes the
+     * page look broken before they have touched it. A product without one
+     * falls back to every SKU it has, which is what this did before
+     * combinations existed.
+     */
+    const opening = combinations.find((c) => !c.outOfStock) ?? combinations[0];
+    const packs = p.skus.map(toPack);
+
+    const base = opening?.packs[0] ?? packs[0];
 
     const variants = p.options.map((option) => {
-      const selected = option.values.find((v) => v.skus.length > 0);
+      const chosen = opening?.values[option.name];
       return {
         name: option.name,
-        selected: selected?.value ?? option.values[0]?.value ?? "",
+        selected:
+          chosen ??
+          option.values.find((v) => v.skus.length > 0)?.value ??
+          option.values[0]?.value ??
+          "",
         options: option.values.map((v) => ({
           value: v.value,
-          // Values with no SKU attached exist but cannot be bought.
-          available: v.skus.length > 0 || v.value !== "Extra Small",
+          // With a matrix, availability is a fact: some SKU carries this
+          // value. Without one the axes are decoration stamped on by the
+          // catalogue generator (DA-11), nothing can honestly be said about
+          // stock, and they are left rendering as they always have.
+          available:
+            combinations.length > 0
+              ? v.skus.length > 0
+              : v.skus.length > 0 || v.value !== "Extra Small",
         })),
       };
     });
@@ -335,7 +443,8 @@ async function load() {
       unit: base?.shortLabel ?? "Each",
       packSize: null,
       outOfStock: p.skus.every((s) => s.manualOutOfStock),
-      images: p.images.map((i) => i.path),
+      images: base?.images.length ? base.images : p.images.filter(image => !image.skuId).map(image => image.path),
+      genericImages: p.images.filter(image => !image.skuId).map(image => image.path),
       tiers: base?.tiers ?? [],
       taxClass: p.taxClass === "ZeroRated" ? "zero-rated" : "standard",
       variantGroup: p.variantGroup,
@@ -343,8 +452,13 @@ async function load() {
       packs,
       defaultPackId: base?.id ?? "base",
       variants,
+      combinations,
       attributes: p.attributes.map((a) => ({ label: a.label, value: a.value })),
-      documents: p.documents.map((d) => ({ label: d.label, href: d.path })),
+      documents: p.documents.map((d) => ({
+        label: d.label,
+        href: d.path,
+        kind: d.kind,
+      })),
       badges: [],
       // Everything currently in the database is seeded catalogue data.
       isPlaceholder: true,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
+import { fillPlaceholders, unknownPlaceholders,
   EMAIL_TEMPLATES,
   findCustomerLeaks,
   findTemplate,
@@ -306,5 +306,55 @@ describe("the wording agrees with the list under it", () => {
       .filter((l) => /\d+ x /.test(l))
       .map((l) => l.match(/^\s*/)![0].length);
     assert.equal(new Set(listedLines).size, 1, `ragged indents: ${listedLines}`);
+  });
+});
+
+describe("fillPlaceholders", () => {
+  const ctx = { reference: "AM-2026-000021", courier: "Aramex", trackingNumber: null };
+
+  it("fills what it knows", () => {
+    assert.equal(fillPlaceholders("Order {{reference}}", ctx), "Order AM-2026-000021");
+  });
+
+  it("allows spaces inside the braces, because people type them", () => {
+    assert.equal(fillPlaceholders("Order {{ reference }}", ctx), "Order AM-2026-000021");
+  });
+
+  it("empties a known key that has nothing in it", () => {
+    // "Tracking: null" is worse than "Tracking:".
+    assert.equal(fillPlaceholders("Tracking: {{trackingNumber}}", ctx), "Tracking: ");
+  });
+
+  it("leaves a key it does not know exactly as typed", () => {
+    // A mistake somebody can see and fix, rather than a gap they cannot.
+    assert.equal(fillPlaceholders("Price {{price}}", ctx), "Price {{price}}");
+  });
+
+  it("leaves ordinary prose with braces alone", () => {
+    assert.equal(fillPlaceholders("Use {this} form", ctx), "Use {this} form");
+  });
+
+  it("fills the same key more than once", () => {
+    assert.equal(
+      fillPlaceholders("{{courier}} — {{courier}}", ctx),
+      "Aramex — Aramex"
+    );
+  });
+});
+
+describe("unknownPlaceholders", () => {
+  it("names what nothing will fill", () => {
+    assert.deepEqual(
+      unknownPlaceholders("{{reference}} and {{price}}", ["reference"]),
+      ["price"]
+    );
+  });
+
+  it("says nothing when every key is known", () => {
+    assert.deepEqual(unknownPlaceholders("{{reference}}", ["reference"]), []);
+  });
+
+  it("reports a repeated unknown once", () => {
+    assert.deepEqual(unknownPlaceholders("{{a}} {{a}}", []), ["a"]);
   });
 });

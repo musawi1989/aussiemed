@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import {
   uploadCatalogueAction,
@@ -23,7 +24,7 @@ export function CatalogueUpload() {
 
   return (
     <div>
-      <form action={upload}>
+      <RestoringForm state={state} saveAll={false} action={upload}>
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-text">
             Filled-in template
@@ -48,7 +49,7 @@ export function CatalogueUpload() {
         >
           {pending ? "Loading…" : "Load catalogue"}
         </button>
-      </form>
+      </RestoringForm>
 
       {state?.ok === false && (
         <p

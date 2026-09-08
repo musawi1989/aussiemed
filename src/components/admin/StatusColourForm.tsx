@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import { setToneColourAction } from "@/app/admin/settings/actions";
 import { StatusPill } from "@/components/StatusPill";
@@ -58,7 +59,7 @@ function ColourRow({ colour }: { colour: ToneColour }) {
 
   return (
     <li className="rounded-card border border-border-base bg-surface-sunken p-3">
-      <form action={submit} className="flex flex-wrap items-center gap-3">
+      <RestoringForm state={state} saveAll={true} action={submit} className="flex flex-wrap items-center gap-3">
         <input type="hidden" name="tone" value={colour.tone} />
 
         {/* The pill, not a swatch: this is what the choice actually produces. */}
@@ -111,7 +112,7 @@ function ColourRow({ colour }: { colour: ToneColour }) {
             {state.message}
           </span>
         )}
-      </form>
+      </RestoringForm>
     </li>
   );
 }

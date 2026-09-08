@@ -37,3 +37,21 @@ skills-lock.json
 # Private document store (TRN certificates and the like). Never public,
 # never committed — see src/lib/storage.ts.
 /storage/
+
+# Variant demo page — illustration only, not part of the site.
+/src/app/variant-demo/
+dev-server.log
+
+.qa/
+
+# Local run output and database backups are never part of a source handover.
+*.log
+*.db-wal
+*.db-shm
+*.db.backup*
+__pycache__/
+*.pyc
+
+# The shareable presentation is supplied separately from the website source.
+/public/presentation.html
+/public/presentation-download.zip

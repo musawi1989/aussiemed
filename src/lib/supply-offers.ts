@@ -1,8 +1,9 @@
 import "server-only";
 
 import { db } from "./db";
-import { audit, requireAdmin, type Result } from "./admin";
+import { requireAdmin, type Result } from "./admin";
 import { requireSupplier } from "./supplier-portal";
+import { ensure, supplierPermission } from "./permissions";
 
 /**
  * A supplier adding items to their own list, and the switch that governs it.
@@ -21,29 +22,23 @@ import { requireSupplier } from "./supplier-portal";
  * immediately. Turning the switch on makes each one arrive unapproved instead,
  * for somebody here to accept. Off is the honest default for a switch whose
  * purpose is to slow things down only when that is wanted.
+ *
+ * THAT SWITCH NOW LIVES ON ROLES AND PERMISSIONS, as the addItems permission,
+ * alongside the nine other things a supplier can do that used to be decided in
+ * code with no way to change them. Its old Setting row is gone: the three
+ * modes there say everything the checkbox said, and one thing more — that a
+ * supplier need not be able to add items at all.
  */
-
-const APPROVAL_KEY = "supplyOffersNeedApproval";
 
 const fail = (error: string): Result<never> => ({ ok: false, error });
 
+/**
+ * Kept as a named question rather than inlined, because three callers ask it
+ * and "does this addition wait for us" reads better than a mode comparison
+ * repeated in a page, an action and a create.
+ */
 export async function offersNeedApproval(): Promise<boolean> {
-  const row = await db.setting.findUnique({ where: { key: APPROVAL_KEY } });
-  return row?.value === "true";
-}
-
-export async function setOffersNeedApproval(on: boolean): Promise<Result> {
-  const actor = await requireAdmin();
-  const before = await offersNeedApproval();
-
-  await db.setting.upsert({
-    where: { key: APPROVAL_KEY },
-    update: { value: String(on) },
-    create: { key: APPROVAL_KEY, value: String(on) },
-  });
-
-  await audit(actor, "setting.supplyApproval", "Setting", APPROVAL_KEY, before, on);
-  return { ok: true, value: undefined };
+  return (await supplierPermission("addItems")) === "approval";
 }
 
 export type BrowsableProduct = {
@@ -154,6 +149,9 @@ export async function availableProducts(filters: {
 export async function addToMySupply(skuId: string): Promise<Result<string>> {
   const { supplierId } = await requireSupplier();
 
+  const allowed = await ensure("addItems");
+  if (!allowed.ok) return allowed;
+
   const sku = await db.productSku.findUnique({
     where: { id: skuId },
     select: { id: true, product: { select: { name: true } } },
@@ -193,6 +191,9 @@ export async function addToMySupply(skuId: string): Promise<Result<string>> {
  */
 export async function removeFromMySupply(supplyId: string): Promise<Result> {
   const { supplierId } = await requireSupplier();
+
+  const allowed = await ensure("removeOffers");
+  if (!allowed.ok) return allowed;
 
   const supply = await db.productSupply.findFirst({
     where: { id: supplyId, supplierId },
@@ -235,7 +236,7 @@ export async function unallocatedProducts(filters: {
   q?: string;
   categoryId?: string;
 }): Promise<UnallocatedProduct[]> {
-  await requireAdmin();
+  await requireAdmin("suppliers", "view");
   const term = filters.q?.trim();
 
   const skus = await db.productSku.findMany({

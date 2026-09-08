@@ -1,5 +1,6 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useState } from "react";
 import { decideApplicationAction } from "@/app/admin/applications/actions";
 import type { FormState } from "@/components/AdminForm";
@@ -35,7 +36,7 @@ export function ApplicationDecision({
   }
 
   return (
-    <form action={submit} className="w-full">
+    <RestoringForm state={state} saveAll={false} action={submit} className="w-full">
       <input type="hidden" name="userId" value={userId} />
 
       {refusing ? (
@@ -97,6 +98,6 @@ export function ApplicationDecision({
           {state.error}
         </p>
       )}
-    </form>
+    </RestoringForm>
   );
 }

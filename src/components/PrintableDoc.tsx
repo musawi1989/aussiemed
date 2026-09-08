@@ -40,7 +40,7 @@ export function PrintableDoc({
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
           href={backHref}
-          className="text-sm font-semibold text-text-muted hover:text-navy"
+          className="inline-flex min-h-11 items-center gap-2 rounded-card border-2 border-navy bg-navy px-4 py-2 font-bold text-white text-sm"
         >
           &larr; {backLabel}
         </Link>
@@ -58,7 +58,7 @@ export function PrintableDoc({
           )}
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={async () => { await Promise.all(Array.from(document.querySelectorAll<HTMLImageElement>(".print-document img")).map(image => image.decode().catch(() => {}))); window.print(); }}
             className="cursor-pointer rounded-card bg-navy px-4 py-2 text-sm font-bold text-on-navy transition-colors hover:bg-navy-hover"
           >
             Print or save as PDF

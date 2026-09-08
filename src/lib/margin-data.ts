@@ -2,6 +2,8 @@ import "server-only";
 
 import { db } from "./db";
 import { requireAdmin } from "./admin";
+import { rankLabel, rankOrder } from "./supply-cover";
+import { SUPPLY_RANKS } from "./purchase-plan";
 import {
   lineMargin,
   marginOf,
@@ -25,9 +27,16 @@ import {
  * ------------------------------------------------------------------ */
 
 export type SupplyCost = {
-  rank: string;
+  /** Primary | Backup | Third, or null for a supplier who only offers it. */
+  rank: string | null;
+  /** How it reads on screen — "Secondary", or "Offer" for a null rank. */
+  rankLabel: string;
+  /** False for an offer: nothing will be bought at this price today. */
+  isCover: boolean;
   supplierName: string;
   costFils: number | null;
+  /** Asked for and not yet agreed. Shown, never used in a margin. */
+  proposedCostFils: number | null;
   isAvailable: boolean;
   supplierPartNumber: string | null;
 };
@@ -50,7 +59,7 @@ export type SkuMargin = {
 };
 
 export async function productMargins(productId: string): Promise<SkuMargin[]> {
-  await requireAdmin();
+  await requireAdmin("reports", "view");
 
   const skus = await db.productSku.findMany({
     where: { productMasterId: productId },
@@ -63,15 +72,26 @@ export async function productMargins(productId: string): Promise<SkuMargin[]> {
       priceFils: true,
       supplies: {
         /*
-         * COVER ONLY, like the buying run. A null rank is a supplier offering
-         * an item, not supplying it: they have no agreed cost with us on it
-         * and including them would put a stranger's figure on a margin report.
+         * EVERY SUPPLIER ON THE PACK, cover or not.
+         *
+         * This was cover only, on the reasoning that an offer has no agreed
+         * cost and would put a stranger's figure on a margin report. The
+         * opposite turned out to be the useful view: what a company not
+         * currently in one of the three slots charges is exactly what tells
+         * you whether the slots are filled correctly. A supplier undercutting
+         * our primary by 20% is invisible on a report that only lists the
+         * primary.
+         *
+         * The distinction is kept rather than erased — isCover says whether a
+         * row can actually be bought from today, the headline margin is still
+         * computed against cover alone, and an offer's price is labelled as
+         * what it is.
          */
-        where: { rank: { not: null } },
         orderBy: { rank: "asc" },
         select: {
           rank: true,
           costFils: true,
+          proposedCostFils: true,
           isAvailable: true,
           supplierPartNumber: true,
           supplier: { select: { companyName: true, isAvailable: true } },
@@ -81,23 +101,42 @@ export async function productMargins(productId: string): Promise<SkuMargin[]> {
   });
 
   return skus.map((sku) => {
-    const supplies: SupplyCost[] = sku.supplies.map((supply) => ({
-      // Non-null by the where above; the report has no row for an offer.
-      rank: supply.rank ?? "",
-      supplierName: supply.supplier.companyName,
-      costFils: supply.costFils,
-      // Both switches matter: the company can be off, or just this item.
-      isAvailable: supply.isAvailable && supply.supplier.isAvailable,
-      supplierPartNumber: supply.supplierPartNumber,
-    }));
+    const supplies: SupplyCost[] = sku.supplies
+      .map((supply) => ({
+        rank: supply.rank,
+        rankLabel: rankLabel(supply.rank),
+        isCover: supply.rank !== null,
+        supplierName: supply.supplier.companyName,
+        costFils: supply.costFils,
+        proposedCostFils: supply.proposedCostFils,
+        // Both switches matter: the company can be off, or just this item.
+        isAvailable: supply.isAvailable && supply.supplier.isAvailable,
+        supplierPartNumber: supply.supplierPartNumber,
+      }))
+      // Cover first in the buying run's own order, then the offers. Sorting
+      // by the rank string would put Backup above Primary alphabetically.
+      .sort(
+        (a, b) =>
+          rankOrder(a.rank) - rankOrder(b.rank) ||
+          a.supplierName.localeCompare(b.supplierName)
+      );
 
-    // The same order of preference the purchasing run uses, so the margin
-    // shown is the margin on the next order rather than on a hypothetical one.
+    /*
+     * The margin is quoted against the supplier we would ACTUALLY buy from.
+     *
+     * Cover only, and in the buying run's order of preference — an offer never
+     * receives a purchase order, so quoting margin against one would describe
+     * a trade that cannot happen. This is the reason the two concepts stayed
+     * separate when offers were added to the table above.
+     */
+    const cover = supplies.filter((s) => s.isCover);
     const buyingFrom =
-      supplies.find((s) => s.rank === "Primary" && s.isAvailable) ??
-      supplies.find((s) => s.isAvailable) ??
-      supplies.find((s) => s.rank === "Primary") ??
-      supplies[0] ??
+      SUPPLY_RANKS.map((rank) =>
+        cover.find((s) => s.rank === rank && s.isAvailable)
+      ).find(Boolean) ??
+      SUPPLY_RANKS.map((rank) => cover.find((s) => s.rank === rank)).find(
+        Boolean
+      ) ??
       null;
 
     return {
@@ -109,7 +148,7 @@ export async function productMargins(productId: string): Promise<SkuMargin[]> {
       supplies,
       margin: marginOf(sku.priceFils, buyingFrom?.costFils ?? null),
       basis: buyingFrom
-        ? `${buyingFrom.rank.toLowerCase()} · ${buyingFrom.supplierName}`
+        ? `${buyingFrom.rankLabel.toLowerCase()} · ${buyingFrom.supplierName}`
         : null,
     };
   });
@@ -148,7 +187,7 @@ export type OrderMargin = {
  * from the part that has arrived.
  */
 export async function orderMargin(reference: string): Promise<OrderMargin | null> {
-  await requireAdmin();
+  await requireAdmin("reports", "view");
 
   const order = await db.order.findUnique({
     where: { reference },

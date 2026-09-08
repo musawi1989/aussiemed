@@ -1,4 +1,5 @@
 import type { Product, Searchable } from "./types";
+import { cardPriceKey, distinctPriceCards, expandVariantCards } from "./catalogue-cards.ts";
 
 /**
  * Catalogue querying as pure functions over a product array.
@@ -33,6 +34,7 @@ export const MAX_LIMIT = 500;
 export type SortKey = "relevance" | "name" | "price-asc" | "price-desc";
 
 export type ProductQuery = {
+  groupFamilies?: boolean;
   categorySlug?: string;
   brand?: string;
   q?: string;
@@ -126,10 +128,17 @@ export function sortProducts(items: Product[], sort: SortKey): Product[] {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
       break;
     default:
-      // Relevance: in stock first, real products ahead of placeholders, then
-      // alphabetical so the order is stable between renders.
+      /*
+       * Relevance: real products ahead of placeholders, then alphabetical so
+       * the order is stable between renders.
+       *
+       * STOCK IS NOT A TERM HERE. It used to sort in-stock first, which
+       * publishes the thing the storefront now hides: whatever sits at the
+       * bottom of every list is out of stock, and two page loads a week apart
+       * would say which lines had run out. Position must not reveal what a
+       * badge no longer does.
+       */
       sorted.sort((a, b) => {
-        if (a.outOfStock !== b.outOfStock) return a.outOfStock ? 1 : -1;
         if (a.isPlaceholder !== b.isPlaceholder) return a.isPlaceholder ? 1 : -1;
         return a.name.localeCompare(b.name);
       });
@@ -155,7 +164,7 @@ export function queryProducts(
   } = query;
 
   // Stage 1 — every filter EXCEPT the category facet.
-  let base = products;
+  let base = query.groupFamilies ? expandVariantCards(products) : products;
   if (q?.trim()) base = base.filter((p) => matchesSearch(p, q.trim()));
   if (brand) base = base.filter((p) => p.brand === brand);
   if (inStockOnly) base = base.filter((p) => !p.outOfStock);
@@ -198,14 +207,22 @@ export function queryProducts(
   // advertise a number the list does not then deliver. This is the structural
   // fix for the old platform's counts-don't-match-results bug.
   const facetCounts: Record<number, number> = {};
+  const facetKeys = new Map<number, Set<string>>();
   for (const product of base) {
     for (const id of categoryIdsFor(product)) {
+      if (query.groupFamilies) {
+        const seen = facetKeys.get(id) ?? new Set<string>();
+        const key = cardPriceKey(product);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        facetKeys.set(id, seen);
+      }
       facetCounts[id] = (facetCounts[id] ?? 0) + 1;
     }
   }
 
   const brandCounts = new Map<string, number>();
-  for (const product of base) {
+  for (const product of query.groupFamilies ? distinctPriceCards(base) : base) {
     if (product.brand) {
       brandCounts.set(product.brand, (brandCounts.get(product.brand) ?? 0) + 1);
     }
@@ -225,6 +242,7 @@ export function queryProducts(
   }
 
   items = sortProducts(items, sort);
+  if (query.groupFamilies) items = distinctPriceCards(items);
 
   const total = items.length;
 

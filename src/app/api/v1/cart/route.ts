@@ -61,6 +61,9 @@ export async function GET() {
         totalFils: 0,
         zeroRatedFils: 0,
         itemCount: 0,
+        listSubtotalFils: 0,
+        discountFils: 0,
+        accountDiscountBasisPoints: 0,
       },
     });
   }

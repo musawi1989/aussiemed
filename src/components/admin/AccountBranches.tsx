@@ -12,6 +12,7 @@ import {
   useRestored,
   type FormState,
 } from "@/components/AdminForm";
+import { ConfirmSubmit } from "./ConfirmSubmit";
 
 export type BranchRow = {
   id: string;
@@ -199,22 +200,24 @@ export function AccountBranches({
                   {openId === branch.id ? "Close" : "Edit"}
                 </button>
 
-                <form action={remove} className="shrink-0">
+                <RestoringForm state={removeState} saveAll={false} action={remove} className="shrink-0">
                   <input type="hidden" name="id" value={id} />
                   <input type="hidden" name="branchId" value={branch.id} />
-                  <button
-                    type="submit"
-                    disabled={removingBranch}
-                    className="cursor-pointer rounded-card border border-border-strong bg-surface px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:border-danger disabled:opacity-60"
-                    title={
+                  {/* The cascade is the thing worth saying out loud: removing
+                      a branch takes everyone who orders for it as well, and
+                      the title attribute only says so on hover. */}
+                  <ConfirmSubmit
+                    what={`the ${branch.label} branch`}
+                    consequence={
                       branch.peopleCount > 0
-                        ? `${branch.peopleCount} ${branch.peopleCount === 1 ? "person orders" : "people order"} for this branch and will come off the list too`
-                        : undefined
+                        ? `${branch.peopleCount} ${branch.peopleCount === 1 ? "person who orders" : "people who order"} for this branch will come off the list too.`
+                        : "Nobody currently orders for this branch."
                     }
-                  >
-                    Remove
-                  </button>
-                </form>
+                    pending={removingBranch}
+                    pendingLabel="Removing…"
+                    className="cursor-pointer rounded-card border border-border-strong bg-surface px-3 py-1.5 text-xs font-bold text-danger transition-colors hover:border-danger disabled:opacity-60"
+                  />
+                </RestoringForm>
               </div>
 
               {openId === branch.id && (

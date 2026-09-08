@@ -8,6 +8,7 @@ import {
   setOrderPayment,
   setOrderStatus,
 } from "@/lib/admin";
+import { emailInvoice } from "@/lib/invoice-email";
 import type { FormState } from "@/components/AdminForm";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
@@ -92,4 +93,31 @@ export async function setLineBatchAction(
   if (!result.ok) return { ok: false, error: result.error };
   done(reference);
   return { ok: true, message: "Lot recorded." };
+}
+
+/**
+ * Email the tax invoice for this order.
+ *
+ * Lived in the inbox's actions file, which is where the "send this on to
+ * somebody" code happened to sit. The inbox has gone and this has nothing to
+ * do with it — it belongs beside the order screen that offers the button.
+ */
+export async function emailInvoiceAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const to = text(data, "to");
+  const result = await emailInvoice(text(data, "reference"), to);
+
+  if (!result.ok) return { ok: false, error: result.error, values: { to } };
+
+  revalidatePath(`/admin/orders/${text(data, "reference")}`);
+  revalidatePath("/admin/emails");
+  return {
+    ok: true,
+    message:
+      result.value.status === "Duplicate"
+        ? `Already sent to ${result.value.to} — nothing sent again.`
+        : `Invoice sent to ${result.value.to}.`,
+  };
 }

@@ -217,6 +217,13 @@ const FULFILMENT: Table = {
     label: "Acknowledged",
     meaning: "The supplier has confirmed they are filling it.",
   },
+  PartiallyDispatched: {
+    // Attention, not active: an order half sent is one somebody still has to
+    // chase the rest of, and "active" would file it with the ones in hand.
+    tone: "attention",
+    label: "Partially dispatched",
+    meaning: "Some of it has left the supplier. The rest is still to come.",
+  },
   PartiallyReceived: {
     tone: "attention",
     label: "Partially received",
@@ -795,4 +802,26 @@ export function paymentFilterWhere(
   }
 
   return { OR: clauses };
+}
+
+export const SETTLEMENT_STATES = ["Unpaid", "PartiallyPaid", "Paid", "Refunded"] as const;
+export const PAYMENT_DUE_STATES = ["Overdue", "DueSoon", "NotDue"] as const;
+
+/** Within a filter choices are ORed; payment and due-date filters are ANDed. */
+export function paymentCriteriaWhere(settlements: readonly string[], dueStates: readonly string[], now: Date): PaymentWhere | null {
+  const due = [...new Set([...dueStates, ...settlements.filter((value) => PAYMENT_DUE_STATES.includes(value as typeof PAYMENT_DUE_STATES[number]))])];
+  const paid = settlements.filter((value) => !PAYMENT_DUE_STATES.includes(value as typeof PAYMENT_DUE_STATES[number]));
+  const and: PaymentWhere[] = [];
+  if (paid.length) and.push({ OR: paid.map((value) => {
+    if (value === "Unpaid") return { OR: [{ paymentStatus: "Unpaid" }, { paymentStatus: "Overdue", paidFils: 0 }] };
+    if (value === "PartiallyPaid") return { OR: [{ paymentStatus: value }, { paymentStatus: "Overdue", paidFils: { gt: 0 } }] };
+    return SETTLEMENT_STATES.includes(value as typeof SETTLEMENT_STATES[number]) ? { paymentStatus: value } : { id: "__no_such_invoice__" };
+  }) });
+  if (due.length) and.push({ OR: due.map((value) => {
+    if (value === "Overdue") return paymentFilterWhere(["Overdue"], now)!;
+    if (value === "DueSoon") return { paymentStatus: { in: ["Unpaid", "PartiallyPaid"] }, paymentDueOn: { gte: now, lte: new Date(now.getTime() + DUE_SOON_DAYS * DAY_MS) } };
+    if (value === "NotDue") return { paymentStatus: { in: ["Unpaid", "PartiallyPaid"] }, OR: [{ paymentDueOn: null }, { paymentDueOn: { gte: now } }] };
+    return { id: "__no_such_invoice__" };
+  }) });
+  return and.length ? { AND: and } : null;
 }

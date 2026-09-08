@@ -43,6 +43,7 @@ export type PriceTier = {
  * is what a buyer actually adds to their cart.
  */
 export type Pack = {
+  images?: string[];
   /** Stable id, unique within the product. Also the SKU suffix. */
   id: string;
   sku: string;
@@ -50,6 +51,7 @@ export type Pack = {
   label: string;
   /** Short label shown beside Add to cart, e.g. "Box". */
   shortLabel: string;
+  baseUnitName?: string;
   /** How many base units this pack contains — used for per-unit comparison. */
   eachesPerPack: number;
   priceAED: number;
@@ -68,6 +70,28 @@ export type VariantAxis = {
   options: { value: string; available: boolean }[];
 };
 
+/**
+ * One buyable point in the variant matrix — Large AND Blue, together.
+ *
+ * The axes alone cannot answer "what does the black extra-large cost", because
+ * a matrix is normally sparse: a supplier makes some of the combinations, not
+ * their cartesian product. So the combinations are listed explicitly, each
+ * carrying its own packs and its own stock, and a value is offered on screen
+ * only when some combination contains it.
+ *
+ * A product whose SKUs carry no option values at all has an empty list, which
+ * the UI reads as "these axes are decoration" — true of every glove until
+ * seed-variants.ts gives two of them a real matrix (DA-11, FN-07).
+ */
+export type VariantCombination = {
+  /** Axis name to value, e.g. { Size: "Large", Colour: "Blue" }. */
+  values: Record<string, string>;
+  /** The packaging levels this combination is sold in. Never empty. */
+  packs: Pack[];
+  /** True when every pack of this combination is out of stock. */
+  outOfStock: boolean;
+};
+
 export type SpecAttribute = {
   label: string;
   value: string;
@@ -76,6 +100,12 @@ export type SpecAttribute = {
 export type ProductDocument = {
   label: string;
   href: string;
+  /**
+   * SDS | Specification | Certificate | Flyer — see DOCUMENT_KINDS in admin.ts.
+   * Kept alongside the label because a buyer hunting for a safety data sheet
+   * before they can accept a delivery scans for the kind, not the name.
+   */
+  kind: string;
 };
 
 /**
@@ -102,6 +132,7 @@ export type Product = {
   packSize: string | null;
   outOfStock: boolean;
   images: string[];
+  genericImages?: string[];
   tiers: PriceTier[];
   taxClass: TaxClass;
   /** Products sharing a family are the same line in different sizes. */
@@ -113,6 +144,12 @@ export type Product = {
   packs: Pack[];
   defaultPackId: string;
   variants: VariantAxis[];
+  /**
+   * The buyable points in the variant matrix. Empty when the product's SKUs
+   * carry no option values, which is how the UI knows the axes above are
+   * decoration rather than a choice — see VariantCombination.
+   */
+  combinations: VariantCombination[];
   attributes: SpecAttribute[];
   documents: ProductDocument[];
   badges: ProductBadge[];

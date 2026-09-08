@@ -9,9 +9,13 @@ import {
   lastCutoffBefore,
   receivePurchaseOrder,
   sendPurchaseOrder,
+  sendAllDraftPurchaseOrders,
   setAutoSend,
   setPurchaseOrderPayment,
 } from "@/lib/purchasing";
+import { setPurchaseLineQuantities } from "@/lib/purchase-lines";
+import { createDocket } from "@/lib/dockets";
+import { audit, requireAdmin } from "@/lib/admin";
 import type { FormState } from "@/components/AdminForm";
 
 /**
@@ -36,7 +40,7 @@ export async function buildTodayAction(
   if (!result.ok) return { ok: false, error: result.error };
   refresh();
 
-  const { created, unsourceable } = result.value;
+  const { created, sent, unsent, autoSent, unsourceable } = result.value;
   if (created.length === 0) {
     return {
       ok: true,
@@ -47,15 +51,160 @@ export async function buildTodayAction(
     };
   }
 
+  /*
+   * "Built" is no longer the whole story.
+   *
+   * Under the monthly model a run opens an order for a supplier who has none
+   * this month and ADDS to the one they already have otherwise. Reporting
+   * every run as "2 drafts built" would tell somebody two new documents exist
+   * when one of them is the order they sent a fortnight ago.
+   */
+  const opened = created.filter((po) => po.opened);
+  const addedTo = created.filter((po) => !po.opened);
   const lines = created.reduce((n, po) => n + po.lineCount, 0);
+
+  const parts: string[] = [];
+  if (opened.length > 0) {
+    parts.push(
+      `${opened.length} monthly order${opened.length === 1 ? "" : "s"} opened`
+    );
+  }
+  if (addedTo.length > 0) {
+    parts.push(
+      `${addedTo.length} existing order${addedTo.length === 1 ? "" : "s"} added to`
+    );
+  }
+
+  /*
+   * What auto-send did, said plainly.
+   *
+   * Whether the suppliers have actually been told is the thing the person who
+   * clicked Build needs to know, and it used to be missing entirely because
+   * auto-send did nothing. An order that could not be sent is named, not
+   * counted: "one failed" sends somebody hunting through the list for which.
+   */
+  if (autoSent) {
+    if (sent.length > 0) {
+      parts.push(`${sent.length} sent to ${sent.length === 1 ? "the supplier" : "suppliers"}`);
+    }
+    if (unsent.length > 0) {
+      parts.push(
+        `NOT sent: ${unsent.map((po) => `${po.poNumber} (${po.reason})`).join("; ")}`
+      );
+    }
+  }
+
   return {
     ok: true,
     message:
-      `${created.length} draft${created.length === 1 ? "" : "s"} built, ` +
-      `${lines} line${lines === 1 ? "" : "s"}` +
+      `${parts.join(", ")} — ${lines} line${lines === 1 ? "" : "s"}` +
       (unsourceable.length > 0
         ? `. ${unsourceable.length} could not be sourced.`
         : "."),
+  };
+}
+
+/**
+ * Push every draft to its supplier in one go.
+ *
+ * Reports what went and names what did not, rather than returning a count.
+ * A draft that refuses is nearly always one with no lines on it, and that is
+ * a thing somebody has to go and look at.
+ */
+export async function sendAllAction(
+  _state: FormState,
+  _data: FormData
+): Promise<FormState> {
+  const result = await sendAllDraftPurchaseOrders();
+  if (!result.ok) return { ok: false, error: result.error };
+
+  refresh();
+
+  const { sent, failed } = result.value;
+
+  if (sent.length === 0 && failed.length === 0) {
+    return { ok: true, message: "There were no drafts waiting to be sent." };
+  }
+
+  const suppliers = new Set(sent.map((po) => po.supplierName)).size;
+  const parts: string[] = [];
+
+  if (sent.length > 0) {
+    parts.push(
+      `${sent.length} purchase order${sent.length === 1 ? "" : "s"} sent to ` +
+        (suppliers === 1 ? sent[0].supplierName : `${suppliers} suppliers`)
+    );
+  }
+  if (failed.length > 0) {
+    parts.push(
+      `NOT sent: ${failed.map((po) => `${po.poNumber} (${po.reason})`).join("; ")}`
+    );
+  }
+
+  const message = `${parts.join(". ")}.`;
+
+  // Anything left behind makes this a failure, even when most of them went:
+  // a green tick over "one was not sent" is how the one gets forgotten.
+  return failed.length === 0
+    ? { ok: true, message }
+    : { ok: false, error: message };
+}
+
+/**
+ * A delivery docket recorded on the supplier's behalf.
+ *
+ * Most suppliers raise their own in the portal. Some ring up, or send a
+ * scanned docket with the driver, and the alternative to recording it here is
+ * that the consignment exists on paper and nowhere else — which is how a
+ * part-delivered order ends up looking unfulfilled for a fortnight. Stamped
+ * with role Admin so the docket says who actually entered it.
+ */
+export async function recordDocketAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const actor = await requireAdmin("purchasing");
+
+  const purchaseOrderId = text(data, "id");
+  const poNumber = text(data, "poNumber");
+
+  // Paired positionally: one hidden line id beside each quantity, the same
+  // arrangement the supplier form and the goods-in form both use.
+  const lineIds = data.getAll("docketLineId").map(String);
+  const quantities = data
+    .getAll("docketQty")
+    .map((v) => Number(String(v).trim() || "0"));
+  const lines = lineIds.map((purchaseOrderLineId, index) => ({
+    purchaseOrderLineId,
+    qty: quantities[index],
+  }));
+
+  const result = await createDocket({
+    purchaseOrderId,
+    lines,
+    courier: text(data, "courier") || null,
+    trackingNumber: text(data, "trackingNumber") || null,
+    note: text(data, "note") || null,
+    dispatched: true,
+    actor: { id: actor.id, name: actor.name, role: "Admin" },
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+
+  await audit(actor, "purchaseOrder.docket", "PurchaseOrder", poNumber, null, {
+    docket: result.value.sequence,
+    units: lines.reduce((n, l) => n + l.qty, 0),
+    complete: result.value.complete,
+    onBehalfOfSupplier: true,
+  });
+
+  refresh();
+  revalidatePath(`/admin/purchasing/${poNumber}`);
+
+  return {
+    ok: true,
+    message: result.value.complete
+      ? `Docket ${result.value.sequence} recorded. That completes the order.`
+      : `Docket ${result.value.sequence} recorded. The rest stays outstanding.`,
   };
 }
 
@@ -116,11 +265,12 @@ export async function receiveAction(
     return { ok: false, error: "One of the quantities is not a number." };
   }
 
-  const result = await receivePurchaseOrder(id, lines);
+  const result = await receivePurchaseOrder(id, lines, text(data, "requestKey") || undefined);
   if (!result.ok) return { ok: false, error: result.error };
 
   refresh();
   revalidatePath(`/admin/purchasing/${text(data, "poNumber")}`);
+  revalidatePath("/admin/received-products");
 
   const { unitsReceived, shortfall, status } = result.value;
   return {
@@ -128,7 +278,7 @@ export async function receiveAction(
     message:
       `${unitsReceived} unit${unitsReceived === 1 ? "" : "s"} booked in` +
       (shortfall > 0
-        ? `. ${shortfall} short — back in the buying queue for the next order.`
+        ? `. ${shortfall} still outstanding with the supplier. Received goods await allocation.`
         : status === "Received"
           ? ". Order complete."
           : "."),
@@ -146,7 +296,7 @@ export async function setAutoSendAction(
         ok: true,
         message:
           text(data, "on") === "true"
-            ? "Auto-send on. Purchase orders will go out at the cutoff without review."
+            ? "Auto-send on. Purchase orders will go to their suppliers as soon as you build a run, without review."
             : "Auto-send off. Purchase orders wait for you.",
       }
     : { ok: false, error: result.error };
@@ -216,4 +366,67 @@ export async function resourceBackordersAction(
     ok: true,
     message: `${poNumber} raised as a draft — ${units} ${units === 1 ? "unit" : "units"} across ${lineCount} ${lineCount === 1 ? "line" : "lines"}. Send it from Purchasing when you are ready.`,
   };
+}
+
+/**
+ * Recording what a supplier told us off-screen, and correcting a draft.
+ *
+ * The form posts one triple per line — id, ordered, confirmed — which FormData
+ * gives back as parallel lists, read positionally and zipped. A blank confirmed
+ * box clears the line back to "they have not said", which is a real answer and
+ * different from zero.
+ */
+export async function setLineQuantitiesAction(
+  _state: FormState,
+  data: FormData
+): Promise<FormState> {
+  const purchaseOrderId = String(data.get("id") ?? "").trim();
+  const poNumber = String(data.get("poNumber") ?? "").trim();
+  const editable = data.get("ordersEditable") !== null;
+
+  const lineIds = data.getAll("lineId").map(String);
+  const confirmed = data.getAll("qtyConfirmed").map((v) => String(v).trim());
+  const ordered = data.getAll("qtyOrdered").map((v) => String(v).trim());
+
+  const edits = lineIds.map((lineId, i) => ({
+    lineId,
+    qtyConfirmed:
+      confirmed[i] === undefined
+        ? undefined
+        : confirmed[i] === ""
+          ? null
+          : Number(confirmed[i]),
+    // Only read when the order is still a draft. A sent order does not render
+    // these inputs, and the service refuses them anyway.
+    qtyOrdered:
+      editable && ordered[i] !== undefined && ordered[i] !== ""
+        ? Number(ordered[i])
+        : undefined,
+  }));
+
+  if (
+    edits.some(
+      (e) =>
+        (e.qtyConfirmed !== null &&
+          e.qtyConfirmed !== undefined &&
+          !Number.isFinite(e.qtyConfirmed)) ||
+        (e.qtyOrdered !== undefined && !Number.isFinite(e.qtyOrdered))
+    )
+  ) {
+    return { ok: false, error: "One of the quantities is not a number." };
+  }
+
+  const result = await setPurchaseLineQuantities(
+    purchaseOrderId,
+    edits,
+    String(data.get("note") ?? "")
+  );
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath(`/admin/purchasing/${poNumber}`);
+  revalidatePath("/admin/purchasing");
+  revalidatePath("/admin/purchasing/backorders");
+
+  const n = result.value.changed;
+  return { ok: true, message: `${n} line${n === 1 ? "" : "s"} updated.` };
 }

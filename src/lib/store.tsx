@@ -45,6 +45,8 @@ type StoreValue = {
   wishlist: number[];
   toggleWishlist: (productId: number) => void;
   inWishlist: (productId: number) => boolean;
+  /** Signed in and a buyer. False for a guest, a supplier or an admin. */
+  canSave: boolean;
 
   quoteLines: CartLine[];
   addToQuote: (productId: number, packId: string, qty?: number) => void;
@@ -82,19 +84,35 @@ function writeJSON(key: string, value: unknown): void {
   }
 }
 
+/** Drops a key we no longer keep, so stale data cannot outlive the feature. */
+function forget(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Nothing to do: the value is unreadable to us either way.
+  }
+}
+
 export function StoreProvider({
   children,
   savedProductIds = [],
+  canSave = false,
 }: {
   children: ReactNode;
   /**
-   * What this account has already saved, from the database.
-   *
-   * Saved products belong to the account, not to the browser: signing in on a
-   * different machine must show the same hearts filled. Guests keep using
-   * local storage, which is why both exist.
+   * What this account has already saved, from the database. Now the ONLY
+   * source — see canSave.
    */
   savedProductIds?: number[];
+  /**
+   * Whether this visitor may save products at all: signed in, and a buyer.
+   *
+   * Saving is a buyer's feature. A guest has no account to save against, and a
+   * supplier has no screen on which to see the list, so neither is shown a
+   * heart — a control that fills in and quietly persists nothing is worse than
+   * no control at all.
+   */
+  canSave?: boolean;
 }) {
   const [entries, setEntries] = useState<CartEntry[]>([]);
   const [quoteEntries, setQuoteEntries] = useState<CartEntry[]>([]);
@@ -105,11 +123,22 @@ export function StoreProvider({
   useEffect(() => {
     setEntries(readJSON<CartEntry[]>(CART_KEY, []));
     setQuoteEntries(readJSON<CartEntry[]>(QUOTE_KEY, []));
-    // A signed-in account's saved products come from the server and win; a
-    // guest's come from this browser.
-    if (savedProductIds.length === 0) {
-      setWishlist(readJSON<number[]>(WISHLIST_KEY, []));
-    }
+
+    /*
+     * Saved products are NOT read from this browser any more.
+     *
+     * They used to fall back to localStorage whenever the account had none,
+     * which let one person's hearts show up under the next account signed in
+     * on the same machine — a buyer with an empty list inherited whatever a
+     * guest or a supplier had saved. Now that only a signed-in buyer can save
+     * anything, the account is the only possible source, and the fallback
+     * could only ever have served somebody else's data.
+     *
+     * The old key is cleared on the way past so nothing is left lying in the
+     * browser from before this changed.
+     */
+    forget(WISHLIST_KEY);
+
     setIncludeVatState(readJSON<boolean>(VAT_PREF_KEY, false));
     setReady(true);
   }, []);
@@ -120,9 +149,9 @@ export function StoreProvider({
   useEffect(() => {
     if (ready) writeJSON(QUOTE_KEY, quoteEntries);
   }, [quoteEntries, ready]);
-  useEffect(() => {
-    if (ready) writeJSON(WISHLIST_KEY, wishlist);
-  }, [wishlist, ready]);
+  // Deliberately not persisted. The list belongs to the account; the server
+  // action behind the heart is what records it, and the state here only keeps
+  // the button instant between the click and the round trip.
   useEffect(() => {
     if (ready) writeJSON(VAT_PREF_KEY, includeVat);
   }, [includeVat, ready]);
@@ -261,6 +290,7 @@ export function StoreProvider({
       wishlist,
       toggleWishlist,
       inWishlist,
+      canSave,
       quoteLines,
       addToQuote: quoteOps.add,
       setQuoteQty: quoteOps.set,
@@ -272,7 +302,7 @@ export function StoreProvider({
     }),
     [
       ready, lines, totals, cartOps, qtyInCart, wishlist, toggleWishlist,
-      inWishlist, quoteLines, quoteOps, inQuote, includeVat,
+      inWishlist, canSave, quoteLines, quoteOps, inQuote, includeVat,
     ]
   );
 

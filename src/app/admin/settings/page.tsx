@@ -12,8 +12,6 @@ import {
 } from "@/lib/order-notices";
 import { getCutoffHour } from "@/lib/purchasing";
 import { CourierList } from "@/components/admin/CourierList";
-import { SupplyApprovalSetting } from "@/components/admin/SupplyApprovalSetting";
-import { offersNeedApproval } from "@/lib/supply-offers";
 import { courierUsage, listCouriers } from "@/lib/couriers";
 
 /**
@@ -24,7 +22,7 @@ import { courierUsage, listCouriers } from "@/lib/couriers";
  * rest is listed as outstanding with the register item that tracks it.
  */
 export default async function AdminSettingsPage() {
-  const [vat, currency, version, cutoffHour, colours, notify, couriers, supplyApproval] =
+  const [vat, currency, version, cutoffHour, colours, notify, couriers] =
     await Promise.all([
       db.setting.findUnique({ where: { key: "vatRateBasisPoints" } }),
       db.setting.findUnique({ where: { key: "currency" } }),
@@ -34,7 +32,6 @@ export default async function AdminSettingsPage() {
       notifySettings(),
       // Archived ones too: this is the screen that restores them.
       listCouriers(true),
-      offersNeedApproval(),
     ]);
 
   /*
@@ -85,7 +82,27 @@ export default async function AdminSettingsPage() {
         </div>
 
         <div className="space-y-5">
-          <SupplyApprovalSetting on={supplyApproval} />
+          {/* Moved to Roles and permissions, with the nine other things a
+              supplier can do that used to have no switch at all. A pointer
+              rather than a silent removal: somebody who knows this checkbox
+              will come here looking for it. */}
+          <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
+            <h2 className="text-base font-bold tracking-tight text-text">
+              What suppliers can do
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-text-muted">
+              Whether a supplier can add items to their own list, change what we
+              pay them, mark things out of stock and the rest now lives on{" "}
+              <a
+                href="/admin/roles"
+                className="font-semibold underline hover:no-underline"
+              >
+                Roles and permissions
+              </a>
+              , together rather than one checkbox here and nine decisions buried
+              in the code.
+            </p>
+          </section>
 
           <CourierList couriers={courierRows} />
 

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { StatusPill } from "@/components/StatusPill";
-import { paymentStatusOf } from "@/lib/status-tone";
 import { COLUMNS, type ColumnKey } from "@/lib/order-views";
 import { bulkSetOrderStatus, exportOrdersCsv } from "@/app/admin/orders/bulk-actions";
 
@@ -22,6 +21,7 @@ export type OrderRow = {
   cells: Partial<Record<ColumnKey, string>>;
   status: string;
   paymentStatus: string;
+  paymentDueStatus?: string;
   /** Shown as a bubble rather than a truncated cell, as in the reference UI. */
   customerNote: string | null;
   internalNote: string | null;
@@ -81,6 +81,7 @@ export function OrdersTable({
   };
 
   const runBulk = (status: string) => {
+    if (["Cancelled", "Delivered"].includes(status) && !window.confirm(`Mark ${selected.length} selected orders as ${status}? This closes those orders and cannot be undone here.`)) return;
     setStatusOpen(false);
     startTransition(async () => {
       const result = await bulkSetOrderStatus(selected, status);
@@ -345,8 +346,9 @@ function Cell({ row, column }: { row: OrderRow; column: ColumnKey }) {
       <div>
         <StatusPill
           axis="payment"
-          status={paymentStatusOf(row, new Date())}
+          status={row.paymentStatus}
         />
+        {row.paymentDueStatus && row.paymentDueStatus !== row.paymentStatus && <span className="ml-1"><StatusPill axis="payment" status={row.paymentDueStatus} /></span>}
         {value && <p className="mt-0.5 text-xs tnum text-text-subtle">{value}</p>}
       </div>
     );

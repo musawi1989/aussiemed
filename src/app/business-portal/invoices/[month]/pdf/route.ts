@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { myInvoice } from "@/lib/supplier-invoices";
+import { previewGate } from "@/lib/preview-gate";
 
 /**
  * GET /business-portal/invoices/:month/pdf — the month's invoice as a file.
@@ -57,7 +58,15 @@ export async function GET(
   let browser;
   try {
     browser = await chromium.launch();
-    const context = await browser.newContext();
+    // The preview gate challenges this render too — Chromium fetches the
+    // invoice page back off our own origin, which through a tunnel is the
+    // public hostname. Same reasoning as the order PDF beside this one.
+    const gate = previewGate();
+    const context = await browser.newContext(
+      gate
+        ? { httpCredentials: { username: gate.username, password: gate.password } }
+        : {}
+    );
 
     // Forwarded as a raw header rather than parsed into structured cookies:
     // the page is fetched from this same origin and the header is what the

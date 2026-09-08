@@ -1,196 +1,70 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPurchaseOrder } from "@/lib/supplier-portal";
-import { StatusPill } from "@/components/StatusPill";
-import { paymentStatusOf } from "@/lib/status-tone";
-import { ConfirmQuantities } from "@/components/portal/ConfirmQuantities";
+import { getPurchaseOrder, myDocketPlan } from "@/lib/supplier-portal";
+import { supplierPermissions } from "@/lib/permissions";
+import { supplierWork } from "@/lib/supplier-work-maths";
 import { courierOptions } from "@/lib/couriers";
-import {
-  AcknowledgeButton,
-  DispatchForm,
-} from "@/components/portal/PurchaseOrderActions";
+import { StatusPill } from "@/components/StatusPill";
+import { DocketEditor } from "@/components/DocketEditor";
+import { InvoicePaymentHistory } from "@/components/InvoicePaymentHistory";
+import { ConfirmQuantities } from "@/components/portal/ConfirmQuantities";
+import { AcknowledgeButton, DispatchForm } from "@/components/portal/PurchaseOrderActions";
 
-const dubai = (d: Date) =>
-  new Date(d.getTime() + 4 * 3_600_000).toISOString().slice(0, 16).replace("T", " ");
-
-/**
- * One purchase order, as its supplier sees it.
- *
- * getPurchaseOrder scopes by the supplier id on the session, so another
- * supplier's number does not resolve at all rather than resolving and being
- * refused — there is no branch here that could be forgotten.
- *
- * Costs are shown, because this is what AussieMed is paying them. Sell prices
- * and customers are not, because neither is any of their business.
- */
-export default async function SupplierPurchaseOrderPage({
-  params,
-}: {
-  params: Promise<{ poNumber: string }>;
-}) {
+export default async function SupplierPurchaseOrderPage({ params }: { params: Promise<{ poNumber: string }> }) {
   const { poNumber } = await params;
-  const po = await getPurchaseOrder(decodeURIComponent(poNumber));
-
+  const po = await getPurchaseOrder(poNumber);
   if (!po) notFound();
-
-  // After the guard: no point listing couriers for a purchase order that does
-  // not exist. Carries whatever this PO already names, so an archived courier
-  // on an old dispatch is still selectable rather than silently blanked.
+  const plan = await myDocketPlan(po.poNumber);
+  const perms = await supplierPermissions();
   const couriers = await courierOptions(po.courier);
-
-  const units = po.lines.reduce((n, l) => n + l.qtyOrdered, 0);
-  const done = po.status === "Received" || po.status === "Cancelled";
-
-  return (
-    <>
-      <Link
-        href="/business-portal"
-        className="text-sm font-semibold text-text-muted hover:text-navy"
-      >
-        &larr; All orders
-      </Link>
-
-      <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight tnum text-text">
-            {po.poNumber}
-            <StatusPill axis="fulfilment" status={po.status} />
-            {/* Where the goods are, and where the money is. They move
-                independently — an order received in full can be unpaid for
-                another month — so both are on the heading rather than one
-                standing in for the other. */}
-            <StatusPill axis="payment" status={paymentStatusOf(po, new Date())} />
-          </h1>
-          <p className="mt-1 text-sm text-text-muted tnum">
-            {po.lines.length} line{po.lines.length === 1 ? "" : "s"} &middot;{" "}
-            {units} unit{units === 1 ? "" : "s"}
-            {po.sentAt ? ` · sent ${dubai(po.sentAt)}` : ""}
-          </p>
-        </div>
-
-        {!po.acknowledgedAt && (
-          <AcknowledgeButton id={po.id} poNumber={po.poNumber} />
-        )}
-      </div>
-
-      <div className="mt-5 grid gap-5 lg:grid-cols-[2fr_1fr]">
-        <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
-          <h2 className="text-base font-bold tracking-tight text-text">
-            What we need
-          </h2>
-
-          {/* What they can actually send, before the table of what we asked
-              for. It is the question this page exists to have answered, and a
-              form below a table is a form that gets scrolled past.
-
-              Hidden once the order is closed: there is nothing left to promise
-              on an order already received or cancelled. */}
-          {!done && (
-            <ConfirmQuantities
-              id={po.id}
-              poNumber={po.poNumber}
-              lines={po.lines.map((line) => ({
-                id: line.id,
-                code: line.supplierPartNumberSnapshot ?? line.skuCodeSnapshot,
-                name: line.nameSnapshot,
-                qtyOrdered: line.qtyOrdered,
-                qtyConfirmed: line.qtyConfirmed,
-              }))}
-            />
-          )}
-
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[30rem] border-collapse text-sm [&_.tnum]:whitespace-nowrap [&_td]:align-top [&_th]:whitespace-nowrap">
-              <thead className="border-b border-border-strong text-left text-xs font-bold uppercase tracking-wide text-text-subtle">
-                <tr>
-                  <th className="py-1.5">Your code</th>
-                  <th className="py-1.5">Description</th>
-                  <th className="py-1.5 text-right">Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-                {po.lines.map((line) => (
-                  <tr key={line.id} className="border-b border-border-base last:border-0">
-                    <td className="py-2 tnum font-semibold text-text">
-                      {line.supplierPartNumberSnapshot ?? (
-                        <span className="text-text-subtle">—</span>
-                      )}
-                    </td>
-                    <td className="py-2 text-text-muted">{line.nameSnapshot}</td>
-                    <td className="py-2 text-right tnum font-bold text-text">
-                      {line.qtyOrdered}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {!done && (
-            <div className="mt-5 border-t border-border-base pt-4">
-              <h3 className="text-sm font-bold text-text">Despatch</h3>
-              <p className="mt-1 text-xs text-text-muted">
-                Tell us what is on its way so goods-in can expect it. Courier and
-                tracking are optional.
-              </p>
-              <DispatchForm
-                id={po.id}
-                poNumber={po.poNumber}
-                courier={po.courier}
-                courierOptions={couriers}
-                trackingNumber={po.trackingNumber}
-              />
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-card border border-border-base bg-surface p-5 shadow-card">
-          <h2 className="text-base font-bold tracking-tight text-text">
-            Progress
-          </h2>
-          <dl className="mt-3 space-y-1.5 text-sm">
-            <Row label="Sent to you" value={po.sentAt ? dubai(po.sentAt) : "—"} />
-            <Row
-              label="Acknowledged"
-              value={po.acknowledgedAt ? dubai(po.acknowledgedAt) : "not yet"}
-              warn={!po.acknowledgedAt}
-            />
-            <Row
-              label="Despatched"
-              value={po.dispatchedAt ? dubai(po.dispatchedAt) : "not yet"}
-            />
-            <Row label="Courier" value={po.courier ?? "—"} />
-            <Row label="Tracking" value={po.trackingNumber ?? "—"} />
-            <Row
-              label="Received by us"
-              value={po.receivedAt ? dubai(po.receivedAt) : "not yet"}
-            />
-          </dl>
-          <p className="mt-3 text-xs leading-relaxed text-text-subtle">
-            All times Dubai. Acknowledgement is recorded once and not changed
-            afterwards.
-          </p>
-        </section>
-      </div>
-    </>
-  );
-}
-
-function Row({
-  label,
-  value,
-  warn = false,
-}: {
-  label: string;
-  value: string;
-  warn?: boolean;
-}) {
-  return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-text-muted">{label}</dt>
-      <dd className={`text-right tnum ${warn ? "font-bold text-danger" : "text-text"}`}>
-        {value}
-      </dd>
+  const done = ["Received", "Cancelled"].includes(po.status);
+  const work = po.lines.map(line => ({ ...line, work: supplierWork(line) }));
+  const pending = work.filter(line => line.work.outstanding > 0);
+  const ready = pending.reduce((n, line) => n + line.work.ready, 0);
+  const backordered = pending.reduce((n, line) => n + line.work.backordered, 0);
+  return <>
+    <Link href="/business-portal" className="text-sm font-semibold underline">All outstanding products</Link>
+    <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+      <div><h1 className="text-xl font-bold">{po.poNumber}</h1><div className="mt-2"><StatusPill axis="fulfilment" status={po.status} /></div></div>
+      {!done && !po.acknowledgedAt && perms.acknowledgeOrders !== "off" && <AcknowledgeButton id={po.id} poNumber={po.poNumber} />}
     </div>
-  );
+    {!done && <section className="mt-5 border-b border-border-base pb-5">
+      <h2 className="text-lg font-bold">To dispatch ({ready})</h2>
+      {perms.markDispatched !== "off" && plan && !plan.complete && plan.lines.some(line => line.outstanding > 0) ? <DispatchForm
+        key={plan.dockets.length + "-" + work.map(l => l.qtyConfirmed + ":" + l.qtyOrdered).join(",")}
+        id={po.id} poNumber={po.poNumber} courier={null} courierOptions={couriers} trackingNumber={null}
+        lines={plan.lines.filter(line => line.outstanding > 0).map(line => ({
+          id: line.id, code: line.skuCode, name: line.name, qtyOrdered: line.qtyOrdered, outstanding: line.outstanding,
+          suggested: work.find(l => l.id === line.id)?.work.ready ?? 0,
+        })).sort((a, b) => Number(b.suggested > 0) - Number(a.suggested > 0))}
+      /> : <p className="mt-3 text-sm text-text-muted">No quantities left to prepare.</p>}
+      {plan?.dockets.filter(d => !d.dispatchedAt).map(d => <div key={d.id} className="mt-3 border-t border-border-base pt-3"><p className="text-sm font-bold">Prepared docket {d.sequence}</p><DocketEditor docket={d} /></div>)}
+    </section>}
+    {!done && perms.confirmQuantities !== "off" && pending.length > 0 && <section className="mt-5 border-b border-border-base pb-5">
+      <h2 className="text-base font-bold">Availability and backorders ({backordered})</h2>
+      <ConfirmQuantities key={work.map(l => [l.id, l.qtyOrdered, l.qtyConfirmed, l.work.sent].join(":")).join(",")} id={po.id} poNumber={po.poNumber}
+        lines={pending.sort((a, b) => Number(a.work.backordered > 0) - Number(b.work.backordered > 0)).map(line => ({
+          id: line.id, name: line.nameSnapshot, code: line.supplierPartNumberSnapshot ?? line.skuCodeSnapshot,
+          qtyOrdered: line.qtyOrdered, qtyConfirmed: line.work.ready + line.work.sent + line.work.prepared, alreadySent: line.work.sent + line.work.prepared,
+        }))}
+      />
+    </section>}
+    <section className="mt-5">
+      <h2 className="text-base font-bold">Dispatch history</h2>
+      {!plan?.dockets.length && <p className="mt-3 text-sm text-text-muted">No dispatches recorded.</p>}
+      {plan?.dockets.filter(d => d.dispatchedAt).map(d => <div key={d.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border-base py-4">
+        <div className="text-sm"><p className="font-bold">Docket {d.sequence}: {d.units} units</p><p>{d.dispatchedAt?.toLocaleString("en-GB", { timeZone: "Asia/Dubai" })}</p><p>{d.courier ?? "No courier"} | {d.trackingNumber ?? "No tracking number"}</p>
+          <Link className="mt-2 inline-block font-bold underline" href={`/business-portal/orders/${encodeURIComponent(po.poNumber)}/docket/${d.sequence}`}>Print dispatch docket {d.sequence}</Link>
+        </div>
+        {perms.markDispatched !== "off" && <DocketEditor docket={d} />}
+      </div>)}
+    </section>
+    <details className="mt-5 border-t border-border-base pt-4"><summary className="cursor-pointer text-sm font-bold">Order totals and receipts</summary>
+      <table className="mt-3 w-full text-sm"><thead><tr className="text-left"><th>Product</th><th>Ordered</th><th>Sent</th><th>Received</th><th>Outstanding</th></tr></thead>
+        <tbody>{work.map(line => <tr key={line.id} className="border-t border-border-base"><td className="py-2">{line.nameSnapshot}<p className="text-xs text-text-muted">{line.skuCodeSnapshot}</p></td><td>{line.qtyOrdered}</td><td>{line.work.sent}</td><td>{line.qtyReceived}</td><td>{line.work.outstanding}</td></tr>)}</tbody>
+      </table>
+      <Link href={`/business-portal/orders/${encodeURIComponent(po.poNumber)}/packing-list`} className="mt-3 inline-block text-sm underline">Print full purchase-order packing list</Link>
+    </details>
+    <InvoicePaymentHistory entries={po.payments} />
+  </>;
 }

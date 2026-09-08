@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { LineSaving } from "@/components/LineSaving";
 import { QtyInput } from "@/components/QtyInput";
 import { aed, useCart } from "@/lib/cart-client";
 import { formatAED } from "@/lib/money";
+import { orderDiscount, sourceLabel } from "@/lib/order-discounts";
 
 /**
  * Renders the server's cart. Every figure shown here was computed by the
@@ -38,8 +40,23 @@ export function CartView() {
     );
   }
 
-  const savings = cart.lines.reduce(
-    (sum, l) => sum + (l.basePriceFils - l.unitPriceFils) * l.qty,
+  /*
+   * TWO DIFFERENT SAVINGS, AND THEY ARE NOT THE SAME CLAIM.
+   *
+   * A volume break is a better list price anybody reaching that quantity gets.
+   * An account discount or an agreed price is this buyer's own arrangement.
+   * This used to add them together and call the lot "Volume savings", which
+   * told an account on 2.5% that its negotiated terms were a bulk deal.
+   *
+   * The break is measured base → list, the arrangement list → paid, so the two
+   * rows cannot double-count the same fils between them.
+   */
+  // The same function the invoice will use, so the figure the buyer sees here
+  // and the figure printed later cannot drift apart.
+  const saved = orderDiscount(cart.lines);
+
+  const volumeSavings = cart.lines.reduce(
+    (sum, l) => sum + Math.max(0, l.basePriceFils - l.listUnitPriceFils) * l.qty,
     0
   );
 
@@ -54,7 +71,7 @@ export function CartView() {
 
         <ul className="space-y-3">
           {cart.lines.map((line) => {
-            const discounted = line.unitPriceFils < line.basePriceFils;
+            const onBreak = line.listUnitPriceFils < line.basePriceFils;
             return (
               <li
                 key={line.id}
@@ -119,17 +136,24 @@ export function CartView() {
                         <p className="text-xs text-text-muted tnum">
                           {formatAED(aed(line.unitPriceFils))} per{" "}
                           {line.unitShortLabel.toLowerCase()}
-                          {discounted && (
+                          {onBreak && (
                             <span className="ml-1.5 font-bold text-accent">
                               &minus;
                               {Math.round(
-                                ((line.basePriceFils - line.unitPriceFils) /
+                                ((line.basePriceFils - line.listUnitPriceFils) /
                                   line.basePriceFils) *
                                   100
                               )}
-                              %
+                              % volume
                             </span>
                           )}
+                          {/* This buyer's own terms, said separately from the
+                              break so neither is mistaken for the other. */}
+                          <LineSaving
+                            line={line}
+                            accountBasisPoints={cart.accountDiscountBasisPoints}
+                            className="ml-1.5"
+                          />
                           {line.vatFils === 0 && (
                             <span className="ml-1.5 font-bold text-success">
                               VAT free
@@ -181,13 +205,37 @@ export function CartView() {
               </dd>
             </div>
 
-            {savings > 0 && (
+            {volumeSavings > 0 && (
               <div className="flex justify-between">
                 <dt className="text-accent">Volume savings</dt>
                 <dd className="font-bold tnum text-accent">
-                  &minus;{formatAED(aed(savings))}
+                  &minus;{formatAED(aed(volumeSavings))}
                 </dd>
               </div>
+            )}
+
+            {/* What this account's own terms took off, named by where it came
+                from. Absent entirely for a guest and for an account on list
+                prices — a row reading "Discount AED 0.00" is noise. */}
+            {saved.sources.map((source) =>
+              saved.savingBySource[source] > 0 ? (
+                <div key={source} className="flex justify-between">
+                  <dt className="text-accent">
+                    {sourceLabel(
+                      source,
+                      // The rate the account was given, taken from the cart's
+                      // own figures rather than re-derived: per-line rounding
+                      // can turn an agreed 2.5% into "2.49% off".
+                      source === "AccountDiscount"
+                        ? cart.accountDiscountBasisPoints
+                        : undefined
+                    )}
+                  </dt>
+                  <dd className="font-bold tnum text-accent">
+                    &minus;{formatAED(aed(saved.savingBySource[source]))}
+                  </dd>
+                </div>
+              ) : null
             )}
 
             {cart.zeroRatedFils > 0 && (

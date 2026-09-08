@@ -20,6 +20,12 @@ export const metadata: Metadata = {
  * which branch the order is for and who is placing it, from lists they keep
  * themselves — both empty for an account that has not set any up, in which
  * case the pickers simply do not appear rather than showing an empty select.
+ *
+ * EVERYTHING WE ALREADY KNOW IS FILLED IN, AND ALL OF IT STAYS EDITABLE. The
+ * account's own details are the fallback beneath the chosen branch, so an
+ * account with no branch saved no longer arrives at a blank form and retypes
+ * what we are holding. Nothing here is locked: a clinic ordering for a sister
+ * site, or having a delivery sent to a different number, types over it.
  */
 export default async function CheckoutPage() {
   const session = await accountSession();
@@ -48,6 +54,10 @@ export default async function CheckoutPage() {
         staff={staff.map((s) => ({ id: s.id, name: s.name }))}
         company={identity?.organisationName ?? ""}
         email={identity?.email ?? ""}
+        contactName={identity?.contactName ?? ""}
+        phone={identity?.phone ?? ""}
+        emirate={identity?.emirate ?? ""}
+        countryCode={identity?.countryCode ?? ""}
         // A guest is Prepaid — no account means no credit — and sees the card
         // option priced but not the account terms of somebody else.
         paymentTerms={identity?.paymentTerms ?? "Prepaid"}

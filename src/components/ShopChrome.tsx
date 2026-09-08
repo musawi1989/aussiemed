@@ -72,7 +72,13 @@ export async function ShopChrome({
   return (
     <CatalogProvider initialProducts={[]}>
       <CartProvider>
-        <StoreProvider savedProductIds={savedProductIds}>
+        <StoreProvider
+          savedProductIds={savedProductIds}
+          // Saving is a buyer's feature. A guest has no account to save
+          // against and a supplier has no screen to see the list on, so
+          // neither is shown a heart at all.
+          canSave={user?.role === "Customer"}
+        >
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-card focus:bg-brand focus:px-4 focus:py-2 focus:text-on-brand"
@@ -98,7 +104,7 @@ export async function ShopChrome({
           <main id="main" className="flex-1">
             {children}
           </main>
-          <Footer />
+          <Footer signedIn={Boolean(user)} />
         </StoreProvider>
       </CartProvider>
     </CatalogProvider>

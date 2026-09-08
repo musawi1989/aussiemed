@@ -1,3 +1,4 @@
+import { EntityLogo } from "@/components/EntityLogo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionTabs } from "@/components/admin/SectionTabs";
@@ -149,7 +150,7 @@ export default async function SupplierReportsPage() {
                           href={`/admin/suppliers/${supplier.id}`}
                           className="font-semibold text-navy hover:underline"
                         >
-                          {supplier.name}
+                          <EntityLogo kind="supplier" id={supplier.id} />{supplier.name}
                         </Link>
                         <span className="block text-xs text-text-subtle">
                           {supplier.status}

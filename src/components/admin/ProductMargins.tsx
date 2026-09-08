@@ -7,11 +7,17 @@ const aed = (fils: number) => formatAED(fils / 100);
 /**
  * What each pack of this product makes — admin only.
  *
- * Both suppliers are listed, because the second one is not decoration: it is
- * what gets bought from when the first cannot supply, and if its cost is much
- * worse then the margin shown is the margin on a good day rather than on an
- * ordinary one. Which supplier the headline figure is against is always named,
- * so a percentage is never ambiguous about what it is a percentage of.
+ * EVERY SUPPLIER ON THE PACK IS LISTED, not only the three in the cover slots.
+ * The fallbacks matter because they are what gets bought from when the primary
+ * cannot supply, and if their cost is much worse then the headline figure is
+ * the margin on a good day rather than an ordinary one. The companies in no
+ * slot at all matter for the opposite reason: one of them undercutting our
+ * primary is the single most useful thing this table can show, and it is
+ * invisible on a report that lists only who we already buy from.
+ *
+ * The distinction is never blurred. An offer is labelled as one, and the
+ * headline percentage is always against a supplier we can actually order from
+ * — named underneath, so a percentage is never ambiguous.
  */
 export function ProductMargins({ margins }: { margins: SkuMargin[] }) {
   const anyCost = margins.some((m) => m.margin.costFils !== null);
@@ -28,8 +34,9 @@ export function ProductMargins({ margins }: { margins: SkuMargin[] }) {
       </div>
 
       <p className="mt-1 text-sm text-text-muted">
-        Never shown to customers or to suppliers. Costs come from the two
-        suppliers set up against each pack.
+        Never shown to customers or to suppliers. Every company carrying each
+        pack is listed — the three we buy from, and anyone else who has added
+        it to their own list, so their prices can be compared.
       </p>
 
       {!anyCost && (
@@ -91,13 +98,30 @@ export function ProductMargins({ margins }: { margins: SkuMargin[] }) {
                       supply.costFils === null ? null : sku.sellFils - supply.costFils;
                     return (
                       <tr
-                        key={supply.rank + supply.supplierName}
+                        key={(supply.rank ?? "offer") + supply.supplierName}
                         className="border-b border-border-base last:border-0"
                       >
                         <td className="py-1.5 pr-3 font-semibold text-text-muted">
-                          {supply.rank}
+                          {supply.isCover ? (
+                            supply.rankLabel
+                          ) : (
+                            /* Not in one of the three slots, so nothing is
+                               bought here. Labelled rather than left blank —
+                               the row is on the table precisely because the
+                               comparison is the point. */
+                            <span
+                              className="text-text-subtle"
+                              title="Carries this item but is not one of the three suppliers, so nothing is ordered from them"
+                            >
+                              offer
+                            </span>
+                          )}
                         </td>
-                        <td className="py-1.5 pr-3 text-text">
+                        <td
+                          className={`py-1.5 pr-3 ${
+                            supply.isCover ? "text-text" : "text-text-muted"
+                          }`}
+                        >
                           {supply.supplierName}
                           {!supply.isAvailable && (
                             <span className="ml-1.5 text-xs font-bold text-danger">
@@ -110,6 +134,17 @@ export function ProductMargins({ margins }: { margins: SkuMargin[] }) {
                             <span className="text-text-subtle">not recorded</span>
                           ) : (
                             aed(supply.costFils)
+                          )}
+                          {/* A price asked for and not agreed. Worth seeing
+                              next to the cost it would replace, and never
+                              counted into a margin until somebody says yes. */}
+                          {supply.proposedCostFils !== null && (
+                            <span
+                              className="ml-1.5 whitespace-nowrap text-xs font-bold text-accent"
+                              title="Requested by the supplier and not yet agreed"
+                            >
+                              &rarr; {aed(supply.proposedCostFils)} asked
+                            </span>
                           )}
                         </td>
                         <td

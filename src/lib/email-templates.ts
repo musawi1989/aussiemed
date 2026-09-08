@@ -435,3 +435,46 @@ export function findCustomerLeaks(body: string, identifiers: string[]): string[]
 
   return [...found];
 }
+
+/**
+ * Fills {{placeholders}} in a template somebody here wrote.
+ *
+ * Pure, and deliberately forgiving in one direction only:
+ *
+ *  - A KEY WE KNOW, with nothing in it, becomes an empty line rather than the
+ *    word "null". An order with no tracking number should read as an order
+ *    with no tracking number, not as one tracked to "null".
+ *
+ *  - A KEY WE DO NOT KNOW IS LEFT EXACTLY AS TYPED. "{{price}}" in a sentence
+ *    is a mistake somebody can see and fix; silently deleting it would leave a
+ *    gap they cannot. A stray brace in ordinary prose survives untouched for
+ *    the same reason.
+ *
+ * Whitespace inside the braces is allowed, because people type it.
+ */
+export function fillPlaceholders(
+  text: string,
+  context: Record<string, unknown>
+): string {
+  return text.replace(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g, (whole, key: string) => {
+    if (!(key in context)) return whole;
+    const value = context[key];
+    return value === null || value === undefined ? "" : String(value);
+  });
+}
+
+/**
+ * The placeholders a template actually uses that nothing will fill.
+ *
+ * Shown when saving, not enforced. Somebody writing a template for orders may
+ * well type a key that only makes sense on a purchase order, and telling them
+ * is more use than refusing to save — but leaving it silent means finding out
+ * when a customer receives an email with braces in it.
+ */
+export function unknownPlaceholders(text: string, known: string[]): string[] {
+  const found = new Set<string>();
+  for (const match of text.matchAll(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g)) {
+    if (!known.includes(match[1])) found.add(match[1]);
+  }
+  return [...found];
+}

@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChangeDecision } from "@/components/admin/ChangeDecision";
 import { changeDetail, pendingChanges } from "@/lib/account-changes";
-import { attentionItems } from "@/lib/attention";
+import {
+  attentionItems,
+  GROUP_BLURBS,
+  GROUP_LABELS,
+} from "@/lib/attention";
+import { EnquiryQueues } from "@/components/admin/EnquiryQueues";
 
 export const metadata: Metadata = {
   title: "Needs attention",
@@ -43,6 +48,23 @@ export default async function ApprovalsPage() {
   const live = queues.filter((q) => q.count > 0);
 
   /**
+   * Grouped, in the order somebody works them.
+   *
+   * A decision blocks a person outside the business, so it comes first. An
+   * order we cannot fill is a phone call worth making today. Everything else
+   * is ours and waits on nobody. An empty group is dropped rather than shown
+   * as a heading with nothing under it.
+   */
+  const sections = (["decide", "sell", "do"] as const)
+    .map((group) => ({
+      group,
+      label: GROUP_LABELS[group],
+      blurb: GROUP_BLURBS[group],
+      items: live.filter((q) => q.group === group),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  /**
    * One of these queues is this page.
    *
    * Its card pointed at /admin/approvals, which is where the reader already
@@ -50,9 +72,22 @@ export default async function ApprovalsPage() {
    * because it behaved like one. It jumps to the section below instead, and
    * says so, rather than pretending to go somewhere.
    */
+  /*
+   * Several of these queues are now this page.
+   *
+   * Account changes always lived here; the enquiry queues joined them when
+   * Enquiries was removed from the nav. A card pointing at the page the reader
+   * is already on did nothing at all and looked like a broken link, so it
+   * jumps to the section instead — to the card's OWN fragment where it names
+   * one, which is what stops three different cards all landing on the same
+   * heading.
+   */
   const HERE = "/admin/approvals";
-  const hrefFor = (href: string) =>
-    href.startsWith(HERE) ? "#account-changes" : href;
+  const hrefFor = (href: string) => {
+    if (!href.startsWith(HERE)) return href;
+    const hash = href.indexOf("#");
+    return hash === -1 ? "#account-changes" : href.slice(hash);
+  };
   const isOnThisPage = (href: string) => href.startsWith(HERE);
 
   return (
@@ -65,53 +100,61 @@ export default async function ApprovalsPage() {
         changes waiting on a decision.
       </p>
 
-      <section className="mt-6">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-text-subtle">
-          Queues
-        </h2>
+      {live.length === 0 ? (
+        <p className="mt-6 rounded-card border border-border-base bg-surface px-4 py-10 text-center text-sm text-text-muted shadow-card">
+          Nothing is waiting. Every queue is empty.
+        </p>
+      ) : (
+        sections.map((section) => (
+          <section key={section.group} className="mt-7">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-text-subtle">
+              {section.label}{" "}
+              <span className="tnum text-text-muted">
+                ({section.items.reduce((n, q) => n + q.count, 0)})
+              </span>
+            </h2>
+            <p className="mt-0.5 max-w-2xl text-xs text-text-muted">
+              {section.blurb}
+            </p>
 
-        {live.length === 0 ? (
-          <p className="mt-2 rounded-card border border-border-base bg-surface px-4 py-8 text-center text-sm text-text-muted shadow-card">
-            Nothing is waiting. Every queue is empty.
-          </p>
-        ) : (
-          <ul className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {live.map((queue) => (
-              <li key={queue.key}>
-                <Link
-                  href={hrefFor(queue.href)}
-                  className={`flex h-full flex-col rounded-card border bg-surface p-4 shadow-card transition-colors hover:border-navy ${
-                    queue.urgent ? "border-accent-border" : "border-border-base"
-                  }`}
-                >
-                  <span className="flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-bold text-text">
-                      {queue.label}
-                      {isOnThisPage(queue.href) && (
-                        <span className="ml-1.5 text-xs font-normal text-text-subtle">
-                          &darr; below
-                        </span>
-                      )}
+            <ul className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {section.items.map((queue) => (
+                <li key={queue.key}>
+                  <Link
+                    href={hrefFor(queue.href)}
+                    className={`flex h-full flex-col rounded-card border bg-surface p-4 shadow-card transition-colors hover:border-navy ${
+                      queue.urgent ? "border-accent-border" : "border-border-base"
+                    }`}
+                  >
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="text-sm font-bold text-text">
+                        {queue.label}
+                        {isOnThisPage(queue.href) && (
+                          <span className="ml-1.5 text-xs font-normal text-text-subtle">
+                            &darr; below
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-bold tnum ${
+                          queue.urgent
+                            ? "bg-accent text-surface"
+                            : "bg-surface-sunken text-text-muted"
+                        }`}
+                      >
+                        {queue.count}
+                      </span>
                     </span>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-sm font-bold tnum ${
-                        queue.urgent
-                          ? "bg-accent text-surface"
-                          : "bg-surface-sunken text-text-muted"
-                      }`}
-                    >
-                      {queue.count}
+                    <span className="mt-1 text-xs leading-relaxed text-text-muted">
+                      {queue.detail}
                     </span>
-                  </span>
-                  <span className="mt-1 text-xs leading-relaxed text-text-muted">
-                    {queue.detail}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
 
       {/* scroll-mt keeps the heading clear of the top of the window when the
           card above jumps to it. */}
@@ -223,6 +266,11 @@ export default async function ApprovalsPage() {
           </ul>
         )}
       </section>
+
+      {/* Below account changes, because those block somebody outside the
+          business from doing anything and these are people waiting on a
+          price. Renders nothing at all when all three queues are empty. */}
+      <EnquiryQueues />
     </div>
   );
 }

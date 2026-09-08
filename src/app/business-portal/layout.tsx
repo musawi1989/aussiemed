@@ -6,6 +6,7 @@ import { OpsShell, initialsOf } from "@/components/ops/OpsShell";
 import type { OpsGroup } from "@/components/ops/OpsSidebar";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { FormWorkspace } from "@/components/admin/FormWorkspace";
 
 export const metadata: Metadata = {
   title: "Business Portal",
@@ -34,6 +35,11 @@ const GROUPS: OpsGroup[] = [
     heading: null,
     icon: "catalogue",
     links: [{ href: "/business-portal/supplies", label: "What you supply" }],
+  },
+  {
+    heading: null,
+    icon: "sales",
+    links: [{ href: "/business-portal/packing-lists", label: "Daily packing lists" }],
   },
   {
     heading: null,
@@ -103,7 +109,7 @@ export default async function BusinessPortalLayout({
         context: supplier?.companyName ?? "No supplier attached",
       }}
     >
-      {children}
+      <FormWorkspace>{children}</FormWorkspace>
     </OpsShell>
   );
 }

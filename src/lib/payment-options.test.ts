@@ -12,6 +12,7 @@ import {
   paymentDueOn,
   termDays,
   termsLabel,
+  termsName,
   totalWithCardFeeFils,
 } from "./payment-options.ts";
 
@@ -85,17 +86,86 @@ describe("payment terms", () => {
     assert.equal(net14.headline, "Due 6 September 2026");
     assert.equal(
       net14.detail,
-      "14 days (two weeks) from the day the order is placed."
+      "We confirm the order and send you the invoice, then dispatch in line with your agreed terms — 14 days (two weeks) from the day the order is placed."
     );
+  });
+
+  it("invoices before it dispatches, whatever the terms", () => {
+    // The copy used to say we dispatch and then invoice, which is backwards.
+    // Both branches of the sentence now put the invoice first.
+    for (const terms of ["Prepaid", "Net7", "Net14", "Net30", "Net60"]) {
+      const { detail } = dueWording(terms, "6 September 2026");
+      assert.match(detail, /send you the invoice/, terms + ": " + detail);
+      assert.doesNotMatch(
+        detail,
+        /dispatch the order and invoice|take payment before anything ships/,
+        terms + ": " + detail
+      );
+    }
+  });
+
+  it("says the goods follow the payment when the account is prepaid", () => {
+    const { detail } = dueWording("Prepaid", "23 August 2026");
+    assert.match(detail, /dispatched once it is settled/);
+  });
+
+  it("says the goods follow the arrangement when the account has terms", () => {
+    // What the client asked for: a buyer with terms should be told the order
+    // ships in accordance with the arrangement they were given, not that it is
+    // held until somebody pays.
+    for (const terms of ["Net7", "Net14", "Net30", "Net60"]) {
+      const { detail } = dueWording(terms, "6 September 2026");
+      assert.match(detail, /dispatch in line with your agreed terms/, terms);
+      assert.doesNotMatch(detail, /once it is settled/, terms);
+    }
+  });
+
+  it("names each account's own terms rather than a house default", () => {
+    // Two buyers checking out at the same moment must not be shown the same
+    // arrangement. This is the whole point of reading it off the account.
+    const seen = new Set<string>();
+    for (const terms of ["Prepaid", "Net7", "Net14", "Net30", "Net60"]) {
+      const { arrangement } = dueWording(terms, "6 September 2026");
+      assert.ok(arrangement.length > 0, terms);
+      seen.add(arrangement);
+    }
+    assert.equal(seen.size, 5);
+
+    assert.equal(dueWording("Net30", "x").arrangement, "Net 30 — 30 days");
+    assert.equal(
+      dueWording("Prepaid", "x").arrangement,
+      "Prepaid — payable before dispatch"
+    );
+  });
+
+  it("falls back to the default arrangement for a term nobody recognises", () => {
+    // A blank or stale value on an account must still produce a sentence, and
+    // must not silently read as "due today".
+    for (const terms of [null, undefined, "", "Net45"]) {
+      const { arrangement, detail } = dueWording(terms, "6 September 2026");
+      assert.equal(arrangement, "Net 14 — 14 days (two weeks)", String(terms));
+      assert.ok(detail.endsWith("."), String(terms));
+    }
   });
 
   it("reads properly for every term, not just the two we looked at", () => {
     for (const terms of ["Prepaid", "Net7", "Net14", "Net30", "Net60"]) {
-      const { headline, detail } = dueWording(terms, "6 September 2026");
+      const { headline, detail, arrangement } = dueWording(
+        terms,
+        "6 September 2026"
+      );
       assert.ok(headline.startsWith("Due "), terms + ": " + headline);
       assert.ok(detail.endsWith("."), terms + ": " + detail);
-      // No double spaces, no orphaned joining words.
-      assert.ok(!/s{2}/.test(headline + detail), terms + " has doubled spaces");
+      /*
+       * A REAL double-space check. This read /s{2}/ — two letter s's, not two
+       * spaces — because the backslash was eaten when the test was written, so
+       * it had never once looked at spacing and passed regardless. The same
+       * escape-eating that took out withoutTopMargin in CountryFields.
+       */
+      assert.ok(
+        !/ {2}/.test(headline + detail + arrangement),
+        terms + " has doubled spaces"
+      );
       assert.ok(!/ from today./.test(detail) || terms !== "Prepaid");
     }
   });
@@ -104,6 +174,14 @@ describe("payment terms", () => {
     assert.equal(termsLabel("Net14"), "14 days (two weeks)");
     assert.equal(termsLabel("Net30"), "30 days");
     assert.equal(termsLabel("Prepaid"), "Payable before dispatch");
+  });
+
+  it("names the arrangement the way a person says it", () => {
+    // "Net30" is how it is stored; "Net 30" is how it is spoken.
+    assert.equal(termsName("Net30"), "Net 30");
+    assert.equal(termsName("Net7"), "Net 7");
+    assert.equal(termsName("Prepaid"), "Prepaid");
+    assert.equal(termsName("nonsense"), "Net 14");
   });
 });
 

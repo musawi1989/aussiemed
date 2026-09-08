@@ -78,6 +78,8 @@ export default async function BackordersPage({
           qtyOrdered: line.qtyOrdered,
           qtyConfirmed: line.qtyConfirmed,
           shortfall: line.shortfall,
+          customers: line.customers,
+          unallocatedShortfall: line.unallocatedShortfall,
         }))}
         suppliers={suppliers.map((s) => ({ id: s.id, name: s.companyName }))}
       />

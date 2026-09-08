@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { LogoEditor } from "@/components/LogoEditor";
 import Link from "next/link";
+import { termsName } from "@/lib/payment-options";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { countryName } from "@/lib/geo";
@@ -145,6 +147,7 @@ export default async function AdminCustomerPage({
 
   return (
     <>
+      <LogoEditor kind="organisation" id={customer.id} name={customer.name} />
       <div className="mt-6">
         <Link
           href="/admin/customers"
@@ -167,7 +170,7 @@ export default async function AdminCustomerPage({
         </div>
         <p className="mt-1 text-sm text-text-muted tnum">
           {spend._count} {spend._count === 1 ? "order" : "orders"} ·{" "}
-          {aed(spend._sum.totalFils ?? 0)} · {customer.paymentTerms} ·{" "}
+          {aed(spend._sum.totalFils ?? 0)} · {termsName(customer.paymentTerms)} ·{" "}
           {formatTrn(customer.trn) ?? "no TRN"} ·{" "}
           {countryName(customer.countryCode) ?? customer.countryCode}
         </p>

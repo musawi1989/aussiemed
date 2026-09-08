@@ -228,10 +228,13 @@ export async function FilterPanel({
         buyer ticking "in stock only" reasonably reads it as a promise about a
         shelf somewhere.
 
-        Every one of those parameters still filters when it arrives in a URL —
-        the v1 API takes inStock, breaks, minPrice and maxPrice and none of them
-        changed — they are simply not offered as controls. Clear all still
-        clears them, so a link somebody was sent can still be got out of.
+        breaks, minPrice and maxPrice still filter when they arrive in a URL and
+        are simply not offered as controls; Clear all still clears them, so a
+        link somebody was sent can be got out of.
+
+        inStock is the exception and no longer filters anywhere, on the shop or
+        the v1 API. Honouring it would publish what the storefront now hides:
+        two result counts, subtracted, say exactly what we hold.
 
         What is left is what a buyer navigates by: where a thing sits, who it is
         for, and whose name is on it.

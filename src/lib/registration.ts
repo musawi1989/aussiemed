@@ -184,6 +184,31 @@ export function canSignIn(account: AccountState): SignInVerdict {
   if (account.isDisabled) {
     return { allowed: false, reason: "This account has been closed. Email info@aussiemed.com if that is wrong." };
   }
+
+  /*
+   * AN ADMIN APPROVAL LETS SOMEBODY IN WHETHER OR NOT THEY ENTERED THE CODE.
+   *
+   * The code proves an address reaches somebody, which is worth having when a
+   * stranger fills in a form. It is worth nothing when an account manager has
+   * met the company, taken the order on the phone and opened the account by
+   * hand — and holding that buyer at the door until they find an email they
+   * were never waiting for is the platform being pedantic at a paying
+   * customer's expense.
+   *
+   * isVerified is NOT set by approving, deliberately. It goes on meaning "the
+   * code was entered" rather than becoming a second word for approved, so the
+   * admin screens can still say whether an address has actually been proved —
+   * which matters, because an approved typo is an account whose owner never
+   * receives an invoice.
+   *
+   * The order of these branches carries that: approval is checked first, so a
+   * rejected or waiting applicant still gets told about the code, and only
+   * somebody we have positively said yes to skips it.
+   */
+  if (account.approvalStatus === "Approved") {
+    return { allowed: true };
+  }
+
   if (!account.isVerified) {
     return {
       allowed: false,
@@ -209,11 +234,31 @@ export function canSignIn(account: AccountState): SignInVerdict {
   return { allowed: true };
 }
 
-/** Applications an admin has to look at. */
+/**
+ * Applications an admin has to look at.
+ *
+ * VERIFIED OR NOT. This used to require the code, on the reasoning that an
+ * unconfirmed application might be a typo and was not worth a person's time.
+ * That was true of the count and wrong about the queue: it meant a company an
+ * account manager had already spoken to sat in a greyed list marked "nothing to
+ * do", and the only way to open their account was to wait for an email they
+ * were not expecting.
+ *
+ * Whether the address has been proved is still shown on the card — see
+ * needsAddressWarning — because it changes what approving means, not whether
+ * it can be done.
+ */
 export function isAwaitingDecision(account: AccountState): boolean {
-  return (
-    !account.isDisabled &&
-    account.isVerified &&
-    account.approvalStatus === "Pending"
-  );
+  return !account.isDisabled && account.approvalStatus === "Pending";
+}
+
+/**
+ * Whether approving this application would open an account we cannot email.
+ *
+ * Worth saying at the moment of deciding rather than in a report afterwards: an
+ * approved typo is an account whose owner never receives an order confirmation
+ * or an invoice, and nobody finds out until they ring up asking where it is.
+ */
+export function needsAddressWarning(account: AccountState): boolean {
+  return !account.isVerified && account.approvalStatus === "Pending";
 }

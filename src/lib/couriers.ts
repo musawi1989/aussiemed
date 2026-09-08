@@ -64,7 +64,7 @@ export async function courierOptions(
 }
 
 export async function createCourier(name: string): Promise<Result<string>> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   const clean = name.trim().replace(/\s+/g, " ");
   if (!clean) return fail("A courier needs a name.");
@@ -98,7 +98,7 @@ export async function createCourier(name: string): Promise<Result<string>> {
 
 /** Off the pickers, still readable on every order that names it. */
 export async function archiveCourier(id: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   const courier = await db.courier.findUnique({ where: { id } });
   if (!courier) return fail("That courier no longer exists.");
@@ -113,7 +113,7 @@ export async function archiveCourier(id: string): Promise<Result> {
 }
 
 export async function restoreCourier(id: string): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin("settings");
 
   const courier = await db.courier.findUnique({ where: { id } });
   if (!courier) return fail("That courier no longer exists.");

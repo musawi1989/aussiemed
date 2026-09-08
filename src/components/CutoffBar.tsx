@@ -68,7 +68,7 @@ export function CutoffBar({
               Today&rsquo;s {label} run has closed
             </span>
             <span className="text-text-muted">
-              — order now and it goes on tomorrow&rsquo;s
+              — order now for the next dispatch
             </span>
           </>
         ) : (
@@ -77,7 +77,7 @@ export function CutoffBar({
               Order before {label} {today ? "today" : "tomorrow"}
             </span>
             <span className="text-text-muted">
-              for {today ? "today" : "the next"} despatch
+              for the next dispatch
             </span>
 
             {/* Only once the browser has told us the time. Until then the

@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createProduct } from "@/lib/admin";
 import type { FormState } from "@/components/AdminForm";
@@ -22,6 +21,9 @@ export async function createProductAction(
     name: text(data, "name"),
     description: text(data, "description") || null,
     brandId: text(data, "brandId") || null,
+    brandName: text(data, "brandName"),
+    supplierId: text(data, "supplierId") || null,
+    buyingPriceAED: text(data, "buyingPriceAED") ? Number(text(data, "buyingPriceAED")) : null,
     taxClass: text(data, "taxClass"),
     variantGroup: text(data, "variantGroup") || null,
     variantLabel: text(data, "variantLabel") || null,
@@ -41,5 +43,5 @@ export async function createProductAction(
   // Straight to the product that was just made, because the next thing anybody
   // does is add a photograph and a second pack size, and both live there. A
   // success message on an empty form would leave them hunting for it.
-  redirect(`/admin/products/${result.value.id}?created=1`);
+  return { ok: true, message: "Product created.", redirectTo: `/admin/products/${result.value.id}?created=1` };
 }

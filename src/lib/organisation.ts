@@ -1,5 +1,6 @@
 import { countryByCode, subdivisionLabel, subdivisionsOf } from "./geo.ts";
 import { isRealTrn, normaliseTrn } from "./trn.ts";
+import { isPaymentTerms } from "./payment-options.ts";
 
 /**
  * The rules for a customer account, as an admin sets it up — FN-19.
@@ -29,6 +30,7 @@ export type OrganisationInput = {
   emirate: string | null;
   notes: string | null;
   isDisabled: boolean;
+  paymentTerms?: string;
 };
 
 export type Problem = { field: string; message: string };
@@ -50,11 +52,13 @@ export function normaliseOrganisation(input: OrganisationInput): OrganisationInp
     emirate: blank(input.emirate),
     notes: blank(input.notes),
     isDisabled: input.isDisabled,
+    ...(input.paymentTerms !== undefined ? { paymentTerms: input.paymentTerms.trim() } : {}),
   };
 }
 
 export function validateOrganisation(raw: OrganisationInput): Problem | null {
   const input = normaliseOrganisation(raw);
+  if (input.paymentTerms !== undefined && !isPaymentTerms(input.paymentTerms)) return { field: "paymentTerms", message: "Choose payment terms or complete the custom terms and due days." };
 
   if (input.name.length < ORG_NAME_MIN) {
     return { field: "name", message: "Give the account a name." };

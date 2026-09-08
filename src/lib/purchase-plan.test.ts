@@ -7,10 +7,11 @@ import {
   type DemandLine,
   type ReservedAllocation,
   type SupplyOption,
+  type SupplyRank,
 } from "./purchase-plan.ts";
 
 const supply = (
-  rank: "Primary" | "Backup",
+  rank: SupplyRank,
   name: string,
   available = true,
   costFils: number | null = 1000
@@ -56,6 +57,74 @@ describe("choosing a supplier", () => {
       chooseSupply([supply("Primary", "Alpha", false), supply("Backup", "Beta", false)]),
       null
     );
+  });
+
+  /*
+   * The third slot. Added late, and the reason these tests exist is that the
+   * ways it silently fails all look like "nothing happened": a preference
+   * chain that stops at the backup never reaches it, and a rank mapping that
+   * coerced unknown values to Primary would have sent it the order FIRST.
+   */
+  it("falls through to the third when neither of the first two can supply", () => {
+    const chosen = chooseSupply([
+      supply("Primary", "Alpha", false),
+      supply("Backup", "Beta", false),
+      supply("Third", "Gamma"),
+    ]);
+    assert.equal(chosen?.supplierName, "Gamma");
+  });
+
+  it("never prefers the third over a primary that can supply", () => {
+    const chosen = chooseSupply([
+      supply("Third", "Gamma"),
+      supply("Backup", "Beta"),
+      supply("Primary", "Alpha"),
+    ]);
+    assert.equal(chosen?.supplierName, "Alpha");
+  });
+
+  it("never prefers the third over a backup that can supply", () => {
+    const chosen = chooseSupply([
+      supply("Third", "Gamma"),
+      supply("Primary", "Alpha", false),
+      supply("Backup", "Beta"),
+    ]);
+    assert.equal(chosen?.supplierName, "Beta");
+  });
+
+  it("returns nothing when all three are unavailable", () => {
+    assert.equal(
+      chooseSupply([
+        supply("Primary", "Alpha", false),
+        supply("Backup", "Beta", false),
+        supply("Third", "Gamma", false),
+      ]),
+      null
+    );
+  });
+
+  it("marks anything but the primary as a fallback on the plan", () => {
+    const line = (rank: SupplyRank): DemandLine => ({
+      orderItemId: `oi-${rank}`,
+      skuId: "sku-1",
+      skuCode: "SKU-1",
+      name: "Gloves",
+      qty: 1,
+      supplies: [supply(rank, rank)],
+    });
+
+    for (const [rank, expected] of [
+      ["Primary", false],
+      ["Backup", true],
+      ["Third", true],
+    ] as const) {
+      const plan = planPurchaseOrders([line(rank)]);
+      assert.equal(
+        plan.orders[0].lines[0].wasFallback,
+        expected,
+        `${rank} should ${expected ? "" : "not "}be a fallback`
+      );
+    }
   });
 
   it("returns nothing when no supplier is recorded at all", () => {

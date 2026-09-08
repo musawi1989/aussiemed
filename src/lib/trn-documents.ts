@@ -115,7 +115,7 @@ export async function putTrnDocument(
   id: string,
   file: { name: string; bytes: Buffer },
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin(kind === "supplier" ? "suppliers" : "customers");
 
   const record = await load(kind, id);
   if (!record) return fail(`That ${HOLDERS[kind].label} no longer exists.`);
@@ -164,7 +164,7 @@ export async function removeTrnDocument(
   kind: TrnHolder,
   id: string,
 ): Promise<Result> {
-  const actor = await requireAdmin();
+  const actor = await requireAdmin(kind === "supplier" ? "suppliers" : "customers");
 
   const record = await load(kind, id);
   if (!record) return fail(`That ${HOLDERS[kind].label} no longer exists.`);
@@ -199,7 +199,7 @@ export async function readTrnDocument(
   kind: TrnHolder,
   id: string,
 ): Promise<{ bytes: Buffer; name: string } | null> {
-  await requireAdmin();
+  await requireAdmin(kind === "supplier" ? "suppliers" : "customers", "view");
 
   const record = await load(kind, id);
   if (!record?.key) return null;

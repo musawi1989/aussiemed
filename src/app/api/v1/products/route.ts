@@ -20,7 +20,10 @@ export async function GET(request: Request) {
     categorySlug: searchParams.get("category") ?? undefined,
     brand: searchParams.get("brand") ?? undefined,
     q: searchParams.get("q") ?? undefined,
-    inStockOnly: searchParams.get("inStock") === "1",
+    // Ignored, deliberately. This endpoint is the shop's own data; letting a
+    // caller filter by stock would publish exactly what the storefront now
+    // hides. Accepted rather than rejected so an old link still works.
+    inStockOnly: false,
     sort: (searchParams.get("sort") as SortKey) ?? "relevance",
   };
 

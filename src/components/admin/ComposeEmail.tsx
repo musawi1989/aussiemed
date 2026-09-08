@@ -1,8 +1,10 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState, useState, useTransition } from "react";
 import { draftAction, sendComposedAction } from "@/app/admin/emails/actions";
 import type { RecipientOption } from "@/lib/compose";
+import { HtmlEditor } from "./HtmlEditor";
 
 type TemplateOption = {
   id: string;
@@ -50,6 +52,7 @@ export function ComposeEmail({
   const [reference, setReference] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [html, setHtml] = useState("");
   const [drafting, startDraft] = useTransition();
   const [draftError, setDraftError] = useState<string | null>(null);
 
@@ -67,6 +70,7 @@ export function ComposeEmail({
     setReference("");
     setSubject("");
     setBody("");
+    setHtml("");
     setDraftError(null);
   };
 
@@ -84,6 +88,7 @@ export function ComposeEmail({
       }
       setSubject(result.subject);
       setBody(result.body);
+      setHtml(result.html ?? "");
     });
   };
 
@@ -100,7 +105,7 @@ export function ComposeEmail({
   }
 
   return (
-    <form
+    <RestoringForm state={state} saveAll={false}
       action={submit}
       className="rounded-card border border-border-strong bg-surface p-5 shadow-card"
     >
@@ -222,7 +227,7 @@ export function ComposeEmail({
       </label>
 
       <label className="mt-3 block">
-        <span className="mb-1 block text-xs font-bold text-text-muted">Message</span>
+        <span className="mb-1 block text-xs font-bold text-text-muted">Plain-text message</span>
         <textarea
           name="body"
           required
@@ -238,9 +243,11 @@ export function ComposeEmail({
         />
       </label>
 
+      <HtmlEditor value={html} onChange={setHtml} />
+      <label className="mt-3 block text-xs font-semibold text-text-muted">Attachments
+        <input key={audience} aria-label="Attach files" name="attachments" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt,.csv,.docx,.xlsx" className="mt-2 block w-full cursor-pointer rounded-card border border-border-strong bg-surface px-3 py-3 text-sm text-text file:mr-3 file:cursor-pointer file:rounded-card file:border-0 file:bg-navy file:px-4 file:py-2 file:text-sm file:font-bold file:text-on-navy hover:file:bg-navy-hover focus-visible:outline-2 focus-visible:outline-navy" />
+      </label>
       <p className="mt-2 text-xs leading-relaxed text-text-subtle">
-        The template only fills the boxes — what goes out is exactly what is in
-        them. Plain text, so it arrives the same in every mail client.
         {audience === "Supplier" && (
           <>
             {" "}
@@ -270,6 +277,6 @@ export function ComposeEmail({
           </span>
         )}
       </div>
-    </form>
+    </RestoringForm>
   );
 }

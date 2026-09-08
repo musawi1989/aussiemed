@@ -229,7 +229,11 @@ export function Header({
               </svg>
             </button>
 
-            <IconLink href="/quote" label="Quote request" count={ready ? quoteLines.length : 0}>
+            <IconLink
+              href="/quote"
+              label="Bulk buy request"
+              count={ready ? quoteLines.length : 0}
+            >
               <path d="M6 3h8l4 4v14H6z" />
               <path d="M14 3v4h4M9 12h6M9 16h4" />
             </IconLink>

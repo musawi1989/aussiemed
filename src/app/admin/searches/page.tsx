@@ -31,7 +31,7 @@ export default async function SearchesPage({
 }: {
   searchParams: Promise<{ all?: string }>;
 }) {
-  await requireAdmin();
+  await requireAdmin("orders", "view");
 
   const { all } = await searchParams;
   const emptyOnly = all !== "1";

@@ -1,10 +1,16 @@
 import type { Product, ProductBadge } from "@/lib/types";
 
 /**
- * Merchandising flags. "Back soon" replaces a bare "Out of stock" wherever the
- * line is expected to return — it tells a buyer to wait rather than go
- * elsewhere, which for a repeat trade customer is the difference between a
- * delayed order and a lost one.
+ * Merchandising flags.
+ *
+ * STOCK IS NOT ONE OF THEM. Whether we hold a line is ours to know: a buyer who
+ * reads "out of stock" goes elsewhere, while one who orders it gives us the
+ * chance to offer something we do have. So the badge is gone, "Back soon" with
+ * it, and nothing here distinguishes a line we hold from one we do not.
+ *
+ * The flag itself is untouched — still set by the admin and the supplier
+ * portal, still shown on every staff screen. It simply does not travel to the
+ * shop. See the note on ProductCard and BuyBox for the rest of it.
  */
 const STYLES: Record<ProductBadge, { label: string; className: string }> = {
   "top-seller": {
@@ -26,21 +32,15 @@ const STYLES: Record<ProductBadge, { label: string; className: string }> = {
 };
 
 export function ProductBadges({ product }: { product: Product }) {
-  const badges = [...product.badges];
+  // "Back soon" is dropped along with the out-of-stock badge: it says the same
+  // thing in a friendlier voice, and a buyer told to wait is a buyer told we
+  // have not got it.
+  const badges = product.badges.filter((badge) => badge !== "back-soon");
 
-  // Out of stock only shows when nothing softer already explains the absence.
-  const showOutOfStock =
-    product.outOfStock && !badges.includes("back-soon");
-
-  if (badges.length === 0 && !showOutOfStock) return null;
+  if (badges.length === 0 && product.taxClass !== "zero-rated") return null;
 
   return (
     <div className="flex flex-col items-start gap-1">
-      {showOutOfStock && (
-        <span className="rounded bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
-          Out of stock
-        </span>
-      )}
       {badges.map((badge) => (
         <span
           key={badge}

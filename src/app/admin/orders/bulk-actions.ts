@@ -16,7 +16,7 @@ export async function bulkSetOrderStatus(
   references: string[],
   status: string
 ): Promise<{ changed: number; refused: { reference: string; why: string }[] }> {
-  await requireAdmin();
+  await requireAdmin("orders");
 
   let changed = 0;
   const refused: { reference: string; why: string }[] = [];
@@ -53,7 +53,7 @@ export async function setLineStatusAction(
  * the URL.
  */
 export async function exportOrdersCsv(references: string[]): Promise<string> {
-  await requireAdmin();
+  await requireAdmin("orders", "view");
 
   const orders = await db.order.findMany({
     where: references.length > 0 ? { reference: { in: references } } : {},

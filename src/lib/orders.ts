@@ -6,16 +6,17 @@ import { db } from "./db";
 import { orderConfirmation } from "./email-message";
 import { paymentDueOn as dueOn } from "./payment-options";
 import { sendQuietly } from "./mailer";
-import { notify } from "./notifications";
 import {
   DEFAULT_VAT_BASIS_POINTS,
   formatInvoiceNumber,
   formatReference,
   priceLine,
   sumLines,
+  unitPriceFilsFor,
   type AccountTerms,
   type PricedLine,
 } from "./pricing";
+import { orderDiscount } from "./order-discounts";
 
 /**
  * Cart and checkout against the database.
@@ -44,6 +45,17 @@ export type CartLineView = {
   lineTotalFils: number;
   vatFils: number;
   basePriceFils: number;
+  /**
+   * What one unit would cost at this quantity WITHOUT this account's terms —
+   * after any volume break, before the account discount or an agreed price.
+   *
+   * Always a number on a live cart, because the cart is priced here and now
+   * and we know both figures. It is the order line that can hold a null, and
+   * only for orders placed before the column existed. See order-discounts.ts.
+   */
+  listUnitPriceFils: number;
+  /** "AgreedPrice" | "AccountDiscount", or null when the line is at list. */
+  discountSource: string | null;
   outOfStock: boolean;
   image: string | null;
 };
@@ -56,6 +68,25 @@ export type CartView = {
   totalFils: number;
   zeroRatedFils: number;
   itemCount: number;
+  /**
+   * What this cart would have come to at list, and what the account's terms
+   * take off it. Zero and equal for a guest, and for an account on list
+   * prices — so the summary simply has nothing to show rather than a row
+   * reading "Discount AED 0.00".
+   */
+  listSubtotalFils: number;
+  discountFils: number;
+  /**
+   * The rate the ACCOUNT is on, in basis points — not one worked back from
+   * the totals.
+   *
+   * Those are different numbers and the difference is not academic. 2.5% of
+   * AED 15.90 is 39.75 fils, which rounds to 40; divide 40 back by 1590 and
+   * the answer is 2.52%. Across a mixed order carrying agreed prices as well,
+   * a derived figure came out at 11.52% and was labelled "Account discount",
+   * which is a specific false statement to a customer holding a contract.
+   */
+  accountDiscountBasisPoints: number;
 };
 
 async function vatBasisPoints(): Promise<number> {
@@ -160,6 +191,24 @@ export async function getCart(
       bp,
       terms
     );
+    /*
+     * The same line priced with no account terms at all — what anybody
+     * walking in off the street would pay at this quantity, volume break
+     * included.
+     *
+     * Deliberately NOT sku.priceFils. Measuring a saving against the
+     * single-unit price would count the volume break as though we had granted
+     * it to this account, and a buyer ordering twelve would be shown a
+     * discount that everybody gets.
+     */
+    const listUnitPriceFils = unitPriceFilsFor(sku.priceFils, sku.tiers, item.qty);
+    const agreed = terms.agreedPriceFils;
+    const discountSource =
+      agreed !== null && agreed !== undefined
+        ? "AgreedPrice"
+        : priced.unitPriceFils < listUnitPriceFils
+          ? "AccountDiscount"
+          : null;
     return {
       id: item.id,
       skuId: sku.id,
@@ -172,6 +221,8 @@ export async function getCart(
       eachesPerPack: sku.eachesPerPack,
       taxClass: sku.product.taxClass,
       basePriceFils: sku.priceFils,
+      listUnitPriceFils,
+      discountSource,
       outOfStock: sku.manualOutOfStock,
       image: sku.product.images[0]?.path ?? null,
       ...priced,
@@ -179,6 +230,10 @@ export async function getCart(
   });
 
   const totals = sumLines(lines);
+  // One place decides what a saving is, and it is tested. See
+  // order-discounts.ts — the same function reads the order back afterwards,
+  // so the figure at checkout and the figure on the invoice cannot drift.
+  const saved = orderDiscount(lines);
 
   return {
     cartKey,
@@ -186,6 +241,9 @@ export async function getCart(
     subtotalFils: totals.subtotalFils,
     vatFils: totals.vatFils,
     totalFils: totals.totalFils,
+    listSubtotalFils: saved.listSubtotalFils ?? totals.subtotalFils,
+    discountFils: saved.savingFils,
+    accountDiscountBasisPoints: account.discountBasisPoints,
     zeroRatedFils: lines
       .filter((l) => l.vatFils === 0)
       .reduce((n, l) => n + l.lineTotalFils, 0),
@@ -224,11 +282,19 @@ export async function addToCart(
   });
   if (!sku) throw new CartError(`No SKU "${skuCode}"`, "not_found", 404);
 
-  // Out of stock never enters the cart. A quote request is the path for a line
-  // that is unavailable today.
-  if (sku.manualOutOfStock) {
-    throw new CartError(`${sku.product.name} is out of stock`, "out_of_stock", 409);
-  }
+  /*
+   * OUT OF STOCK IS ALLOWED INTO THE CART.
+   *
+   * It was refused here, which told the buyer what we hold as plainly as a
+   * badge would have: they pressed Add to cart and were turned away. The
+   * decision is that a line we cannot fill is worth more as an order somebody
+   * can ring about than as a sale lost to a competitor, so it goes through and
+   * the admin order marks the lines that need a call.
+   *
+   * A product that is not Active is still refused below. That is a listing
+   * which should not be on sale at all — a different thing from one we happen
+   * to be out of today.
+   */
   if (sku.product.status !== "Active") {
     throw new CartError(`${sku.product.name} is not available`, "bad_request", 409);
   }
@@ -341,14 +407,15 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
   if (cart.lines.length === 0) {
     throw new CartError("Cart is empty", "bad_request", 409);
   }
-  const unavailable = cart.lines.filter((l) => l.outOfStock);
-  if (unavailable.length > 0) {
-    throw new CartError(
-      `${unavailable.map((l) => l.productName).join(", ")} went out of stock`,
-      "out_of_stock",
-      409
-    );
-  }
+  /*
+   * No stock check. A cart that filled up while a line ran out still checks
+   * out, for the same reason it was allowed in: refusing at this point names
+   * the line to the buyer, and does it at the worst possible moment — with
+   * their details typed and the order in front of them.
+   *
+   * What we cannot fill is dealt with afterwards, by somebody who can offer an
+   * alternative. See the note in addToCart.
+   */
 
   const bp = await vatBasisPoints();
   const year = new Date().getUTCFullYear();
@@ -393,7 +460,10 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     const organisation = input.organisationId
       ? await tx.organisation.findUnique({
           where: { id: input.organisationId },
-          select: { paymentTerms: true },
+          // The discount as well as the terms: what the account was given is
+          // snapshotted onto the order beside the VAT rate, so moving them to
+          // a different rate tomorrow cannot restate an invoice already sent.
+          select: { paymentTerms: true, discountBasisPoints: true },
         })
       : null;
 
@@ -465,6 +535,8 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
         totalFils: orderTotals.totalFils,
         // Stored so a later rate change cannot rewrite this order.
         vatRateBasisPoints: bp,
+        // Likewise the account's discount. A guest has none.
+        accountDiscountBasisPoints: organisation?.discountBasisPoints ?? 0,
         // The address as given at the time. Editing an address book entry
         // later must not alter where a historical order was sent.
         shippingSnapshot: JSON.stringify({
@@ -499,6 +571,12 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
           unitPriceFils: line.unitPriceFils,
           lineTotalFils: line.lineTotalFils,
           vatFils: line.vatFils,
+          // What this would have cost at list, and why it did not. Snapshotted
+          // like the name and the tax class: a saving printed on an invoice is
+          // a claim made to a customer, and recomputing it from tomorrow's
+          // prices would quietly restate a document already sent.
+          listUnitPriceFils: line.listUnitPriceFils,
+          discountSource: line.discountSource,
         },
       });
     }
@@ -550,22 +628,6 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResult> {
     }
   );
 
-  await notify({
-    kind: "OrderPlaced",
-    subject: `New order ${placed.reference}`,
-    body: [
-      `${input.company || input.contact} placed order ${placed.reference}.`,
-      `${cart.lines.length} line${cart.lines.length === 1 ? "" : "s"}, ` +
-        `AED ${(placed.totalFils / 100).toFixed(2)} including VAT.`,
-      placed.branchLabel ? `Delivering to ${placed.branchLabel}.` : null,
-      placed.staffName ? `Ordered by ${placed.staffName}.` : null,
-    ]
-      .filter((line) => line !== null)
-      .join("\n"),
-    href: `/admin/orders/${placed.reference}`,
-    entity: "Order",
-    entityId: placed.orderId,
-  });
 
   return { reference: placed.reference, totalFils: placed.totalFils };
 }
@@ -578,9 +640,35 @@ export async function getOrderByReference(reference: string) {
   return db.order.findUnique({
     where: { reference },
     include: {
+      shipments: { orderBy: { sequence: "asc" }, include: { lines: true } },
       items: {
         orderBy: { nameSnapshot: "asc" },
-        include: { sku: { include: { product: true } } },
+        include: {
+          sku: {
+            include: {
+              product: {
+                include: {
+                  /* The photograph beside the line, so a buyer checking an
+                     order back recognises what they bought without opening
+                     five product pages. Ordered, and a SKU-specific image
+                     wins over the product's own where one exists — the black
+                     glove rather than the range shot.
+
+                     Two is enough: the tile shows one, and the second exists
+                     only so a SKU-specific image can beat a general one
+                     without a second query. */
+                  images: { orderBy: { sortOrder: "asc" } },
+                  brand: { select: { name: true } },
+                  categories: {
+                    orderBy: { categoryId: "asc" },
+                    take: 1,
+                    select: { category: { select: { slug: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
   });

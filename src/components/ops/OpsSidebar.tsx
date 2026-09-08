@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { OpsSearch } from "./OpsSearch";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -41,10 +42,14 @@ export function OpsSidebar({
   brand,
   groups,
   user,
+  searchPlaceholder,
 }: {
   brand: { label: string; href: string };
   groups: OpsGroup[];
   user: { name: string; email: string; initials: string; context: string };
+  /** Placeholder for the search box. Omitted, no box is shown — the supplier
+   *  portal shares this shell and has nothing to search across. */
+  searchPlaceholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -75,6 +80,11 @@ export function OpsSidebar({
           </span>
         </span>
       </Link>
+
+      {/* Above the navigation on purpose: it is the answer for somebody who
+          does not yet know which of these screens owns the thing they are
+          holding. */}
+      {searchPlaceholder && <OpsSearch placeholder={searchPlaceholder} />}
 
       <nav aria-label={brand.label} className="flex-1 overflow-y-auto px-2 py-3">
         {groups.map((group, i) => (

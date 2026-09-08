@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { CountryFields } from "@/components/CountryFields";
+import { LineSaving } from "@/components/LineSaving";
+import { orderDiscount, sourceLabel } from "@/lib/order-discounts";
 import { useState } from "react";
 import { aed, useCart } from "@/lib/cart-client";
 import { formatAED } from "@/lib/money";
@@ -37,16 +39,36 @@ export function CheckoutView({
   staff = [],
   company = "",
   email = "",
+  contactName = "",
+  phone = "",
+  emirate = "",
+  countryCode = "",
   paymentTerms = "Prepaid",
   signedIn = false,
 }: {
   branches?: CheckoutBranch[];
   staff?: { id: string; name: string }[];
-  /** The account's own company name and address, prefilled for a signed-in
-   *  buyer. Empty for a guest, who types them. Both stay editable — a clinic
-   *  ordering for a sister site should not have to fight a locked field. */
+  /*
+   * What the account already tells us, prefilled for a signed-in buyer and
+   * empty for a guest, who types it.
+   *
+   * ALL OF IT STAYS EDITABLE. Prefilling is a convenience, not an assertion:
+   * a clinic ordering for a sister site, or sending one delivery to a
+   * different contact, should not have to fight a locked field. The server
+   * takes what is submitted — see the checkout route, which reads the body
+   * rather than re-reading the account.
+   *
+   * These are the FALLBACK beneath the selected branch, not a replacement for
+   * it. A branch is the address goods actually go to and wins wherever it has
+   * a value; this is what fills the form for an account that has never saved
+   * one, which used to leave contact, phone, country and emirate blank.
+   */
   company?: string;
   email?: string;
+  contactName?: string;
+  phone?: string;
+  emirate?: string;
+  countryCode?: string;
   /** This account's agreed terms. A guest is Prepaid. */
   paymentTerms?: string;
   signedIn?: boolean;
@@ -93,6 +115,9 @@ export function CheckoutView({
   );
   const cardFee = cardFeeFils(cart.totalFils);
   const due = dueWording(paymentTerms, settleBy);
+  // What this account's terms take off, split by where it came from. The same
+  // function reads the order back on the invoice afterwards.
+  const saved = orderDiscount(cart.lines);
 
   if (placed) {
     return (
@@ -262,7 +287,7 @@ export function CheckoutView({
               label="Contact name"
               name="contact"
               required
-              defaultValue={branch?.contact}
+              defaultValue={branch?.contact || contactName}
               key={`contact-${branchId}`}
             />
             <Field
@@ -286,9 +311,9 @@ export function CheckoutView({
                 another. */}
             <CountryFields
               key={`where-${branchId}`}
-              countryCode={branch?.countryCode}
-              subdivision={branch?.emirate}
-              phone={branch?.phone}
+              countryCode={branch?.countryCode || countryCode || undefined}
+              subdivision={branch?.emirate || emirate || undefined}
+              phone={branch?.phone || phone || undefined}
               required
               /* The same strings the Field below this uses. They used to be the
                  admin forms' styles, borrowed: uppercase grey labels over 38px
@@ -325,20 +350,28 @@ export function CheckoutView({
                 On account
               </span>
               <span className="mt-1 block text-sm text-text-muted">
-                We dispatch the order and invoice you. Nothing is taken now, and
-                there is no card fee.
+                We confirm the order and invoice you, then dispatch it. Nothing
+                is taken now, and there is no card fee.
               </span>
-              {/* The date this buyer's own terms produce. Asserting "two weeks"
-                  at an account agreed on Net30 would be telling them their
-                  invoice is due a fortnight before it is. */}
+              {/* This buyer's own arrangement and the date it produces, not the
+                  house default. Asserting "two weeks" at an account agreed on
+                  Net30 would be telling them their invoice is due a fortnight
+                  before it is — and naming the terms as well as the date means
+                  a change made in the admin screen shows up here as the words
+                  the buyer was given, rather than only as a date that moved. */}
               <span className="mt-2 block rounded-card bg-surface px-3 py-2 text-sm text-text">
+                {signedIn && (
+                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-text-subtle">
+                    Your payment terms: {due.arrangement}
+                  </span>
+                )}
                 <span className="font-bold">{due.headline}</span>
                 <span className="block text-text-muted">{due.detail}</span>
               </span>
               <span className="mt-2 block text-xs leading-relaxed text-text-subtle">
                 {signedIn
-                  ? "Your invoice is issued when the order ships, and settles against this account. Terms are set when your account is approved and can be changed by arrangement."
-                  : "Account terms are agreed when your trade account is approved. Until then an order is confirmed by us before it ships."}
+                  ? "Your invoice is issued when we confirm the order, and settles against this account. Terms are set when your account is approved and can be changed by arrangement — what is shown above is what your account is on today."
+                  : "Account terms are agreed when your trade account is approved. Until then we confirm and invoice an order before it ships."}
               </span>
             </span>
           </label>
@@ -405,6 +438,15 @@ export function CheckoutView({
                 <span className="min-w-0 text-text-muted">
                   <span className="tnum">{line.qty}</span> &times;{" "}
                   {line.productName}
+                  {/* Why this line is cheaper than the listed price, on the
+                      line itself — a buyer checking one product against a
+                      quote should not have to work it out from the totals. */}
+                  <LineSaving
+                    line={line}
+                    accountBasisPoints={cart.accountDiscountBasisPoints}
+                    struck
+                    className="ml-1.5 text-xs"
+                  />
                 </span>
                 <span className="shrink-0 font-bold tnum text-text">
                   {formatAED(aed(line.lineTotalFils))}
@@ -414,6 +456,38 @@ export function CheckoutView({
           </ul>
 
           <dl className="mt-3 space-y-2.5 text-sm">
+            {/* WHAT IT WOULD HAVE COST, then what came off, then what it is.
+                A subtotal that is already net of a discount, with no sign of
+                the discount, is a saving the buyer was given and never told
+                about — and the first they would hear of it is a colleague
+                asking why the invoice does not match the website. */}
+            {saved.discounted && saved.listSubtotalFils !== null && (
+              <div className="flex justify-between">
+                <dt className="text-text-muted">Subtotal at list</dt>
+                <dd className="tnum text-text-muted">
+                  {formatAED(aed(saved.listSubtotalFils))}
+                </dd>
+              </div>
+            )}
+
+            {saved.sources.map((source) =>
+              saved.savingBySource[source] > 0 ? (
+                <div key={source} className="flex justify-between">
+                  <dt className="text-accent">
+                    {sourceLabel(
+                      source,
+                      source === "AccountDiscount"
+                        ? cart.accountDiscountBasisPoints
+                        : undefined
+                    )}
+                  </dt>
+                  <dd className="font-bold tnum text-accent">
+                    &minus;{formatAED(aed(saved.savingBySource[source]))}
+                  </dd>
+                </div>
+              ) : null
+            )}
+
             <div className="flex justify-between">
               <dt className="text-text-muted">Subtotal</dt>
               <dd className="font-bold tnum text-text">

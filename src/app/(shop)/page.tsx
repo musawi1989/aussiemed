@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ProductCard } from "@/components/ProductCard";
-import { getDepartments, queryProducts } from "@/lib/catalog";
+import { getDepartments } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "AussieMed — One-Stop Online Medical Supply Partner",
@@ -44,11 +43,21 @@ const PROMISES = [
 ];
 
 export default async function HomePage() {
-  const [departments, featured] = await Promise.all([
-    getDepartments(),
-    queryProducts({ inStockOnly: true, sort: "relevance" }),
-  ]);
-  const withTiers = featured.items.filter((p) => p.tiers.length > 0).slice(0, 8);
+  /*
+   * Departments only.
+   *
+   * The page used to end on a grid of eight products under "Best Volume
+   * Breaks". Nobody asked for it and no decision records it — it was a shop
+   * front's reflex. A trade buyer arriving here is not shopping for one line,
+   * they are working out whether this supplier covers what their practice
+   * uses, and eight products out of thousands answers that question badly.
+   * That is what the category grid is for, and it is now the whole page below
+   * the hero.
+   *
+   * Dropping it also stopped the front page loading the entire catalogue to
+   * show eight of it.
+   */
+  const departments = await getDepartments();
   // Every department, including the ones nothing is filed under yet. The client
   // asked on 18 Aug 2026 for the full range to be visible while the catalogue
   // is loaded (DEC-27, reversing DEC-16); an empty one lands on a page that
@@ -104,27 +113,43 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ---------- order by category ---------- */}
+      {/*
+        ---------- the range ----------
+
+        The main event, not a section on the way to one. A buyer landing here
+        is deciding whether this supplier covers what their practice gets
+        through in a month, and the answer to that is the shape of the range —
+        twelve departments, named — not a sample of individual products.
+
+        Bigger tiles and four across at the widest instead of six: at six they
+        read as thumbnails in a list, and the photograph is doing the work of
+        saying what each department contains.
+      */}
       <section className="mx-auto max-w-[1600px] px-4 py-16">
         <h2 className="section-heading text-2xl sm:text-3xl">
-          Order By Category
+          Everything we supply
         </h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-text-muted">
+          Medical, dental, laboratory, cleaning and practice consumables, in
+          one account and on one reference number. Every department below is
+          part of the range we sell.
+        </p>
 
-        <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {visibleDepartments.map((dept) => {
             const image = CATEGORY_IMAGES[dept.slug];
             return (
               <li key={dept.id}>
                 <Link
                   href={`/products?category=${dept.slug}`}
-                  className="group relative flex h-40 items-end overflow-hidden rounded-card shadow-card transition-shadow hover:shadow-raised"
+                  className="group relative flex h-52 items-end overflow-hidden rounded-card shadow-card transition-shadow hover:shadow-raised"
                 >
                   {image ? (
                     <Image
                       src={image}
                       alt=""
                       fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 16vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
@@ -171,32 +196,31 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ---------- volume deals ---------- */}
-      {withTiers.length > 0 && (
-        <section className="mx-auto max-w-[1600px] px-4 py-16">
-          <h2 className="section-heading text-2xl sm:text-3xl">
-            Best Volume Breaks
-          </h2>
-          <p className="mt-3 text-center text-text-muted">
-            Lines where ordering by the box saves the most.
-          </p>
-
-          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {withTiers.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link
-              href="/products"
-              className="inline-block rounded-card bg-navy px-7 py-3 font-bold text-on-navy transition-colors hover:bg-navy-hover"
-            >
-              View the full range
-            </Link>
-          </div>
-        </section>
-      )}
+      {/* The one way through to the catalogue, which the removed product
+          grid had been carrying. A page about the business still has to let
+          somebody start ordering. */}
+      <section className="bg-surface-sunken py-14 text-center">
+        <h2 className="font-display text-xl font-bold text-text sm:text-2xl">
+          Know what you need?
+        </h2>
+        <p className="mx-auto mt-2 max-w-xl px-4 text-text-muted">
+          Search the full catalogue, or ask us for a price on a bulk order.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 px-4">
+          <Link
+            href="/products"
+            className="rounded-card bg-navy px-7 py-3 font-bold text-on-navy transition-colors hover:bg-navy-hover"
+          >
+            Browse the full range
+          </Link>
+          <Link
+            href="/bulk-buy"
+            className="rounded-card border border-border-strong bg-surface px-7 py-3 font-bold text-text transition-colors hover:bg-surface-hover"
+          >
+            Get bulk prices
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

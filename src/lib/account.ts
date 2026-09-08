@@ -92,12 +92,24 @@ export async function accountOverview(branchId?: string): Promise<{
  * Just enough to prefill a form: who they are and who they buy for.
  *
  * Deliberately lighter than accountOverview, which reads every order to work
- * out the figures. Checkout only needs the two names.
+ * out the figures — but it does now read more than the two names it started
+ * with, because checkout was only prefilling what this returned.
+ *
+ * AN ACCOUNT WITH NO BRANCH SAVED USED TO GET A NEARLY EMPTY CHECKOUT. Contact
+ * name, phone, country and emirate were all filled from the selected branch and
+ * from nowhere else, so a buyer who had never added one retyped details we were
+ * already holding against their account and their user. Branches stay the
+ * better source — they are the address goods actually go to — so these are the
+ * fallback, not the replacement.
  */
 export async function accountIdentity(): Promise<{
   organisationName: string;
   contactName: string;
   email: string;
+  /** The person's own number, falling back to the account's. */
+  phone: string;
+  emirate: string;
+  countryCode: string;
   /** What this account was agreed, so checkout can state its own due date
    *  rather than asserting the default at everybody. */
   paymentTerms: string;
@@ -105,17 +117,89 @@ export async function accountIdentity(): Promise<{
   const session = await accountSession();
   if (!session) return null;
 
-  const organisation = await db.organisation.findUnique({
-    where: { id: session.organisationId },
-    select: { name: true, paymentTerms: true },
-  });
+  const [organisation, user] = await Promise.all([
+    db.organisation.findUnique({
+      where: { id: session.organisationId },
+      select: {
+        name: true,
+        paymentTerms: true,
+        phone: true,
+        emirate: true,
+        countryCode: true,
+      },
+    }),
+    // The session carries a name and an email and no number, and the number is
+    // the field people most resent retyping.
+    db.user.findUnique({
+      where: { id: session.id },
+      select: { phone: true },
+    }),
+  ]);
 
   return {
     organisationName: organisation?.name ?? "",
     contactName: session.name,
     email: session.email,
+    // The individual before the switchboard: whoever is placing the order is
+    // who the courier should be ringing.
+    phone: user?.phone ?? organisation?.phone ?? "",
+    emirate: organisation?.emirate ?? "",
+    countryCode: organisation?.countryCode ?? "AE",
     paymentTerms: organisation?.paymentTerms ?? "Prepaid",
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Bulk buy requests
+ * ------------------------------------------------------------------ */
+
+/**
+ * The account's own bulk buy requests, newest first.
+ *
+ * SCOPED BY ORGANISATION, NOT BY USER. A clinic is not one person: the
+ * practice manager who asked for a price last month may be on leave when the
+ * answer matters, and a request only its author can see is a request the
+ * account cannot act on. Same rule as orders, which have always worked this
+ * way.
+ *
+ * Newest first here, unlike the admin queue. An operator is working a backlog
+ * and wants the oldest unanswered one at the top; a buyer is checking on what
+ * they just sent.
+ */
+export async function accountBulkBuyRequests() {
+  const session = await requireAccount();
+
+  return db.quoteRequest.findMany({
+    where: { organisationId: session.organisationId },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: {
+      items: {
+        include: {
+          sku: {
+            select: {
+              skuCode: true,
+              unitLabel: true,
+              product: { select: { name: true, slug: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+/** How many are still open, for the tab badge. */
+export async function accountOpenBulkBuyCount(): Promise<number> {
+  const session = await accountSession();
+  if (!session) return 0;
+
+  return db.quoteRequest.count({
+    where: {
+      organisationId: session.organisationId,
+      status: { not: "Completed" },
+    },
+  });
 }
 
 /* ------------------------------------------------------------------ *

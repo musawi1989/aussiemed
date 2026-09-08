@@ -13,7 +13,8 @@ import { getDepartments, queryProducts } from "@/lib/catalog";
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const inStockOnly = searchParams.get("inStock") === "1";
+  // Ignored, deliberately — see the note in the products route.
+  const inStockOnly = false;
 
   const { facetCounts } = await queryProducts({ inStockOnly });
 

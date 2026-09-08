@@ -1,11 +1,15 @@
+import { AdminBackButton } from "@/components/admin/AdminBackButton";
 import type { Metadata } from "next";
+import { FormWorkspace } from "@/components/admin/FormWorkspace";
 import { RoleSignInForm } from "@/components/RoleSignInForm";
 import { TestCredentials } from "@/components/TestCredentials";
 import { OpsShell, initialsOf } from "@/components/ops/OpsShell";
 import type { OpsGroup } from "@/components/ops/OpsSidebar";
 import { getSessionUser } from "@/lib/auth";
 import { attentionCount } from "@/lib/attention";
-import { unreadCount } from "@/lib/notifications";
+import { openBulkBuyCount } from "@/lib/bulk-buy-admin";
+import { currentAdmin } from "@/lib/admin-team";
+import { canReach } from "@/lib/admin-permissions";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -33,17 +37,17 @@ export const metadata: Metadata = {
  * what somebody opens the back office to deal with; the catalogue is what they
  * go to when something needs changing, which is less often.
  */
-const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
+const groupsFor = (waiting: number, bulkBuy: number): OpsGroup[] => [
   {
     heading: null,
     icon: "dashboard",
     links: [
       { href: "/admin", label: "Dashboard", exact: true },
-      // Above Needs attention: the inbox is what happened, and the panel is
-      // what is still to do. People look at the first one first.
-      { href: "/admin/inbox", label: "Inbox", count: unread },
-      // Second, not buried under System: it is the answer to "what needs me
-      // today", and a queue nobody can find is a queue nobody works.
+      // Not buried under System: it is the answer to "what needs me today",
+      // and a queue nobody can find is a queue nobody works. The Inbox sat
+      // above it until 28 Aug 2026 and was removed — it recorded that an order
+      // had arrived, which the orders list says better, and the three events
+      // that would have justified it were never wired up.
       { href: "/admin/approvals", label: "Needs attention", count: waiting },
     ],
   },
@@ -51,8 +55,19 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
     heading: "Sales",
     icon: "sales",
     links: [
-      { href: "/admin/orders", label: "Orders" },
-      { href: "/admin/enquiries", label: "Enquiries" },
+      { href: "/admin/orders", label: "Orders", exact: true },
+      { href: "/admin/received-products", label: "Received products" },
+      /*
+       * Its own place in the sidebar, at the client's request.
+       *
+       * It was two headings buried at the bottom of Needs attention — "Quote
+       * requests" and "Bulk-buy enquiries", the same conversation arriving
+       * through two doors. One queue now, and one somebody can find.
+       */
+      { href: "/admin/bulk-buy", label: "Bulk buy requests", count: bulkBuy },
+      // The kanban view of the same orders. It lived behind a tab on the list
+      // and nobody who had not clicked that tab knew it existed.
+      { href: "/admin/orders/board", label: "Order board" },
       { href: "/admin/searches", label: "Searches" },
     ],
   },
@@ -68,7 +83,12 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
   {
     heading: "Buying",
     icon: "catalogue",
-    links: [{ href: "/admin/purchasing", label: "Purchase orders" }],
+    links: [
+      { href: "/admin/purchasing", label: "Purchase orders", exact: true },
+      // Existed and was reachable only from inside Purchasing, so nobody who
+      // had not already found it knew it was there.
+      { href: "/admin/purchasing/backorders", label: "Backorders" },
+    ],
   },
   {
     heading: "People",
@@ -94,10 +114,10 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
     heading: "Reports",
     icon: "sales",
     links: [
-      { href: "/admin/reports", label: "Profit", exact: true },
-      { href: "/admin/reports/products", label: "Products" },
-      { href: "/admin/reports/customers", label: "Customers" },
-      { href: "/admin/reports/suppliers", label: "Suppliers" },
+      { href: "/admin/reports", label: "Profit & margin", exact: true },
+      { href: "/admin/reports/products", label: "By product" },
+      { href: "/admin/reports/customers", label: "By customer" },
+      { href: "/admin/reports/suppliers", label: "By supplier" },
     ],
   },
   {
@@ -105,6 +125,10 @@ const groupsFor = (waiting: number, unread: number): OpsGroup[] => [
     icon: "system",
     links: [
       { href: "/admin/settings", label: "Settings" },
+      // Next to Settings because that is where its one predecessor lived — the
+      // supplier-additions checkbox — and where somebody will look for it.
+      { href: "/admin/team", label: "Admin team" },
+      { href: "/admin/roles", label: "Roles & permissions" },
       { href: "/admin/emails", label: "Email" },
       { href: "/admin/audit", label: "Audit trail" },
     ],
@@ -142,12 +166,39 @@ export default async function AdminLayout({
     );
   }
 
-  const [waiting, unread] = await Promise.all([attentionCount(), unreadCount()]);
+  // Both counts in one round trip. The bulk-buy badge is what is OPEN, not
+  // the length of the list: a badge reading 40 past requests tells nobody
+  // anything, one reading 2 waiting is the reason to click.
+  const [waiting, bulkBuy] = await Promise.all([
+    attentionCount(),
+    openBulkBuyCount(),
+  ]);
+
+  /**
+   * The nav, narrowed to what this admin actually holds.
+   *
+   * HIDING IS A COURTESY, NOT THE CONTROL. Every screen guards itself as well —
+   * a link somebody cannot see is still a URL somebody can type, and a nav that
+   * was the only thing standing between a limited admin and the margin report
+   * would be no control at all. This exists so people are not shown doors that
+   * will not open.
+   *
+   * A group left with no links disappears rather than becoming a heading over
+   * nothing.
+   */
+  const me = await currentAdmin();
+  const allowed = (href: string) =>
+    !me || canReach(href, { isMaster: me.isMaster, denied: me.denied });
+
+  const groups = groupsFor(waiting, bulkBuy)
+    .map((group) => ({ ...group, links: group.links.filter((l) => allowed(l.href)) }))
+    .filter((group) => group.links.length > 0);
 
   return (
-    <OpsShell
+    <FormWorkspace><OpsShell
       brand={{ label: "Admin", href: "/admin" }}
-      groups={groupsFor(waiting, unread)}
+      groups={groups}
+      searchPlaceholder="Order, product, customer…"
       user={{
         name: user.name,
         email: user.email,
@@ -155,7 +206,8 @@ export default async function AdminLayout({
         context: "Administration",
       }}
     >
+      <AdminBackButton />
       {children}
-    </OpsShell>
+    </OpsShell></FormWorkspace>
   );
 }

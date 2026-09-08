@@ -1,10 +1,12 @@
 "use client";
 
+import { RestoringForm } from "@/components/AdminForm";
 import { useActionState } from "react";
 import {
   buildTodayAction,
   cancelDraftAction,
   sendAction,
+  sendAllAction,
   setAutoSendAction,
 } from "@/app/admin/purchasing/actions";
 import type { FormState } from "@/components/AdminForm";
@@ -28,7 +30,7 @@ function ActionButton({
   const [state, submit, pending] = useActionState(action, null);
 
   return (
-    <form
+    <RestoringForm state={state} saveAll={false}
       action={submit}
       onSubmit={(event) => {
         if (confirm && !window.confirm(confirm)) event.preventDefault();
@@ -51,7 +53,7 @@ function ActionButton({
           {state.message}
         </span>
       )}
-    </form>
+    </RestoringForm>
   );
 }
 
@@ -67,15 +69,37 @@ export function BuildButton({ cutoffLabel }: { cutoffLabel: string }) {
   );
 }
 
-export function SendButton({ id, poNumber }: { id: string; poNumber: string }) {
+/**
+ * Push every draft at once, for when the day's rhythm is not the right one.
+ *
+ * The count is in the label rather than only in the confirm, because "Send
+ * all drafts" and "Send all 6 drafts" are different amounts of commitment and
+ * the person should know which one they are agreeing to before they press it.
+ *
+ * The caller only renders this when a draft exists — a button that reports
+ * "there were no drafts waiting" is a button that should not have been there.
+ */
+export function SendAllButton({ count }: { count: number }) {
+  return (
+    <ActionButton
+      action={sendAllAction}
+      label={`Send all ${count} draft${count === 1 ? "" : "s"}`}
+      busyLabel="Sending…"
+      className="rounded-card border border-navy bg-surface px-3 py-2 text-sm font-bold text-navy transition-colors hover:bg-navy hover:text-on-navy disabled:opacity-60"
+      confirm={`Send ${count} purchase order${count === 1 ? "" : "s"} to their suppliers now? This commits ${count === 1 ? "it" : "them all"} and cannot be undone.`}
+    />
+  );
+}
+
+export function SendButton({ id, poNumber, amendment = false }: { id: string; poNumber: string; amendment?: boolean }) {
   return (
     <ActionButton
       action={sendAction}
       fields={{ id, poNumber }}
-      label="Send to supplier"
+      label={amendment ? "Send order update" : "Send to supplier"}
       busyLabel="Sending…"
       className="rounded-card bg-navy px-3 py-1.5 text-xs font-bold text-on-navy transition-colors hover:bg-navy-hover disabled:opacity-60"
-      confirm={`Send ${poNumber} to the supplier? This commits the order.`}
+      confirm={amendment ? `Send the latest ${poNumber} quantities to the supplier? Unchanged updates are not duplicated.` : `Send ${poNumber} to the supplier? This commits the order.`}
     />
   );
 }

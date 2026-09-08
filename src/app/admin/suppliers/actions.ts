@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { addressPartsFrom } from "@/lib/geo";
-import { createSupplier, updateSupplier, type SupplierEdit } from "@/lib/admin";
+import { createSupplier, updateSupplier, removeSupplier, type SupplierEdit } from "@/lib/admin";
 import type { FormState } from "@/components/AdminForm";
 
 const text = (data: FormData, key: string) => String(data.get(key) ?? "").trim();
@@ -23,7 +23,17 @@ function read(data: FormData): SupplierEdit {
     // reads it as one rather than as a target of zero.
     promisedLeadTimeDays: text(data, "promisedLeadTimeDays") || null,
     ackSlaHours: text(data, "ackSlaHours") || null,
+    paymentTermsDays: text(data, "paymentTermsDays") || null,
+    paymentTermsLabel: text(data, "paymentTermsLabel") || null,
   };
+}
+
+export async function removeSupplierAction(_state: FormState, data: FormData): Promise<FormState> {
+  const result = await removeSupplier(text(data, "id"));
+  if (!result.ok) return { ok: false, error: result.error };
+  revalidatePath("/admin/suppliers", "layout");
+  revalidatePath("/business-portal", "layout");
+  return { ok: true, message: result.value.archived ? "Supplier archived. Historical orders remain available and portal access is disabled." : "Supplier deleted." };
 }
 
 export async function createSupplierAction(

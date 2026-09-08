@@ -170,3 +170,24 @@ export function remainingLabel(ms: number): string {
   const days = Math.floor(hours / 24);
   return `${days} day${days === 1 ? "" : "s"}`;
 }
+
+/**
+ * The month a date falls in, as a half-open window: [from, to).
+ *
+ * One purchase order per supplier per calendar month means every build has to
+ * ask "is there already an order for this supplier this month" — and that
+ * question is only as good as its boundaries. Half-open on purpose: an order
+ * opened at the last millisecond of the 31st belongs to that month, and an
+ * order opened at midnight on the 1st belongs to the next one. A closed range
+ * would put both in either month depending on how the comparison was written.
+ *
+ * UTC, like everything else stored here. A month boundary read in local time
+ * would move an order between months for four hours a night.
+ */
+export function monthWindow(at: Date): { from: Date; to: Date } {
+  const from = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1));
+  // Month 12 rolls into January of the next year on its own — Date.UTC takes
+  // an out-of-range month deliberately, which is what makes December work.
+  const to = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth() + 1, 1));
+  return { from, to };
+}

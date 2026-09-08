@@ -1,4 +1,6 @@
+import { EntityLogo } from "@/components/EntityLogo";
 import Link from "next/link";
+import { termsName } from "@/lib/payment-options";
 import { db } from "@/lib/db";
 import { contains } from "@/lib/db-search";
 import { countryName } from "@/lib/geo";
@@ -133,7 +135,7 @@ export default async function AdminCustomersPage({
                       href={`/admin/customers/${account.id}`}
                       className="font-semibold text-navy hover:underline"
                     >
-                      {account.name}
+                      <EntityLogo kind="organisation" id={account.id} name={account.name} />{account.name}
                     </Link>
                     {account.isDisabled && (
                       <span className="ml-2">
@@ -165,7 +167,7 @@ export default async function AdminCustomersPage({
                     )}
                   </td>
                   <td className="px-4 py-3 text-text-muted">
-                    {account.paymentTerms}
+                    {termsName(account.paymentTerms)}
                   </td>
                   <td className="px-4 py-3 text-right tnum text-text-muted">
                     {account.orders.length}
@@ -200,14 +202,6 @@ export default async function AdminCustomersPage({
         </div>
       )}
 
-      <p className="mt-4 text-xs leading-relaxed text-text-subtle">
-        Payment terms and credit limits are not editable: they wait on AC-09. A
-        TRN can be set here, and order documents need one on both sides before
-        they are compliant UAE tax invoices — AC-03.{" "}
-        <Link href="/admin/settings" className="font-semibold text-navy hover:underline">
-          Settings
-        </Link>
-      </p>
     </>
   );
 }

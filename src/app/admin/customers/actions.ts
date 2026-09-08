@@ -20,6 +20,7 @@ function read(data: FormData): OrganisationInput {
     countryCode: where.countryCode,
     emirate: where.emirate || null,
     notes: text(data, "notes") || null,
+    ...(data.has("paymentTerms") ? { paymentTerms: text(data, "paymentTerms") } : {}),
     // The hidden "0" posts before the box's "1", so the last value wins.
     isDisabled: data.getAll("isDisabled").at(-1) === "1",
   };

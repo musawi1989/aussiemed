@@ -34,6 +34,7 @@ export async function invoiceForAccount(reference: string) {
       status: true,
       paymentStatus: true,
       paymentDueOn: true,
+      payments: { orderBy: [{ occurredAt: "asc" }, { recordedAt: "asc" }], select: { id: true, occurredAt: true, kind: true, amountFils: true } },
       // What has actually come in, so the invoice can show a balance rather
       // than only a total. On credit terms a part payment is normal, and a
       // document that shows the full total next to the word "Part paid"
@@ -70,4 +71,3 @@ export async function invoiceForAccount(reference: string) {
 }
 
 export type AccountInvoice = NonNullable<Awaited<ReturnType<typeof invoiceForAccount>>>;
-

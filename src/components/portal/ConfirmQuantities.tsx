@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { RestoringForm } from "@/components/AdminForm";
 import { confirmQuantitiesAction } from "@/app/business-portal/actions";
 import type { FormState } from "@/components/AdminForm";
 
@@ -10,6 +11,7 @@ export type ConfirmLine = {
   name: string;
   qtyOrdered: number;
   qtyConfirmed: number | null;
+  alreadySent?: number;
 };
 
 /**
@@ -49,22 +51,22 @@ export function ConfirmQuantities({
 
   const [values, setValues] = useState<Record<string, number>>(() =>
     Object.fromEntries(
-      lines.map((l) => [l.id, l.qtyConfirmed ?? l.qtyOrdered])
+      lines.map((l) => [l.id, Math.max(0, (l.qtyConfirmed ?? l.qtyOrdered) - (l.alreadySent ?? 0))])
     )
   );
 
   const clamp = (line: ConfirmLine, next: number) =>
-    Math.max(0, Math.min(line.qtyOrdered, Number.isFinite(next) ? next : 0));
+    Math.max(0, Math.min(line.qtyOrdered - (line.alreadySent ?? 0), Number.isFinite(next) ? next : 0));
 
   const set = (line: ConfirmLine, next: number) =>
     setValues((prev) => ({ ...prev, [line.id]: clamp(line, next) }));
 
-  const totalOrdered = lines.reduce((n, l) => n + l.qtyOrdered, 0);
+  const totalOrdered = lines.reduce((n, l) => n + l.qtyOrdered - (l.alreadySent ?? 0), 0);
   const totalSaid = lines.reduce((n, l) => n + (values[l.id] ?? 0), 0);
   const short = totalOrdered - totalSaid;
 
   return (
-    <form action={submit} className="mt-3">
+    <RestoringForm state={state} action={submit} saveAll className="mt-3">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="poNumber" value={poNumber} />
 
@@ -97,14 +99,15 @@ export function ConfirmQuantities({
           <thead className="border-b border-border-base text-left text-xs font-bold uppercase tracking-wide text-text-subtle">
             <tr>
               <th className="px-3 py-2">Item</th>
-              <th className="px-3 py-2 text-right">We asked for</th>
+              <th className="px-3 py-2 text-right">Still needed</th>
               <th className="px-3 py-2 text-center">You can send</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line) => {
               const value = values[line.id] ?? 0;
-              const isShort = value < line.qtyOrdered;
+              const outstanding = line.qtyOrdered - (line.alreadySent ?? 0);
+              const isShort = value < outstanding;
 
               return (
                 <tr key={line.id} className="border-b border-border-base last:border-0">
@@ -115,10 +118,11 @@ export function ConfirmQuantities({
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tnum font-bold text-text">
-                    {line.qtyOrdered}
+                    {outstanding}
                   </td>
                   <td className="px-3 py-2">
                     <input type="hidden" name="lineId" value={line.id} />
+                    <input type="hidden" name="qtyConfirmed" value={value + (line.alreadySent ?? 0)} />
 
                     <div className="flex items-center justify-center gap-2">
                       <div className="flex items-center gap-1">
@@ -131,11 +135,10 @@ export function ConfirmQuantities({
                       </Step>
 
                       <input
-                        name="qtyConfirmed"
                         type="number"
                         inputMode="numeric"
                         min={0}
-                        max={line.qtyOrdered}
+                        max={outstanding}
                         value={value}
                         onChange={(e) => set(line, Number(e.target.value))}
                         aria-label={`How many ${line.name} you can send, of ${line.qtyOrdered}`}
@@ -150,7 +153,7 @@ export function ConfirmQuantities({
 
                       <Step
                         label={`One more ${line.name}`}
-                        disabled={value >= line.qtyOrdered}
+                        disabled={value >= outstanding}
                         onClick={() => set(line, value + 1)}
                       >
                         +
@@ -166,7 +169,7 @@ export function ConfirmQuantities({
                         repeatedly and watching the number.
                       */}
                       <span className="w-16 shrink-0 text-left text-xs font-semibold tnum text-danger">
-                        {isShort ? `${line.qtyOrdered - value} short` : ""}
+                        {isShort ? `${outstanding - value} short` : ""}
                       </span>
                     </div>
                   </td>
@@ -203,7 +206,7 @@ export function ConfirmQuantities({
         cancel anything &mdash; it lets us cover the rest before the order is
         due.
       </p>
-    </form>
+    </RestoringForm>
   );
 }
 

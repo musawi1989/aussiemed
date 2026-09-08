@@ -2,6 +2,9 @@ import "server-only";
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import { composeEmailMime } from "./email-mime";
+import { emailHtmlFromText, safeEmailHtml, validateAttachments } from "./email-html";
 
 import { db } from "./db";
 import {
@@ -61,20 +64,10 @@ const outboxDriver: Driver = {
 
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const safeKind = message.kind.replace(/[^A-Za-z0-9]/g, "");
-    const file = join(root, `${stamp}-${safeKind}.eml`);
+    const file = join(root, `${stamp}-${safeKind}-${randomUUID()}.eml`);
 
-    const eml = [
-      `From: AussieMed <${FROM_ADDRESS}>`,
-      `To: ${message.to}`,
-      `Subject: ${message.subject}`,
-      `Date: ${new Date().toUTCString()}`,
-      "Content-Type: text/plain; charset=utf-8",
-      "",
-      message.text,
-      "",
-    ].join("\r\n");
-
-    await writeFile(file, eml, "utf8");
+    const eml = await composeEmailMime(message, FROM_ADDRESS);
+    await writeFile(file, eml);
   },
 };
 
@@ -125,6 +118,8 @@ export function mailDriverName(): string {
  * ------------------------------------------------------------------ */
 
 export type SendOptions = {
+  senderUserId?: string;
+  subjectPrefix?: string;
   /** What this is about, so the admin screen can link back. */
   entity?: string;
   entityId?: string;
@@ -144,9 +139,36 @@ export type SendOptions = {
  * goes wrong is recorded on the row and surfaced on /admin/emails.
  */
 export async function send(
-  message: EmailMessage,
+  original: EmailMessage,
   options: SendOptions = {}
 ): Promise<SendOutcome> {
+  /**
+   * The admin's own wording, if they have written any — see
+   * message-templates.ts.
+   *
+   * APPLIED HERE, ONCE, rather than at each call site. Every automatic message
+   * in the application goes through this function, so this is the only place
+   * that has to be right; a hook per caller would be a hook somebody forgets on
+   * the next message they add, and the failure mode is silent.
+   *
+   * It is applied BEFORE the row is written, so what is recorded on
+   * /admin/emails is what actually went out. Recording the built-in text and
+   * sending the override would make the trail a record of what we meant.
+   *
+   * Imported lazily to keep this module's own import graph free of the
+   * database layer, and because a mailer that cannot be loaded without a
+   * template table is a mailer that stops working the moment one is missing.
+   */
+  const { applyTemplate } = await import("./message-templates");
+  const message = await applyTemplate(original);
+  if (/[\r\n]/.test(message.subject) || message.subject.length > 998) return { id: "", status: "Failed", error: "Use a single-line subject under 998 characters." };
+  const attachmentError = validateAttachments(message.attachments ?? []);
+  if (attachmentError) return { id: "", status: "Failed", error: attachmentError };
+  const signature = options.senderUserId ? await db.user.findUnique({ where: { id: options.senderUserId }, select: { emailSignatureHtml: true } }) : null;
+  message.html = safeEmailHtml(message.html || emailHtmlFromText(message.text));
+  if (signature?.emailSignatureHtml) message.html += `<hr>${safeEmailHtml(signature.emailSignatureHtml)}`;
+  if (options.subjectPrefix) message.subject = `${options.subjectPrefix.replace(/[\r\n]/g, " ")}${message.subject}`;
+
   const audience = AUDIENCE[message.kind];
   const chosen = driver();
 
@@ -173,7 +195,9 @@ export async function send(
       const existing = await db.outboundEmail.findUnique({
         where: { dedupeKey: options.dedupeKey },
       });
-      if (existing) return { id: existing.id, status: "Duplicate" };
+      if (existing) return existing.status === "Sent"
+        ? { id: existing.id, status: "Duplicate" }
+        : { id: existing.id, status: existing.status === "Suppressed" ? "Suppressed" : "Failed", error: existing.error ?? "This message is queued or failed. Retry it from Email." };
     }
     throw error;
   }
@@ -195,6 +219,8 @@ async function create(
       toAddress: (message.to ?? "").trim(),
       subject: message.subject,
       body: message.text,
+      html: message.html ?? null,
+      attachments: { create: (message.attachments ?? []).map(file => ({ fileName: file.fileName, contentType: file.contentType, bytes: new Uint8Array(file.bytes) })) },
       status: state.status,
       driver: driverName,
       error: state.error ?? null,
@@ -210,8 +236,10 @@ async function create(
  * a retry goes down exactly the same path as the first try.
  */
 export async function deliver(id: string): Promise<SendOutcome> {
-  const row = await db.outboundEmail.findUnique({ where: { id } });
+  const row = await db.outboundEmail.findUnique({ where: { id }, include: { attachments: true } });
   if (!row) return { id, status: "Failed", error: "No such message" };
+  if (row.status === "Sent") return { id, status: "Duplicate" };
+  if (row.status === "Suppressed" || !isSendableAddress(row.toAddress)) return { id, status: "Suppressed", error: "This recipient is not enabled for delivery." };
 
   const chosen = driver();
 
@@ -221,6 +249,8 @@ export async function deliver(id: string): Promise<SendOutcome> {
       to: row.toAddress,
       subject: row.subject,
       text: row.body,
+      html: row.html ?? undefined,
+      attachments: row.attachments.map(file => ({ fileName: file.fileName, contentType: file.contentType, bytes: file.bytes })),
     });
 
     await db.outboundEmail.update({

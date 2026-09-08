@@ -4,4 +4,5 @@ import type { SectionTab } from "@/components/admin/SectionTabs";
 export const PRODUCT_TABS: SectionTab[] = [
   { href: "/admin/products", label: "Products", exact: true },
   { href: "/admin/products/unallocated", label: "No supplier" },
+  { href: "/admin/products/brands", label: "Brands" },
 ];
